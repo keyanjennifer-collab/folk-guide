@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/chat/index",
+    "pages/caikuxiang/index",
+    "pages/settings/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "今日五色",
+    "navigationBarBackgroundColor": "#F4EFE5",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F4EFE5"
+  },
+  "tabBar": {
+    "color": "#77756E",
+    "selectedColor": "#183F35",
+    "backgroundColor": "#FBF9F4",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "今日五色" },
+      { "pagePath": "pages/chat/index", "text": "AI国学" },
+      { "pagePath": "pages/caikuxiang/index", "text": "财库香" },
+      { "pagePath": "pages/settings/index", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

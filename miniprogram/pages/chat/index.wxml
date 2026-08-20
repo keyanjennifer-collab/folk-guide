@@ -1,0 +1,90 @@
+<view class="page ai-page">
+  <view class="ai-hero">
+    <view class="wisdom-moon"><text>问</text></view><view class="bamboo bamboo-one"></view><view class="bamboo bamboo-two"></view><view class="ai-mist"></view>
+    <view class="hero-top"><view><view class="eyebrow">PERSONAL WISDOM</view><view class="hero-title">AI国学</view></view><button class="rule-button" bindtap="showRules">服务说明</button></view>
+    <view class="trial-row">
+      <view><view class="trial-title">{{serviceTitle}}</view><view class="trial-copy">{{serviceCopy}}</view></view>
+      <view class="trial-days">{{serviceActive ? trialDaysLeft : '—'}}<text wx:if="{{serviceActive}}">天</text></view>
+    </view>
+    <view class="quota"><text>今日问答 {{remainingQuestions}}/{{dailyLimit}}</text><text>七日比较 {{remainingComparisons}}/{{comparisonLimit}}</text></view>
+  </view>
+
+  <view class="result-card personal-color-card">
+    <view class="result-head"><view><view class="section-kicker">PERSONAL FIVE COLORS</view><view class="result-title">我的今日五色</view></view><view class="result-badge">{{personalState === 'ready' ? '五' : '候'}}</view></view>
+    <view class="personal-status">{{personalStatusCopy}}</view>
+    <view wx:if="{{personalState === 'ready'}}">
+      <view class="personal-meta"><text>{{personalDate}}</text><text>{{personalPrecision}}</text></view>
+
+      <view class="personal-summary-grid">
+        <view><text>今日个人主色</text><strong>{{personalPrimaryColor}}</strong></view>
+        <view><text>辅助参考色</text><strong>{{personalSupportingColors}}</strong></view>
+      </view>
+      <view class="personal-focus-box"><text>今日个人重点</text><strong>{{personalFocus}}</strong></view>
+      <view class="personal-combination"><text>穿搭与配色</text><view>{{personalCombinationAdvice}}</view></view>
+      <view class="personal-comparison"><text>为什么与公共排名不同？</text><view>{{personalComparisonNote}}</view></view>
+
+      <view class="personal-detail-title"><text>我的五色详细建议</text><small>点击颜色展开</small></view>
+      <view class="personal-ranking detailed-ranking">
+        <view wx:for="{{personalColors}}" wx:key="name" class="personal-color-item">
+          <view class="personal-color-row rank-{{item.rank}}" data-rank="{{item.rank}}" bindtap="togglePersonalColor">
+            <text class="personal-rank">{{item.rank}}</text><view class="personal-swatch {{item.tone}}"></view><strong>{{item.name}}</strong><text>{{item.element}}</text><text>{{item.tendency}}</text><text class="personal-arrow">{{expandedPersonalRank === item.rank ? '收' : '展'}}</text>
+          </view>
+          <view wx:if="{{expandedPersonalRank === item.rank}}" class="personal-color-detail">
+            <view class="personal-reason"><text>个人排序说明</text><view>{{item.reason}}</view></view>
+            <view class="personal-detail-block"><text>适合处理</text><view class="personal-suitable-list"><text wx:for="{{item.suitable}}" wx:for-item="suitableItem" wx:key="*this">· {{suitableItem}}</text></view></view>
+            <view class="personal-detail-block"><text>可能的阻力</text><view>{{item.resistance}}</view></view>
+            <view class="personal-detail-block"><text>行动与穿搭建议</text><view>{{item.advice}}</view></view>
+            <view class="personal-incense"><view><text>对应香品</text><strong>{{item.incense}}</strong><small>{{item.scent}}</small></view><button bindtap="toIncense">查看香品</button></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="personal-calculation-note"><text>本次计算说明</text><view>{{personalCultureNote}}</view></view>
+      <view class="personal-reminders"><text wx:for="{{personalReminders}}" wx:key="*this">· {{item}}</text></view>
+      <button class="result-button" bindtap="toProfile">查看或修改生辰档案</button>
+    </view>
+    <button wx:if="{{personalState === 'missing'}}" class="result-button" bindtap="toProfile">完善生辰档案</button>
+    <button wx:if="{{personalState === 'error'}}" class="result-button" bindtap="loadPersonalDaily">重新读取</button>
+  </view>
+
+  <view class="knowledge-card">
+    <view class="knowledge-mark">据</view>
+    <view class="section-kicker">CULTURAL DIALOGUE</view>
+    <view class="knowledge-title">问典籍，也问生活</view>
+    <view class="knowledge-copy">围绕传统典籍、五行时序与生活文化提供清楚、克制的回答。面对重要现实决定，请结合实际信息理性判断。</view>
+    <view class="status-list">
+      <view class="status-row {{answerReady ? 'ready' : 'waiting'}}"><text>AI问答</text><text>{{answerStatus}}</text></view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-copy">正在读取问答服务状态…</view>
+  </view>
+
+  <view class="section-title section-line"><text>你可能想问</text><view class="section-rule"></view></view>
+  <scroll-view class="question-groups" scroll-x enable-flex>
+    <view wx:for="{{questions}}" wx:key="group" class="question-group">
+      <view class="group-name">{{item.group}}</view>
+      <button wx:for="{{item.items}}" wx:for-item="questionItem" wx:key="*this" class="question-button" data-question="{{questionItem}}" disabled="{{sending}}" bindtap="chooseQuestion">{{questionItem}}</button>
+    </view>
+  </scroll-view>
+
+  <view class="section-title chat-title section-line"><text>继续提问</text><view class="section-rule"></view></view>
+  <view class="messages">
+    <view wx:for="{{messages}}" wx:key="index" class="message {{item.role}}">
+      <view class="message-role">{{item.role === 'user' ? '你' : 'AI国学 · AI生成'}}</view>
+      <view class="message-text">{{item.text}}</view>
+      <view wx:if="{{item.references && item.references.length}}" class="references">
+        <view class="reference-title">参考资料</view>
+        <view wx:for="{{item.references}}" wx:for-item="reference" wx:key="*this">· {{reference}}</view>
+      </view>
+      <view wx:if="{{item.role === 'assistant' && item.messageId}}" class="feedback-row">
+        <button class="feedback {{item.feedback === 'helpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="helpful" bindtap="feedback">有帮助</button>
+        <button class="feedback {{item.feedback === 'unhelpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="unhelpful" bindtap="feedback">需要纠正</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="composer">
+    <textarea value="{{question}}" bindinput="setQuestion" maxlength="500" auto-height disabled="{{sending}}" placeholder="询问典籍、五行或传统文化"/>
+    <button loading="{{sending}}" disabled="{{sending}}" bindtap="send">发送</button>
+  </view>
+  <view class="disclaimer">AI生成内容仅供传统文化学习和生活参考，不构成医疗、法律、投资或其他专业意见。</view>
+</view>

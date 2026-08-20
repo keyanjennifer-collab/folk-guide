@@ -1,0 +1,14 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+sqlalchemy==2.0.42
+pydantic-settings==2.10.1
+httpx==0.28.1
+PyJWT==2.10.1
+pytest==8.4.1
+pytest-asyncio==1.1.0
+lunar-python==1.4.8
+openpyxl==3.1.5
+python-multipart==0.0.32
+pypdf==6.16.1
+agno==2.9.0
+tzdata==2026.3

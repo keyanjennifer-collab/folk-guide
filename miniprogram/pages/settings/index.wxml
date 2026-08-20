@@ -1,0 +1,36 @@
+<view class="mine-page">
+  <view wx:if="{{!isLoggedIn}}" class="guest-hero"><view class="mine-moon"></view><view class="guest-avatar">五</view><view class="guest-title">登录后管理个人服务</view><view class="guest-copy">公共五色无需登录；个人档案、订单和服务卡需要微信登录。</view><button bindtap="realLogin">微信快捷登录</button><view class="login-note">仅用于建立小程序账号，手机号可稍后绑定</view></view>
+
+  <block wx:else>
+    <view class="user-hero">
+      <view class="mine-moon"></view>
+      <view class="avatar">五</view><view class="user-main"><view class="user-name">{{nickname}}</view><view class="user-id">五行五色用户 · 新客体验中</view></view><view class="settings-mark">⌁</view>
+      <view class="hero-stats"><view><strong>{{trialDaysLeft}}</strong><text>体验剩余天数</text></view><view><strong>{{questionRemaining}}</strong><text>今日问答次数</text></view><view><strong>{{pendingCards}}</strong><text>待开启服务卡</text></view></view>
+    </view>
+
+    <view class="profile-card" bindtap="toProfile"><view class="profile-icon">档</view><view class="profile-main"><view class="profile-title">本人档案 <text>{{hasProfile ? '完整度 ' + profileCompleteness + '%' : '待创建'}}</text></view><view class="progress"><view style="width: {{hasProfile ? profileCompleteness : 0}}%"></view></view><view class="profile-copy">{{profileSummary}}</view></view><view class="arrow">›</view></view>
+
+    <view class="service-card">
+      <view class="card-head"><view><view class="section-kicker">MY SERVICE</view><view class="section-title">我的个人服务</view></view><view class="card-count" bindtap="showCards">卡包 {{pendingCards + 1}}张 ›</view></view>
+      <view class="trial-card"><view class="trial-top"><view><view class="trial-label">新客赠送</view><view class="trial-title">3天AI国学体验</view></view><view class="trial-number">{{trialDaysLeft}}<text>天</text></view></view><view class="trial-progress"><view style="width: 33%"></view></view><view class="trial-copy">第1天使用中 · 每日20次问答、2次七日比较</view><button bindtap="toAi">继续使用AI国学</button></view>
+      <view class="pending-card"><view><view class="pending-label">待开启</view><strong>30天个人服务卡</strong><text>有效期至2027年8月6日</text></view><view class="card-actions"><button bindtap="activateCard">开启</button><button class="outline" bindtap="giftCard">赠送</button></view></view>
+    </view>
+
+    <view class="panel account-panel"><view class="panel-head"><view class="section-title">账号安全</view><text>微信已登录</text></view><view class="menu-row"><view class="menu-main"><strong>账号与手机号</strong><text>{{phoneDisplay}}</text></view><button wx:if="{{!phoneBound}}" class="phone-button" open-type="getPhoneNumber" bindgetphonenumber="bindPhone">绑定手机号</button></view><view wx:if="{{!wechatPhoneAvailable && !phoneBound}}" class="phone-note">完成微信小程序注册和后端密钥配置后即可使用手机号绑定。</view><button class="logout-button" bindtap="logout">退出登录</button></view>
+
+    <view class="panel">
+      <view class="panel-head"><view class="section-title">我的订单</view><text data-label="全部订单" bindtap="showOrders">全部订单 ›</text></view>
+      <view class="order-grid"><view data-label="待付款" bindtap="showOrders"><view class="order-icon">付</view><text>待付款</text><i wx:if="{{orderCounts.unpaid}}">{{orderCounts.unpaid}}</i></view><view data-label="待发货" bindtap="showOrders"><view class="order-icon">包</view><text>待发货</text><i wx:if="{{orderCounts.unshipped}}">{{orderCounts.unshipped}}</i></view><view data-label="待收货" bindtap="showOrders"><view class="order-icon">运</view><text>待收货</text><i wx:if="{{orderCounts.shipped}}">{{orderCounts.shipped}}</i></view><view data-label="退款/售后" bindtap="showOrders"><view class="order-icon">售</view><text>退款/售后</text><i wx:if="{{orderCounts.afterSale}}">{{orderCounts.afterSale}}</i></view></view>
+    </view>
+
+    <view class="panel">
+      <view class="menu-row"><view class="menu-icon green">醒</view><view class="menu-main"><strong>每日五色提醒</strong><text>记录订阅意愿，正式发送受微信规则限制</text></view><switch checked="{{pushEnabled}}" color="#385f4d" bindchange="togglePush"/></view>
+      <picker wx:if="{{pushEnabled}}" mode="selector" range="{{['07:00','08:00','09:00']}}" bindchange="selectPushTime"><view class="menu-row sub-row"><view class="menu-icon gold">时</view><view class="menu-main"><strong>偏好提醒时间</strong><text>{{pushTime}}</text></view><view class="arrow">›</view></view></picker>
+      <view class="menu-row" data-title="个人结果记录" bindtap="showRecords"><view class="menu-icon green">记</view><view class="menu-main"><strong>个人结果记录</strong><text>查看服务期内的每日个人结果</text></view><view class="arrow">›</view></view>
+      <view class="menu-row" data-title="AI问答记录" bindtap="showRecords"><view class="menu-icon gold">问</view><view class="menu-main"><strong>AI问答记录</strong><text>查看或清空历史问答</text></view><view class="arrow">›</view></view>
+    </view>
+
+    <view class="panel simple-menu"><view class="menu-row" bindtap="showHelp"><view class="menu-main"><strong>帮助与反馈</strong></view><view class="arrow">›</view></view><view class="menu-row" bindtap="showPrivacy"><view class="menu-main"><strong>隐私与数据管理</strong></view><view class="arrow">›</view></view><view class="menu-row" bindtap="showAbout"><view class="menu-main"><strong>关于五行五色</strong></view><view class="arrow">›</view></view></view>
+    <view class="version">五行五色 V1.0 · 内容仅供文化与生活参考</view>
+  </block>
+</view>

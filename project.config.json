@@ -1,0 +1,38 @@
+{
+  "description": "民俗生活助手微信小程序",
+  "miniprogramRoot": "miniprogram/",
+  "compileType": "miniprogram",
+  "appid": "wx349bf6810a9a559a",
+  "projectname": "folk-guide",
+  "setting": {
+    "useCompilerPlugins": [
+      "typescript"
+    ],
+    "urlCheck": false,
+    "es6": true,
+    "minified": true,
+    "postcss": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "enhance": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

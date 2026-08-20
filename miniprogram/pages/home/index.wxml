@@ -1,0 +1,123 @@
+<view class="home-page">
+  <!--
+    参考高端香氛品牌常用的“整屏摄影 + 居中文案”结构。
+    图片路径由 index.ts 管理；如果图片暂时为空，会显示纯深绿色背景，不使用来源不明的占位图。
+  -->
+  <view class="editorial-hero">
+    <image wx:if="{{heroImage}}" class="hero-image" src="{{heroImage}}" mode="aspectFill"></image>
+    <view wx:else class="hero-image-empty"></view>
+    <view class="hero-shade"></view>
+
+    <view class="hero-brand">
+      <text>五色知时</text>
+      <text class="hero-brand-en">WUSE ZHISHI</text>
+    </view>
+
+    <view class="hero-copy">
+      <view class="hero-kicker">FIVE COLORS · IN SEASON</view>
+      <view class="hero-slogan">五色应时，知时而行</view>
+      <view class="hero-principle">色无定论，应时而变</view>
+    </view>
+
+    <view class="hero-footer">
+      <view>
+        <view class="hero-date">{{dateLabel}}</view>
+        <view class="hero-calendar">{{calendarLabel}}</view>
+      </view>
+      <button class="hero-share" open-type="share">分享</button>
+    </view>
+  </view>
+
+  <!-- 首屏之后先交代今天能得到什么，保持参考页面的大留白和清晰层级。 -->
+  <view class="opening-section">
+    <view class="section-kicker center">TODAY'S GUIDANCE</view>
+    <view class="opening-title">今日五色</view>
+    <view class="opening-rule"></view>
+    <view class="opening-copy">五种颜色同时参考，排名反映今日公共环境。轻触任一色签，查看适合事项、行动建议与对应香品。</view>
+    <view class="mini-spectrum" aria-label="五色">
+      <text class="tone-green"></text><text class="tone-black"></text><text class="tone-gold"></text><text class="tone-white"></text><text class="tone-red"></text>
+    </view>
+    <view class="quick-actions">
+      <button open-type="share">分享今日五色</button>
+      <button bindtap="showSubscribe">订阅每日提醒</button>
+    </view>
+  </view>
+
+  <view class="ranking-section">
+    <view class="section-head">
+      <view>
+        <view class="section-kicker">FIVE COLOR · DAILY</view>
+        <view class="section-title">今日公共五色排名</view>
+      </view>
+      <view class="rule-tag">{{statusLabel}}</view>
+    </view>
+
+    <view wx:if="{{contentSource !== 'published'}}" class="guide-empty">
+      <view class="guide-empty-mark">五色知时</view>
+      <view class="guide-empty-title">{{contentSource === 'loading' ? '正在读取今日内容' : contentSource === 'empty' ? '今日内容准备中' : '暂时无法读取'}}</view>
+      <view class="guide-empty-copy">{{contentMessage}}</view>
+      <button wx:if="{{contentSource !== 'loading'}}" class="guide-retry" bindtap="loadToday">重新读取</button>
+    </view>
+
+    <block wx:else>
+      <block wx:for="{{guides}}" wx:key="rank">
+        <view class="guide-row {{expandedRank === item.rank ? 'is-expanded' : ''}}" data-rank="{{item.rank}}" bindtap="toggleGuide">
+          <view class="rank-number"><text>0{{item.rank}}</text></view>
+          <view class="color-ribbon tone-{{item.tone}}"><text></text></view>
+          <view class="guide-main">
+            <view class="guide-name">{{item.name}} <text>· {{item.element}}</text></view>
+            <view class="guide-status">{{item.status}}</view>
+          </view>
+          <view class="chevron">{{expandedRank === item.rank ? '−' : '+'}}</view>
+        </view>
+
+        <view wx:if="{{expandedRank === item.rank}}" class="guide-detail">
+          <view class="detail-label">适合处理</view>
+          <view class="chips"><text wx:for="{{item.suitable}}" wx:for-item="tag" wx:key="*this" class="chip">{{tag}}</text></view>
+          <view class="detail-block"><text class="detail-label">可能的阻力</text><text>{{item.resistance}}</text></view>
+          <view class="detail-block"><text class="detail-label">行动建议</text><text>{{item.advice}}</text></view>
+          <view class="incense-box">
+            <view>
+              <view class="detail-label">今日对应香品</view>
+              <view class="incense-name">{{item.incense}}</view>
+              <view class="incense-scent">{{item.scent}}</view>
+            </view>
+            <button class="small-button" catchtap="toIncense">了解香品</button>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+
+  <!-- 第二张品牌图尚未找到合适的东方素材，因此仅在 philosophyImage 有值时显示。 -->
+  <image wx:if="{{philosophyImage}}" class="philosophy-image" src="{{philosophyImage}}" mode="aspectFill"></image>
+
+  <view class="brand-section" bindtap="showBrandMeaning">
+    <view class="section-kicker center">OUR PHILOSOPHY</view>
+    <view class="brand-title">色无定论，应时而变</view>
+    <view class="brand-copy">每一天的时序不同，五色之间的关系也会变化。我们将传统五行规律，转化成今天能用的颜色、穿搭、香品与生活建议。</view>
+    <view class="logic-chain">
+      <view class="logic-node"><text class="logic-symbol">时</text><text class="logic-caption">当下时序</text></view><text class="logic-arrow">›</text>
+      <view class="logic-node"><text class="logic-symbol">五行</text><text class="logic-caption">关系变化</text></view><text class="logic-arrow">›</text>
+      <view class="logic-node"><text class="logic-symbol">五色</text><text class="logic-caption">现代表达</text></view><text class="logic-arrow">›</text>
+      <view class="logic-node"><text class="logic-symbol">个人</text><text class="logic-caption">判断选择</text></view><text class="logic-arrow">›</text>
+      <view class="logic-node action"><text class="logic-symbol">行</text><text class="logic-caption">落到生活</text></view>
+    </view>
+    <view class="story-conclusion">先理解当下，再做适合当下的选择。</view>
+    <view class="story-link">了解品牌理念　›</view>
+  </view>
+
+  <view class="personal-section">
+    <view class="personal-kicker">PERSONAL NOTE</view>
+    <view class="personal-title"><text>公共排名之外，</text><text>也看看你的个人结果</text></view>
+    <view class="personal-copy">结合本人出生信息后，每个人的颜色排序可能不同。公共内容仍可不登录完整查看。</view>
+    <button class="primary-button" bindtap="showPersonalLogin">启阅我的个人结果</button>
+  </view>
+
+  <view class="closing-actions">
+    <button open-type="share"><text>分享</text><text class="closing-action-title">把今日五色送给朋友</text><text class="closing-action-link">生成分享卡　›</text></button>
+    <button bindtap="showSubscribe"><text>提醒</text><text class="closing-action-title">每天从当下开始</text><text class="closing-action-link">订阅每日消息　›</text></button>
+  </view>
+
+  <view class="disclaimer">内容仅供传统文化了解和日常生活参考，不用于预测确定结果，也不替代个人判断或专业意见。</view>
+</view>

@@ -1,0 +1,78 @@
+.home-page{padding:0 0 60rpx;background:#f7f5ef;color:#27312c}
+.home-page button::after{border:0}
+
+/* 沉浸式摄影首屏：图片可替换，文字、遮罩和排版保持不变。 */
+.editorial-hero{position:relative;overflow:hidden;height:680rpx;background:#182c25;color:#fff}
+.hero-image,.hero-image-empty,.hero-shade{position:absolute;inset:0;width:100%;height:100%}
+.hero-image-empty{background:linear-gradient(155deg,#182d26,#314a3e 56%,#14231e)}
+.hero-shade{background:linear-gradient(180deg,rgba(8,18,14,.36) 0%,rgba(8,18,14,.08) 32%,rgba(7,16,13,.25) 58%,rgba(6,14,11,.78) 100%)}
+.hero-brand{position:absolute;z-index:2;top:38rpx;left:0;right:0;display:flex;flex-direction:column;align-items:center;font-family:"Songti SC","STSong",serif;font-size:24rpx;letter-spacing:8rpx;text-shadow:0 2rpx 9rpx rgba(0,0,0,.42)}
+.hero-brand-en{margin-top:4rpx;font-family:serif;font-size:13rpx;letter-spacing:4rpx;opacity:.76}
+.hero-copy{position:absolute;z-index:2;left:42rpx;right:42rpx;bottom:170rpx;text-align:center;text-shadow:0 3rpx 15rpx rgba(0,0,0,.55)}
+.hero-kicker{font-family:serif;font-size:16rpx;letter-spacing:6rpx;opacity:.82}
+.hero-slogan{margin:19rpx 0 8rpx;font-family:"Songti SC","STSong",serif;font-size:50rpx;font-weight:500;letter-spacing:6rpx;white-space:nowrap}
+.hero-principle{font-family:"Songti SC","STSong",serif;font-size:23rpx;letter-spacing:5rpx;opacity:.9}
+.hero-footer{position:absolute;z-index:2;left:34rpx;right:30rpx;bottom:34rpx;display:flex;align-items:flex-end;justify-content:space-between;padding-top:23rpx;border-top:1rpx solid rgba(255,255,255,.38)}
+.hero-date{font-size:22rpx;letter-spacing:1rpx}.hero-calendar{max-width:560rpx;margin-top:5rpx;font-size:18rpx;opacity:.74}
+.hero-share{width:auto;margin:0;padding:0 22rpx;border:1rpx solid rgba(255,255,255,.62)!important;border-radius:0;background:transparent!important;color:#fff!important;font-size:21rpx;line-height:58rpx;letter-spacing:3rpx}
+
+/* 首屏后的介绍区强调留白，接近精品香氛页面的杂志式节奏。 */
+.opening-section{padding:70rpx 54rpx 62rpx;background:#fbfaf6;text-align:center}
+.section-kicker{color:#9a8454;font-family:serif;font-size:17rpx;letter-spacing:5rpx}.section-kicker.center{text-align:center}
+.opening-title{margin-top:9rpx;color:#223d34;font-family:"Songti SC","STSong",serif;font-size:42rpx;letter-spacing:8rpx}
+.opening-rule{width:52rpx;height:1rpx;margin:25rpx auto;background:#9d8250}
+.opening-copy{color:#666b65;font-size:26rpx;line-height:1.95;text-align:left}
+.mini-spectrum{display:flex;width:270rpx;height:8rpx;margin:34rpx auto;overflow:hidden}.mini-spectrum text{flex:1}
+.quick-actions{display:flex;border-top:1rpx solid #ded9cf;border-bottom:1rpx solid #ded9cf}
+.quick-actions button{flex:1;margin:0;padding:22rpx 8rpx;border-radius:0;background:transparent;color:#334a41;font-size:23rpx;line-height:1.4;letter-spacing:2rpx}
+.quick-actions button+button{border-left:1rpx solid #ded9cf}
+
+/* 今日排名：减少圆角卡片，用细线、序号和色签建立秩序。 */
+.ranking-section{margin-top:18rpx;padding:58rpx 36rpx 46rpx;background:#fff}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;padding:0 8rpx 27rpx;border-bottom:1rpx solid #dcd7cd}
+.section-title{margin-top:7rpx;color:#203a31;font-family:"Songti SC","STSong",serif;font-size:38rpx;font-weight:500;letter-spacing:3rpx}
+.rule-tag{padding:7rpx 12rpx;border:1rpx solid #b5965b;color:#856d3c;font-size:19rpx;white-space:nowrap}
+.guide-empty{padding:76rpx 30rpx 62rpx;border-bottom:1rpx solid #e1ddd5;text-align:center}
+.guide-empty-mark{color:#a18a5a;font-family:serif;font-size:17rpx;letter-spacing:5rpx}
+.guide-empty-title{margin-top:16rpx;color:#2c443a;font-family:"Songti SC","STSong",serif;font-size:32rpx;letter-spacing:3rpx}
+.guide-empty-copy{max-width:540rpx;margin:17rpx auto 0;color:#7b807c;font-size:23rpx;line-height:1.8}
+.guide-retry{width:220rpx;margin:32rpx auto 0;border:1rpx solid #9a8355!important;border-radius:0;background:transparent!important;color:#796641!important;font-size:22rpx;line-height:66rpx;letter-spacing:2rpx}
+.guide-row{display:flex;align-items:center;min-height:124rpx;padding:0 8rpx;border-bottom:1rpx solid #e1ddd5}
+.guide-row.is-expanded{background:linear-gradient(90deg,rgba(239,235,225,.05),rgba(239,235,225,.62),rgba(239,235,225,.05))}
+.rank-number{width:60rpx;color:#8b938e;font-family:serif;font-size:23rpx;letter-spacing:1rpx}
+.color-ribbon{position:relative;width:38rpx;height:64rpx;margin-right:25rpx;border-radius:3rpx 3rpx 17rpx 17rpx;box-shadow:inset 0 0 0 1rpx rgba(0,0,0,.09),3rpx 5rpx 12rpx rgba(46,46,39,.14)}
+.color-ribbon text{position:absolute;top:9rpx;left:50%;width:7rpx;height:7rpx;border-radius:50%;background:rgba(255,255,255,.65);transform:translateX(-50%)}
+.tone-green{background:#416b58}.tone-black{background:#242d29}.tone-gold{background:#b9974f}.tone-white{box-sizing:border-box;background:#efede6}.tone-red{background:#9d5046}
+.guide-main{flex:1}.guide-name{color:#283a32;font-family:"Songti SC","STSong",serif;font-size:31rpx;letter-spacing:2rpx}.guide-name text{color:#777d78;font-size:22rpx}.guide-status{margin-top:5rpx;color:#737a75;font-size:23rpx}
+.chevron{color:#9a865d;font-family:serif;font-size:34rpx}
+.guide-detail{padding:2rpx 18rpx 36rpx 93rpx;border-bottom:1rpx solid #ddd8cf;color:#4f5a53;font-size:25rpx;line-height:1.75}
+.detail-label{display:block;margin:20rpx 0 8rpx;color:#8a7c60;font-size:20rpx;font-weight:600;letter-spacing:2rpx}.detail-block>text:last-child{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:11rpx}.chip{padding:6rpx 15rpx;border:1rpx solid #cbd5ce;color:#486456;font-size:22rpx}
+.incense-box{display:flex;align-items:center;justify-content:space-between;margin-top:25rpx;padding:22rpx;border-left:4rpx solid #a4864d;background:#f0eadc}
+.incense-box .detail-label{margin:0 0 5rpx}.incense-name{color:#4d4432;font-family:"Songti SC","STSong",serif;font-size:28rpx}.incense-scent{max-width:360rpx;color:#766e5d;font-size:21rpx}
+.small-button{width:auto;min-width:140rpx;margin:0 0 0 18rpx;padding:0 16rpx;border-radius:0;background:#6e5e3e;color:#fff;font-size:21rpx;line-height:60rpx}
+
+.philosophy-image{display:block;width:100%;height:430rpx;margin:18rpx 0 0}
+.brand-section{padding:74rpx 42rpx 68rpx;background:#f7f5ef;text-align:center}
+.brand-title{margin:11rpx 0 26rpx;color:#233b33;font-family:"Songti SC","STSong",serif;font-size:42rpx;letter-spacing:5rpx}
+.brand-copy{max-width:650rpx;margin:0 auto;color:#606761;font-size:26rpx;line-height:1.95;text-align:left}
+.logic-chain{display:flex;align-items:center;justify-content:space-between;margin-top:42rpx;padding:32rpx 0 0;border-top:1rpx solid #d8d1c3}
+.logic-node{display:flex;flex:0 0 96rpx;flex-direction:column;align-items:center}
+.logic-symbol{display:flex;align-items:center;justify-content:center;width:62rpx;height:62rpx;border:1rpx solid #8fa096;border-radius:50%;color:#345548;font-family:"Songti SC","STSong",serif;font-size:23rpx}
+.logic-caption{margin-top:9rpx;color:#7d837f;font-size:18rpx;white-space:nowrap}.logic-arrow{color:#af9562;font-family:serif;font-size:28rpx}
+.logic-node.action .logic-symbol{border-color:#9a7e48;background:#9a7e48;color:#fff}.logic-node.action .logic-caption{color:#796540}
+.story-conclusion{margin-top:30rpx;color:#756541;font-family:"Songti SC","STSong",serif;font-size:24rpx;letter-spacing:2rpx}
+.story-link{display:inline-block;margin-top:30rpx;padding-bottom:5rpx;border-bottom:1rpx solid #9b895f;color:#6c6045;font-size:22rpx;letter-spacing:2rpx}
+
+.personal-section{position:relative;overflow:hidden;margin-top:18rpx;padding:74rpx 50rpx 68rpx;background:linear-gradient(145deg,#142f27,#284a3d);color:#f7f1e5}
+.personal-section::after{content:"";position:absolute;right:-80rpx;bottom:-120rpx;width:380rpx;height:380rpx;border:1rpx solid rgba(218,198,149,.25);border-radius:50%}
+.personal-kicker{position:relative;z-index:1;color:#c7b887;font-family:serif;font-size:17rpx;letter-spacing:5rpx}
+.personal-title{position:relative;z-index:1;margin:15rpx 0 24rpx;font-family:"Songti SC","STSong",serif;font-size:42rpx;line-height:1.55;letter-spacing:4rpx}
+.personal-title text{display:block}.personal-copy{position:relative;z-index:1;max-width:600rpx;color:#d1dbd5;font-size:25rpx;line-height:1.85}
+.primary-button{position:relative;z-index:1;width:100%;margin:38rpx 0 0;border:1rpx solid rgba(223,205,161,.7)!important;border-radius:0;background:transparent!important;color:#f4ead2!important;font-size:25rpx;line-height:86rpx;letter-spacing:3rpx}
+
+.closing-actions{display:flex;margin-top:18rpx;background:#fbfaf6}
+.closing-actions button{display:flex;flex:1;min-height:230rpx;margin:0;padding:35rpx 25rpx;border-radius:0;background:transparent;color:#7f714f;text-align:left;flex-direction:column;align-items:flex-start;line-height:1.5}
+.closing-actions button+button{border-left:1rpx solid #ddd8ce}
+.closing-actions>button>text:first-child{font-size:20rpx;letter-spacing:4rpx}.closing-action-title{margin-top:15rpx;color:#32463d;font-family:"Songti SC","STSong",serif;font-size:28rpx}.closing-action-link{margin-top:auto;color:#847756;font-size:20rpx}
+.disclaimer{padding:44rpx 45rpx 0;color:#8a8d88;font-size:21rpx;line-height:1.7;text-align:center}

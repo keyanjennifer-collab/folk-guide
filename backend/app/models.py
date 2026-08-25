@@ -128,6 +128,33 @@ class AIConversationMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
 
+class DailyCacheRun(Base):
+    """每日缓存批处理的运行记录和数据库级执行租约。
+
+    ``target_date`` 按北京时间自然日唯一。若部署时误启动多个 Uvicorn worker，
+    第一个 worker 会取得运行租约，其余 worker 看到未过期租约后跳过，避免同时为
+    全部用户重复计算。租约过期后允许其他 worker 接管未完成任务。
+
+    本表只记录任务状态和数量，不保存生辰、openid、手机号或个人五色正文。
+    """
+    __tablename__ = "daily_cache_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    target_date: Mapped[date] = mapped_column(Date, unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(24), default="running", index=True)
+    trigger: Mapped[str] = mapped_column(String(24), default="scheduler")
+    attempt: Mapped[int] = mapped_column(Integer, default=1)
+    public_days: Mapped[int] = mapped_column(Integer, default=0)
+    eligible_users: Mapped[int] = mapped_column(Integer, default=0)
+    personal_users: Mapped[int] = mapped_column(Integer, default=0)
+    failed_users: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    worker_id: Mapped[str] = mapped_column(String(160))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class PublicGuide(Base):
     """今日五色公共内容，一天一个版本化内容包。"""
     __tablename__ = "public_guides"

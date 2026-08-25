@@ -17,6 +17,7 @@ type ChatItem = {
   feedback?: "helpful" | "unhelpful";
   messageId?: number;
   blocked?: boolean;
+  safetyStatus?: "safe" | "blocked" | "output_filtered" | "output_truncated";
 };
 
 type PersonalColorView = PersonalDailyColor & { tone: string };
@@ -32,7 +33,10 @@ const WELCOME: ChatItem = {
 
 function daysLeft(expiresAt: string | null): number {
   if (!expiresAt) return 0;
-  const milliseconds = new Date(expiresAt).getTime() - Date.now();
+  // 数据库事件时间按UTC保存；兼容早期接口未在字符串末尾携带Z的情况，避免
+  // 手机按本地时间误解后与“我的”页面显示出不同的剩余天数。
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(expiresAt);
+  const milliseconds = new Date(hasTimezone ? expiresAt : `${expiresAt}Z`).getTime() - Date.now();
   return Math.max(Math.ceil(milliseconds / 86_400_000), 0);
 }
 
@@ -47,6 +51,7 @@ function historyMessages(records: AIHistoryRecord[]): ChatItem[] {
       references: record.citations.map(citationLabel),
       feedback: record.feedback || undefined,
       messageId: record.id,
+      safetyStatus: record.safety_status,
     });
   });
   return messages.length ? messages : [WELCOME];
@@ -234,6 +239,7 @@ Page({
         references: result.citations.map(citationLabel),
         messageId: result.message_id,
         blocked: result.blocked,
+        safetyStatus: result.safety_status,
       };
       const quotaField = comparison ? "remainingComparisons" : "remainingQuestions";
       this.setData({

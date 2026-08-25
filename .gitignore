@@ -17,4 +17,6 @@ miniprogram_npm/
 storage/
 backend/storage/
 project.private.config.json
+docs/
+tools/generate_quick_run_report_doc.py
 .DS_Store

@@ -1,20 +1,26 @@
 """正式 AI 国学问答的分类、安全、权益、检索和历史业务逻辑。"""
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .ai_safety import review_model_output
+from .config import get_settings
+from .daily_color_cache_service import ensure_personal_color_cache
 from .llm_provider import AnswerProvider
-from .models import AIConversationMessage, AIServiceGrant, User
+from .models import AIConversationMessage, AIServiceGrant, BirthProfile, User
 from .retrieval_service import hybrid_search
-from .time_service import beijing_day_bounds_utc_naive, utc_now_naive
+from .time_service import beijing_day_bounds_utc_naive, beijing_today, utc_now_naive
 from .vector_store import VectorStore
+from .web_search_service import WebSearchProvider, WebSearchServiceError, web_search_is_requested
 
 
 DISCLAIMER = "内容仅用于传统文化学习和生活灵感参考，不构成医疗、法律、投资或其他专业意见。"
+logger = logging.getLogger("folk_guide.ai")
 
 # 这些类别不能交给模型自由发挥，否则容易形成健康、死亡、赌博或收益承诺。
 HIGH_RISK_TERMS = {
@@ -22,6 +28,22 @@ HIGH_RISK_TERMS = {
     "彩票号码", "保证发财", "稳赚", "借钱投资", "违法", "报复",
 }
 COMPARISON_TERMS = {"七日", "7日", "未来一周", "一周比较", "七天比较"}
+
+# 个人上下文识别使用“明确个人表达”或“当天 + 行动主题”的组合，不能只见到
+# “颜色”就读取档案。例如“传统文化中五行怎样对应五色”仍是通用知识问题。
+PERSONAL_EXPLICIT_TERMS = {
+    "我的五色", "个人五色", "结合我的", "根据我的", "按照我的", "按我的",
+    "我的八字", "我的生辰", "我的档案", "我的排名", "个人排名", "我的结果",
+    "个人结果", "适合我", "我适合", "我今天",
+}
+PERSONAL_SUBJECT_TERMS = {"我的", "本人", "个人", "自己"}
+TODAY_TERMS = {"今天", "今日", "当天", "本日"}
+PERSONAL_ACTION_TERMS = {
+    "颜色", "五色", "穿搭", "穿什么", "衣服", "配色", "香品", "用什么香",
+    "财库香", "适合做", "适合处理", "不适合", "不宜", "宜做", "注意什么",
+    "今日重点", "排名", "结果", "行动", "推进", "合作", "项目", "沟通", "财务", "工作",
+}
+PROFILE_TERMS = {"八字", "生辰", "四柱", "档案"}
 
 
 @dataclass(frozen=True)
@@ -52,9 +74,26 @@ def classify_question(question: str, requested_type: str | None = None) -> tuple
         return "high_risk", True
     if requested_type == "seven_day_comparison" or any(term in question for term in COMPARISON_TERMS):
         return "seven_day_comparison", False
+    if question_requests_personal_context(question):
+        return "personal_daily", False
     if any(term in question for term in {"八字", "生辰", "我的档案"}):
         return "profile_culture", False
     return "culture_knowledge", False
+
+
+def question_requests_personal_context(question: str) -> bool:
+    """判断回答是否确实需要读取当前登录用户的个人五色。
+
+    本函数只做后端可审计的最小分类，不把分类工作交给外部模型。这样普通典籍问题
+    不会无故触碰生辰派生结果，个人问题也不会因模型误判而漏读当天结果。
+    """
+    if any(term in question for term in PERSONAL_EXPLICIT_TERMS):
+        return True
+    has_action_topic = any(term in question for term in PERSONAL_ACTION_TERMS)
+    has_personal_subject = any(term in question for term in PERSONAL_SUBJECT_TERMS)
+    asks_about_today = any(term in question for term in TODAY_TERMS)
+    has_profile_topic = any(term in question for term in PROFILE_TERMS)
+    return has_action_topic and (has_personal_subject or asks_about_today or has_profile_topic)
 
 
 def quota_for_user(db: Session, user: User, now: datetime | None = None) -> QuotaState:
@@ -64,6 +103,7 @@ def quota_for_user(db: Session, user: User, now: datetime | None = None) -> Quot
     每日统计固定以北京时间自然日计算，与服务器部署时区无关。
     """
     now = now or utc_now_naive()
+    settings = get_settings()
     paid = db.scalar(select(AIServiceGrant).where(
         AIServiceGrant.user_id == user.id,
         AIServiceGrant.start_at <= now,
@@ -71,9 +111,13 @@ def quota_for_user(db: Session, user: User, now: datetime | None = None) -> Quot
     ).order_by(AIServiceGrant.end_at.desc()))
     trial_end = user.created_at + timedelta(days=3)
     if paid:
-        plan, expires_at, normal_limit, comparison_limit = paid.grant_type, paid.end_at, 50, 5
+        plan, expires_at = paid.grant_type, paid.end_at
+        normal_limit = max(0, settings.ai_paid_normal_limit)
+        comparison_limit = max(0, settings.ai_paid_comparison_limit)
     elif now < trial_end:
-        plan, expires_at, normal_limit, comparison_limit = "new_user_3_days", trial_end, 20, 2
+        plan, expires_at = "new_user_3_days", trial_end
+        normal_limit = max(0, settings.ai_trial_normal_limit)
+        comparison_limit = max(0, settings.ai_trial_comparison_limit)
     else:
         plan, expires_at, normal_limit, comparison_limit = None, None, 0, 0
 
@@ -90,17 +134,85 @@ def quota_for_user(db: Session, user: User, now: datetime | None = None) -> Quot
     ).all())
     comparison_used = counts.get("seven_day_comparison", 0)
     # 安全拦截不消耗次数；其他可回答类别都计入普通问答。
-    normal_used = sum(count for category, count in counts.items() if category not in {"seven_day_comparison", "high_risk"})
+    normal_used = sum(
+        count for category, count in counts.items()
+        if category not in {"seven_day_comparison", "high_risk", "profile_required"}
+    )
     return QuotaState(bool(plan), plan, expires_at, normal_limit, normal_used, comparison_limit, comparison_used)
 
 
 def citations_from_contexts(contexts: list[dict]) -> list[dict]:
     """只暴露来源字段，不把内部检索分数或向量主键返回给用户。"""
     return [{
+        "kind": "knowledge",
         "document_id": item["document_id"], "chunk_id": item["chunk_id"],
         "title": item["title"], "heading": item["heading"], "source_name": item["source_name"],
         "page_start": item.get("page_start"), "page_end": item.get("page_end"),
     } for item in contexts]
+
+
+def citations_from_web_results(results: list[dict]) -> list[dict]:
+    """把网页来源标成web，不与人工审核知识库或个人规则结果混淆。"""
+    return [{
+        "kind": "web",
+        "document_id": None,
+        "chunk_id": None,
+        "title": item.get("title") or "网页资料",
+        "heading": item.get("published_date"),
+        "source_name": item.get("url") or "网页来源",
+        "page_start": None,
+        "page_end": None,
+    } for item in results]
+
+
+def personal_context_from_payload(payload: dict) -> dict:
+    """从个人五色缓存中提取允许发给模型的最小上下文。
+
+    明确采用字段白名单，不能直接把整个 ``payload`` 交给模型。缓存中的档案版本、
+    配置指纹、权益计划等内部元数据不属于回答所需信息；原始生辰、手机号、openid
+    本来也不在个人五色响应中，仍通过白名单再守一道边界。
+    """
+    colors = [{
+        "rank": item["rank"],
+        "name": item["name"],
+        "element": item["element"],
+        "tendency": item["tendency"],
+        "suitable": item["suitable"],
+        "resistance": item["resistance"],
+        "advice": item["advice"],
+        "incense": item["incense"],
+        "scent": item["scent"],
+        "reason": item["reason"],
+    } for item in payload["colors"]]
+    return {
+        "date": payload["date"],
+        "timezone": payload["timezone"],
+        "rule_version": payload["rule_version"],
+        "precision_mode": payload["precision_mode"],
+        "primary_color": payload["primary_color"],
+        "supporting_colors": payload["supporting_colors"],
+        "combination_advice": payload["combination_advice"],
+        "personal_focus": payload["personal_focus"],
+        "comparison_note": payload["comparison_note"],
+        "culture_note": payload["culture_note"],
+        "reminders": payload["reminders"],
+        "colors": colors,
+    }
+
+
+def personal_context_citation(context: dict) -> dict:
+    """把个人规则结果标成独立来源，不冒充古籍或知识库切片。"""
+    precision = "完整四柱" if context["precision_mode"] == "four_pillars" else "三柱参考"
+    return {
+        "kind": "personal_daily",
+        "document_id": None,
+        "chunk_id": None,
+        "title": "今日个人五色",
+        "heading": context["date"],
+        "source_name": f"个人规则结果·{precision}·{context['rule_version']}",
+        "page_start": None,
+        "page_end": None,
+    }
 
 
 def answer_ai_question(
@@ -111,6 +223,9 @@ def answer_ai_question(
     store: VectorStore,
     provider: AnswerProvider,
     use_knowledge_base: bool,
+    web_search_provider: WebSearchProvider | None = None,
+    web_search_enabled: bool = False,
+    web_search_always: bool = False,
 ) -> tuple[AIConversationMessage, QuotaState, bool]:
     """执行一次问答，并在同一事务内保存答案和引用。
 
@@ -118,6 +233,10 @@ def answer_ai_question(
     """
     category, blocked = classify_question(question, requested_type)
     quota = quota_for_user(db, user)
+    settings = get_settings()
+    personal_context: dict | None = None
+    web_results: list[dict] = []
+    safety_status = "blocked" if blocked else "safe"
     if blocked:
         answer = "这类问题涉及灾祸、疾病、死亡、违法或收益保证，不能依据生辰或传统文化作确定性预测。请根据现实信息并咨询相应专业人士。"
         contexts: list[dict] = []
@@ -127,20 +246,80 @@ def answer_ai_question(
             raise PermissionError("AI国学赠送权益已结束，请开通服务后继续使用")
         if quota.remaining(category) <= 0:
             raise OverflowError("今日该功能使用次数已用完，请明日再试")
-        # 内部开关为true时沿用完整RAG链路；false时不查询数据库，引用自然为空。
-        # 两条链路共用前面的硬安全分类和模型供应器中的系统级回答边界。
-        contexts = hybrid_search(db, question, store, limit=5) if use_knowledge_base else []
-        answer = provider.generate(
-            question,
-            contexts,
-            use_knowledge_base=use_knowledge_base,
-        )
-        model_name = provider.model_name
+
+        # 个人问题才读取当前JWT所属用户的档案。普通典籍问答不会查询BirthProfile，
+        # 更不会把无关个人数据附加到模型请求中。
+        if question_requests_personal_context(question):
+            profile = db.scalar(select(BirthProfile).where(BirthProfile.user_id == user.id))
+            if profile is None:
+                category = "profile_required"
+                answer = (
+                    "这个问题需要结合你的本人档案和今日个人五色回答。"
+                    "请先到“我的 → 本人档案”填写出生日期；不知道时辰也可以使用三柱参考。"
+                )
+                contexts = []
+                model_name = "profile-context-rule-v1"
+            else:
+                # quota.active为真时plan必然存在；个人缓存函数仍由调用方显式传入权益计划，
+                # 保证无权益请求无法绕过门槛生成个人结果。
+                if quota.plan is None:  # pragma: no cover - 防御性保护
+                    raise PermissionError("当前没有有效的AI国学体验或服务权益")
+                personal_payload = ensure_personal_color_cache(
+                    db, profile, beijing_today(), quota.plan
+                )
+                personal_context = personal_context_from_payload(personal_payload)
+
+        if category != "profile_required":
+            # 内部开关为true时沿用完整RAG链路；false时不查询知识库，引用自然为空。
+            # 个人规则上下文与知识库片段使用不同参数，不能把个人数据写进公共向量库。
+            contexts = hybrid_search(db, question, store, limit=5) if use_knowledge_base else []
+            # 网页搜索是可选的外部参考层。关闭、未配置Key、非触发问题或上游失败时，
+            # 安全降级为模型已有知识，不把搜索异常变成整次问答失败。
+            if (
+                web_search_enabled
+                and web_search_provider is not None
+                and web_search_is_requested(question, always=web_search_always)
+            ):
+                try:
+                    web_results = web_search_provider.search(
+                        question,
+                        max_results=get_settings().web_search_max_results,
+                    )
+                except WebSearchServiceError:
+                    logger.warning("web_search_failed category=%s", category, exc_info=True)
+                    web_results = []
+            answer = provider.generate(
+                question,
+                contexts,
+                use_knowledge_base=use_knowledge_base,
+                personal_context=personal_context,
+                web_results=web_results,
+            )
+            # 模型提示词是第一道约束；这里在持久化和返回前再做确定性复核，
+            # 被拦截的原文不会进入数据库，也不会写入日志。
+            reviewed = review_model_output(
+                answer,
+                max_chars=settings.ai_max_output_chars,
+            )
+            answer = reviewed.answer
+            safety_status = reviewed.status
+            if reviewed.filtered:
+                logger.warning(
+                    "ai_output_filtered category=%s reason=%s",
+                    category,
+                    reviewed.reason,
+                )
+            model_name = provider.model_name
+
+    citations = citations_from_contexts(contexts)
+    citations.extend(citations_from_web_results(web_results))
+    if personal_context is not None:
+        citations.append(personal_context_citation(personal_context))
 
     message = AIConversationMessage(
         user_id=user.id, question=question, answer=answer, category=category,
-        references_json=json.dumps(citations_from_contexts(contexts), ensure_ascii=False),
-        model_name=model_name, safety_status="blocked" if blocked else "safe",
+        references_json=json.dumps(citations, ensure_ascii=False),
+        model_name=model_name, safety_status=safety_status,
     )
     db.add(message)
     db.commit()

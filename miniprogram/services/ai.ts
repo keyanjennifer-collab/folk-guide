@@ -3,8 +3,9 @@
 import { request } from "./api";
 
 export interface AICitation {
-  document_id: number;
-  chunk_id: number;
+  kind: "knowledge" | "personal_daily" | "web";
+  document_id: number | null;
+  chunk_id: number | null;
   title: string;
   heading: string | null;
   source_name: string;
@@ -33,6 +34,7 @@ export interface AIChatResponse {
   citations: AICitation[];
   remaining_today: number;
   model_name: string;
+  safety_status: "safe" | "blocked" | "output_filtered" | "output_truncated";
   disclaimer: string;
 }
 
@@ -43,6 +45,7 @@ export interface AIHistoryRecord {
   category: string;
   citations: AICitation[];
   feedback: "helpful" | "unhelpful" | null;
+  safety_status: "safe" | "blocked" | "output_filtered" | "output_truncated";
   created_at: string;
 }
 
@@ -74,6 +77,14 @@ export function submitAIFeedback(messageId: number, rating: "helpful" | "unhelpf
 
 /** 把后端结构化引用转换成用户可读的一行，不暴露内部chunk_id。 */
 export function citationLabel(citation: AICitation): string {
+  if (citation.kind === "personal_daily") {
+    const date = citation.heading ? ` · ${citation.heading}` : "";
+    return `${citation.title}${date}｜${citation.source_name}`;
+  }
+  if (citation.kind === "web") {
+    const date = citation.heading ? ` · ${citation.heading}` : "";
+    return `网页：${citation.title}${date}｜${citation.source_name}`;
+  }
   const heading = citation.heading ? ` · ${citation.heading}` : "";
   const page = citation.page_start
     ? citation.page_end && citation.page_end !== citation.page_start

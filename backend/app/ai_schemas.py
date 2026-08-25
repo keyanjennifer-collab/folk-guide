@@ -1,6 +1,7 @@
 """正式 AI 国学问答、次数权益、历史记录和反馈接口的数据模型。"""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -12,9 +13,10 @@ class AIChatInput(BaseModel):
 
 
 class AICitation(BaseModel):
-    """回答引用，精确到知识文档和切片，便于用户查看来源。"""
-    document_id: int
-    chunk_id: int
+    """回答依据；知识片段精确到切片，个人结果明确标成独立规则来源。"""
+    kind: Literal["knowledge", "personal_daily", "web"] = "knowledge"
+    document_id: int | None
+    chunk_id: int | None
     title: str
     heading: str | None
     source_name: str
@@ -31,6 +33,8 @@ class AIChatOutput(BaseModel):
     citations: list[AICitation]
     remaining_today: int
     model_name: str
+    # safe / blocked / output_filtered / output_truncated；便于前端在必要时说明答案被安全处理。
+    safety_status: str = "safe"
     disclaimer: str
 
 
@@ -56,6 +60,7 @@ class AIHistoryItem(BaseModel):
     category: str
     citations: list[AICitation]
     feedback: str | None
+    safety_status: str = "safe"
     created_at: datetime
 
 

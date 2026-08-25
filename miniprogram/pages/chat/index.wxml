@@ -71,6 +71,8 @@
     <view wx:for="{{messages}}" wx:key="index" class="message {{item.role}}">
       <view class="message-role">{{item.role === 'user' ? '你' : 'AI国学 · AI生成'}}</view>
       <view class="message-text">{{item.text}}</view>
+      <view wx:if="{{item.safetyStatus === 'output_filtered'}}" class="safety-note">回答已按安全规则处理，未展示不适合确定性判断的内容。</view>
+      <view wx:if="{{item.safetyStatus === 'output_truncated'}}" class="safety-note">回答较长，已按服务长度限制截取。</view>
       <view wx:if="{{item.references && item.references.length}}" class="references">
         <view class="reference-title">参考资料</view>
         <view wx:for="{{item.references}}" wx:for-item="reference" wx:key="*this">· {{reference}}</view>

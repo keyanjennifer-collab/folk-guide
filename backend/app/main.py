@@ -1,6 +1,9 @@
 """FastAPI 应用入口：装配登录、档案、每日建议及后台路由。"""
 
+import asyncio
+from asyncio import CancelledError
 from contextlib import asynccontextmanager
+from contextlib import suppress
 from datetime import date, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
@@ -16,6 +19,8 @@ from .config import get_settings
 from .database import Base, SessionLocal, engine, get_db
 from .daily_color_cache_service import warm_personal_color_cache, warm_public_color_cache
 from .daily_color_rule_routes import router as daily_color_rule_router
+from .daily_update_routes import router as daily_update_router
+from .daily_update_service import daily_cache_scheduler_loop
 from .migrations import migrate_development_schema
 from .models import AIConversationMessage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User
 from .profile_service import profile_output
@@ -39,12 +44,28 @@ from .time_service import beijing_today
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """创建数据库结构、迁移旧字段，并预热北京时间未来7天公共五色。"""
+    """建表迁移、启动时预热公共缓存，并管理北京时间每日调度任务。"""
     Base.metadata.create_all(engine)
     migrate_development_schema(engine)
-    with SessionLocal() as db:
-        warm_public_color_cache(db, beijing_today())
-    yield
+    runtime_settings = get_settings()
+    scheduler_task: asyncio.Task | None = None
+    # 正式运行时由带数据库租约的任务统一完成启动补跑，避免多worker在lifespan中
+    # 同时写公共缓存。测试或显式关闭调度时仍同步预热，保持接口开箱即用。
+    if runtime_settings.testing or not runtime_settings.daily_scheduler_enabled:
+        with SessionLocal() as db:
+            warm_public_color_cache(db, beijing_today())
+    # 测试进程直接调用任务服务验证，不启动常驻循环，避免每个TestClient重复创建线程。
+    if runtime_settings.daily_scheduler_enabled and not runtime_settings.testing:
+        scheduler_task = asyncio.create_task(
+            daily_cache_scheduler_loop(), name="daily-color-cache-scheduler"
+        )
+    try:
+        yield
+    finally:
+        if scheduler_task is not None:
+            scheduler_task.cancel()
+            with suppress(CancelledError):
+                await scheduler_task
 
 
 settings = get_settings()
@@ -85,6 +106,10 @@ OPENAPI_TAGS = [
         "description": "按本人档案与当天时序生成个人五色，需有效AI国学体验或服务权益；提前缓存未来3天。",
     },
     {
+        "name": "每日缓存·运维",
+        "description": "北京时间每日00:00批量预热公共7天和有效用户个人3天缓存；状态与补跑接口需要 X-Admin-Key。",
+    },
+    {
         "name": "旧版兼容接口",
         "description": "仅为旧前端保留，已被新版接口替代，新功能不要接入。",
     },
@@ -113,6 +138,7 @@ app.include_router(public_guide_router)
 app.include_router(daily_color_rule_router)
 app.include_router(knowledge_router)
 app.include_router(ai_router)
+app.include_router(daily_update_router)
 
 
 @app.get("/health", tags=["系统状态"], summary="检查后端服务是否正常")

@@ -38,6 +38,8 @@ Page({
     // 暂时没有合适图片的区域保持空字符串，WXML 会自动隐藏对应图片位。
     heroImage: "/assets/home/hero-forest.jpg",
     philosophyImage: "",
+    // 线香图片尚未拍摄时保持空字符串，页面使用品牌化无图视觉；后续只需填写资源路径。
+    incenseImage: "",
     expandedRank: 1,
     contentSource: "loading",
     statusLabel: "读取中",
@@ -45,6 +47,14 @@ Page({
     dateLabel: "今日 · 北京时间",
     calendarLabel: "每日内容以北京时间更新",
     shareTitle: "今日五色排名与生活建议",
+    primaryColor: "静候今日",
+    primaryElement: "",
+    primaryTone: "",
+    primaryStatus: "正在读取今日时序",
+    supportingColors: "",
+    primarySuitable: "",
+    incenseName: "",
+    incenseScent: "",
     // 真实接口返回前保持空数组，绝不把固定示例冒充当天推荐。
     guides: [] as ColorGuide[],
   },
@@ -84,6 +94,12 @@ Page({
       const [year, month, day] = data.guide_date.split("-");
       const dateText = `${year}年${Number(month)}月${Number(day)}日`;
       const automaticallyGenerated = data.rule_version === "wuse-public-research-v1.0";
+      const guides = data.items.map((item) => ({
+        rank: item.rank, name: item.color, element: item.element, tone: TONE_MAP[item.color],
+        status: item.smoothness, suitable: item.suitable, resistance: item.resistance,
+        advice: item.advice, incense: item.incense_name, scent: item.scent,
+      }));
+      const primary = guides[0];
       this.setData({
         contentSource: "published",
         statusLabel: automaticallyGenerated ? "今日已生成" : "今日已发布",
@@ -91,11 +107,15 @@ Page({
         dateLabel: `${dateText} · ${data.weekday}`,
         calendarLabel: `${data.lunar_date} · ${data.solar_term} · ${data.day_ganzhi}`,
         shareTitle: data.share_title,
-        guides: data.items.map((item) => ({
-          rank: item.rank, name: item.color, element: item.element, tone: TONE_MAP[item.color],
-          status: item.smoothness, suitable: item.suitable, resistance: item.resistance,
-          advice: item.advice, incense: item.incense_name, scent: item.scent,
-        })),
+        guides,
+        primaryColor: primary?.name || "今日五色",
+        primaryElement: primary?.element || "",
+        primaryTone: primary?.tone || "",
+        primaryStatus: primary?.status || "今日内容已生成",
+        supportingColors: guides.slice(1, 3).map((item) => item.name).join("、"),
+        primarySuitable: primary?.suitable.slice(0, 2).join("、") || "",
+        incenseName: primary?.incense || "",
+        incenseScent: primary?.scent || "",
       });
     } catch (error) {
       // 404 表示内容尚未发布；网络或服务异常另行提示，二者都不能降级为演示排名。
@@ -105,6 +125,14 @@ Page({
         statusLabel: notPublished ? "准备中" : "暂不可用",
         contentMessage: notPublished ? "今日详细指南正在更新，稍后再来看看。" : getApiErrorMessage(error, "今日内容暂时无法读取，请稍后重试。"),
         guides: [],
+        primaryColor: "静候今日",
+        primaryElement: "",
+        primaryTone: "",
+        primaryStatus: "今日内容准备中",
+        supportingColors: "",
+        primarySuitable: "",
+        incenseName: "",
+        incenseScent: "",
       });
     }
   },
@@ -120,8 +148,11 @@ Page({
       success: (result) => { if (result.confirm) wx.switchTab({ url: "/pages/chat/index" }); },
     });
   },
-  showSubscribe() {
-    wx.showModal({ title: "每日五色提醒", content: "订阅能力将在确认微信消息模板后接入。当前可以每天从首页查看公共五色指南。", showCancel: false, confirmText: "知道了" });
+  toAi() {
+    wx.switchTab({ url: "/pages/chat/index" });
+  },
+  scrollToRanking() {
+    wx.pageScrollTo({ selector: "#rankingSection", duration: 420 });
   },
   /** 向第一次接触品牌的用户解释口号，不使用“幸运色”等确定性表述。 */
   showBrandMeaning() {

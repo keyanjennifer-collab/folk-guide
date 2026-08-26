@@ -1,7 +1,19 @@
 <view class="page ai-page">
   <view class="ai-hero">
-    <view class="wisdom-moon"><text>问</text></view><view class="bamboo bamboo-one"></view><view class="bamboo bamboo-two"></view><view class="ai-mist"></view>
-    <view class="hero-top"><view><view class="eyebrow">PERSONAL WISDOM</view><view class="hero-title">AI国学</view></view><button class="rule-button" bindtap="showRules">服务说明</button></view>
+    <view class="hero-top">
+      <view class="hero-identity">
+        <view class="advisor-logo hero-advisor-logo" aria-label="AI国学顾问">
+          <view class="advisor-book"><text></text><text></text></view>
+          <view class="advisor-spark">✦</view>
+        </view>
+        <view>
+          <view class="eyebrow">ORIENTAL LIFE ADVISOR</view>
+          <view class="hero-title">AI国学</view>
+        </view>
+      </view>
+      <button class="rule-button" bindtap="showRules">服务说明</button>
+    </view>
+    <view class="hero-intro">从传统典籍与五行时序出发，回答可以落到今天生活里的问题。</view>
     <view class="trial-row">
       <view><view class="trial-title">{{serviceTitle}}</view><view class="trial-copy">{{serviceCopy}}</view></view>
       <view class="trial-days">{{serviceActive ? trialDaysLeft : '—'}}<text wx:if="{{serviceActive}}">天</text></view>
@@ -48,7 +60,10 @@
   </view>
 
   <view class="knowledge-card">
-    <view class="knowledge-mark">据</view>
+    <view class="knowledge-mark advisor-logo" aria-label="AI国学顾问">
+      <view class="advisor-book"><text></text><text></text></view>
+      <view class="advisor-spark">✦</view>
+    </view>
     <view class="section-kicker">CULTURAL DIALOGUE</view>
     <view class="knowledge-title">问典籍，也问生活</view>
     <view class="knowledge-copy">围绕传统典籍、五行时序与生活文化提供清楚、克制的回答。面对重要现实决定，请结合实际信息理性判断。</view>

@@ -1,7 +1,13 @@
 <view class="shop-page">
   <view class="shop-hero">
     <view class="incense-smoke smoke-one"></view><view class="incense-smoke smoke-two"></view><view class="hero-window"></view>
-    <view class="hero-kicker">FIVE ELEMENT INCENSE</view><view class="hero-title">财库香</view>
+    <view class="hero-brand-row">
+      <view class="incense-brand-logo" aria-label="财库香">
+        <text class="logo-smoke logo-smoke-left"></text><text class="logo-smoke logo-smoke-right"></text>
+        <text class="logo-stick"></text><text class="logo-base"></text>
+      </view>
+      <view><view class="hero-kicker">FIVE ELEMENT INCENSE</view><view class="hero-title">财库香</view></view>
+    </view>
     <view class="hero-copy">五色齐备，依今日节奏自在选择。关注香气、原料与日常仪式，不承诺确定结果。</view>
     <view class="hero-points"><text>天然香材</text><text>五色五行</text><text>大部分地区包邮</text></view>
   </view>
@@ -14,7 +20,13 @@
     </view>
   </view>
 
-  <view class="section-head"><view><view class="section-kicker">REFILL COLLECTION</view><view class="section-title">单色补充装</view></view><view class="section-note">任一颜色 · 30支</view></view>
+  <view class="section-head">
+    <view class="collection-heading">
+      <view class="collection-logo" aria-label="五色香品"><text class="mini-green"></text><text class="mini-black"></text><text class="mini-gold"></text><text class="mini-white"></text><text class="mini-red"></text></view>
+      <view><view class="section-kicker">REFILL COLLECTION</view><view class="section-title">单色补充装</view></view>
+    </view>
+    <view class="section-note">任一颜色 · 30支</view>
+  </view>
   <view class="notice">按实际消耗补充。单色商品累计确认收货实付满199元，再赠一张30天服务卡。</view>
   <view class="product-grid">
     <view wx:for="{{products}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
@@ -26,7 +38,7 @@
   <view class="service-card"><view class="section-title">购买与权益说明</view><view class="service-row"><text>01</text><view><strong>商品确认收货后发卡</strong><small>物流签收不直接发卡，减少售后争议</small></view></view><view class="service-row"><text>02</text><view><strong>服务卡一年内开启</strong><small>开启后连续使用30天，同一时间只使用一张</small></view></view><view class="service-row"><text>03</text><view><strong>支持赠送好友</strong><small>领取前可撤回，好友领取后不可再次转赠</small></view></view></view>
   <view class="safety-note">香品用于日常香气体验与传统文化生活仪式。请注意用火和通风，远离儿童、宠物及易燃物。</view>
 
-  <view class="cart-float" bindtap="openCart"><text>购物车</text><view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view></view>
+  <view class="cart-float" bindtap="openCart"><view class="cart-icon"><text></text></view><text>购物车</text><view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view></view>
 
   <view wx:if="{{selectedProduct}}" class="overlay" catchtap="closeProduct"><view class="product-sheet" catchtap="noop">
     <view class="sheet-handle"></view><view class="sheet-visual tone-bg-{{selectedProduct.tone}}"><view class="single-tube large tone-{{selectedProduct.tone}}"></view><view class="element-mark large-mark">{{selectedProduct.element}}</view></view>

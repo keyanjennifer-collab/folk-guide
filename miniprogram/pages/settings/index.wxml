@@ -1,6 +1,7 @@
 <view class="mine-page">
   <view wx:if="{{!isLoggedIn}}" class="guest-hero">
     <view class="mine-moon"></view>
+    <view class="guest-overline">PERSONAL CENTER</view>
     <view class="guest-avatar">五</view>
     <view class="guest-title">登录后管理个人服务</view>
     <view class="guest-copy">公共五色无需登录；个人档案、个人五色和AI问答记录需要微信登录。</view>
@@ -11,12 +12,15 @@
   <block wx:else>
     <view class="user-hero">
       <view class="mine-moon"></view>
-      <view class="avatar">五</view>
-      <view class="user-main">
-        <view class="user-name">{{nickname}}</view>
-        <view class="user-id">五行五色用户 · {{memberStatus}}</view>
+      <view class="user-overline">PERSONAL CENTER</view>
+      <view class="identity-row">
+        <view class="avatar">五</view>
+        <view class="user-main">
+          <view class="user-name">{{nickname}}</view>
+          <view class="user-id">五色知时用户 · {{memberStatus}}</view>
+        </view>
+        <view class="settings-mark">WUSE</view>
       </view>
-      <view class="settings-mark">⌁</view>
       <view class="hero-stats">
         <view><strong>{{serviceActive ? serviceDaysLeft : '—'}}</strong><text>服务剩余天数</text></view>
         <view><strong>{{questionRemaining}}</strong><text>今日问答次数</text></view>
@@ -25,7 +29,7 @@
     </view>
 
     <view class="profile-card" bindtap="toProfile">
-      <view class="profile-icon">档</view>
+      <view class="profile-icon"><view class="file-symbol"><text></text><text></text></view></view>
       <view class="profile-main">
         <view class="profile-title">本人档案 <text>{{hasProfile ? '完整度 ' + profileCompleteness + '%' : '待创建'}}</text></view>
         <view class="progress"><view style="width: {{hasProfile ? profileCompleteness : 0}}%"></view></view>
@@ -36,7 +40,7 @@
 
     <view class="service-card">
       <view class="card-head">
-        <view><view class="section-kicker">MY SERVICE</view><view class="section-title">我的个人服务</view></view>
+        <view class="service-heading"><view class="service-logo">✦</view><view><view class="section-kicker">MY SERVICE</view><view class="section-title">我的个人服务</view></view></view>
         <view class="card-count" bindtap="showServiceDetails">服务详情 ›</view>
       </view>
       <view class="trial-card {{serviceActive ? '' : 'inactive'}}">
@@ -52,7 +56,7 @@
     </view>
 
     <view class="panel account-panel">
-      <view class="panel-head"><view class="section-title">账号安全</view><text>微信已登录</text></view>
+      <view class="panel-head"><view><view class="section-kicker">ACCOUNT</view><view class="section-title">账号安全</view></view><text>微信已登录</text></view>
       <view class="menu-row">
         <view class="menu-main"><strong>账号与手机号</strong><text>{{phoneDisplay}}</text></view>
         <button wx:if="{{!phoneBound}}" class="phone-button" open-type="getPhoneNumber" bindgetphonenumber="bindPhone">绑定手机号</button>
@@ -63,17 +67,17 @@
 
     <view class="panel">
       <view class="menu-row" bindtap="showPushPending">
-        <view class="menu-icon green">醒</view>
+        <view class="menu-icon reminder-menu-icon"><view class="bell-icon"><text></text></view></view>
         <view class="menu-main"><strong>每日五色提醒</strong><text>尚未开通 · 上线前接入微信订阅消息</text></view>
         <view class="pending-text">待接入</view><view class="arrow">›</view>
       </view>
       <view class="menu-row" bindtap="openPersonalResult">
-        <view class="menu-icon green">色</view>
+        <view class="menu-icon color-menu-icon"><text class="menu-green"></text><text class="menu-black"></text><text class="menu-gold"></text><text class="menu-white"></text><text class="menu-red"></text></view>
         <view class="menu-main"><strong>今日个人五色</strong><text>{{personalResultSummary}}</text></view>
         <view class="arrow">›</view>
       </view>
       <view class="menu-row" bindtap="showAIRecords">
-        <view class="menu-icon gold">问</view>
+        <view class="menu-icon ai-menu-icon"><view class="menu-book"><text></text><text></text></view><view class="menu-spark">✦</view></view>
         <view class="menu-main"><strong>AI问答记录</strong><text>{{historySummary}}</text></view>
         <view class="arrow">›</view>
       </view>
@@ -82,9 +86,9 @@
     <view class="panel simple-menu">
       <view class="menu-row" bindtap="showHelp"><view class="menu-main"><strong>帮助与反馈</strong></view><view class="arrow">›</view></view>
       <view class="menu-row" bindtap="showPrivacy"><view class="menu-main"><strong>隐私与数据管理</strong></view><view class="arrow">›</view></view>
-      <view class="menu-row" bindtap="showAbout"><view class="menu-main"><strong>关于五行五色</strong></view><view class="arrow">›</view></view>
+      <view class="menu-row" bindtap="showAbout"><view class="menu-main"><strong>关于五色知时</strong></view><view class="arrow">›</view></view>
     </view>
     <view wx:if="{{dashboardLoading}}" class="dashboard-loading">正在同步个人数据…</view>
-    <view class="version">五行五色 V1.0 · 内容仅供文化与生活参考</view>
+    <view class="version">五色知时 V1.0 · 内容仅供文化与生活参考</view>
   </block>
 </view>

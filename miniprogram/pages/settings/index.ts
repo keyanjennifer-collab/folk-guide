@@ -434,7 +434,7 @@ Page({
 
   showAbout() {
     wx.showModal({
-      title: "关于五行五色",
+      title: "关于五色知时",
       content: "五色应时，知时而行。内容仅供传统文化了解和生活参考。",
       showCancel: false,
     });

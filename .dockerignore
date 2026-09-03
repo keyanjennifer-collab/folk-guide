@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+deploy/.env.production
+backend/.venv
+backend/*.db
+backend/*.sqlite*
+storage
+backend/storage
+node_modules
+miniprogram_npm
+docs
+*.log
+*.pyc
+__pycache__

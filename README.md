@@ -15,6 +15,10 @@ Copy-Item .env.example .env
 uvicorn app.main:app --reload
 ```
 
+生产部署配置位于 `deploy/`：使用 PostgreSQL、Alembic 和 Caddy。生产环境必须先执行
+`alembic upgrade head`，再启动 API；不要依赖应用启动时自动建表。详细流程见
+`deploy/README.md`，真实密钥只放服务器上的 `deploy/.env.production`。
+
 打开 `http://127.0.0.1:8000/docs` 查看和调试接口，`http://127.0.0.1:8000/health` 用于健康检查。
 
 开发环境没有填写微信 AppID 时，后端会根据前端传来的临时 code 创建开发用户。生产环境必须设置 `ENVIRONMENT=production`、随机的 `JWT_SECRET` 及真实微信凭据。

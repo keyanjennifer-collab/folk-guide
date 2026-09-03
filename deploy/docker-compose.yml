@@ -1,0 +1,80 @@
+version: "2.4"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in deploy/.env.production}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in deploy/.env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?set POSTGRES_USER in deploy/.env.production}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.production}@db:5432/${POSTGRES_DB:?set POSTGRES_DB in deploy/.env.production}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - knowledge_data:/app/storage/knowledge
+    expose:
+      - "8000"
+    networks: [internal]
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: "no"
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?set POSTGRES_USER in deploy/.env.production}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.production}@db:5432/${POSTGRES_DB:?set POSTGRES_DB in deploy/.env.production}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/.env.production}
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env.production}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../preview:/srv/site:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+    networks: [internal]
+
+volumes:
+  postgres_data:
+  knowledge_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge

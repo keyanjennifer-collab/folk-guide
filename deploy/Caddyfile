@@ -1,0 +1,9 @@
+{$SITE_DOMAIN}, www.{$SITE_DOMAIN} {
+    root * /srv/site
+    file_server
+    encode gzip
+}
+
+{$API_DOMAIN} {
+    reverse_proxy api:8000
+}

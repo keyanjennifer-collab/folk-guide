@@ -106,12 +106,20 @@
   </main>
   <main id="profile" class="hidden"><button class="backlink" onclick="showPage('mine')">‹ 返回我的</button><section class="profilehero"><div><small>PERSONAL PROFILE</small><h1>本人档案</h1><span>用于传统历法计算与个人文化参考</span></div><div class="completion" id="previewCompletion">50%</div></section><section class="card modebox"><div class="modeicon" id="previewModeIcon">简</div><div><b id="previewModeTitle">简化个人结果模式</b><br><small class="muted">不知道时辰也可以继续使用</small></div></section><section class="card"><div class="formrow"><label>历法类型</label><div class="segments"><button class="active" onclick="selectCalendar(this)">公历</button><button onclick="selectCalendar(this)">农历</button></div></div><div class="formrow"><label>出生日期 · 必填</label><input type="date"></div><div class="formrow switchline"><span><b>我知道出生时辰</b><br><small class="muted">关闭后使用简化结果</small></span><input id="knownTime" style="width:auto" type="checkbox" onchange="updateProfilePreview()"></div><div class="formrow"><label>出生时间</label><input id="birthTimePreview" type="time" onchange="updateProfilePreview()"></div><div class="formrow"><label>出生城市 · 可选</label><input id="cityPreview" placeholder="例如：上海，无需详细地址" oninput="updateProfilePreview()"></div><div class="formrow"><label>性别 · 可选</label><div class="genderbuttons"><button onclick="selectGender(this)">男</button><button onclick="selectGender(this)">女</button><button class="active" onclick="selectGender(this)">不填写</button></div></div><div class="formrow switchline"><span>当前时区</span><b>Asia/Shanghai</b></div></section><label><input style="width:auto" type="checkbox"> 我已阅读并同意《生辰档案使用说明》</label><button onclick="alert('前端预览：正式小程序将保存到Python档案接口')">创建本人档案</button><p class="muted" style="text-align:center">时辰、城市和性别均可不填，档案可随时修改或删除。</p></main>
   <nav class="tabs"><button id="tab-home" class="active" onclick="showPage('home')">今日五色</button><button id="tab-chat" onclick="showPage('chat')">AI国学</button><button id="tab-caikuxiang" onclick="showPage('caikuxiang')">财库香</button><button id="tab-mine" onclick="showPage('mine')">我的</button></nav>
+  <footer class="site-footer">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">
+      琼ICP备2026012667号
+    </a>
+  </footer>
 </div><script>
   const pages=['home','chat','caikuxiang','mine','profile'];
   let remaining=20;
   let cartCount=0,cartTotal=0;
   // 浏览器预览页和微信小程序共用同一个Python接口，不再维护一份固定演示排名。
-  const API_BASE_URL='http://127.0.0.1:8000';
+  // 本地预览仍访问电脑上的开发后端；部署到正式域名后切换到 HTTPS API。
+  const API_BASE_URL=location.hostname==='127.0.0.1'||location.hostname==='localhost'
+    ? 'http://127.0.0.1:8000'
+    : 'https://api.wusezhishi.com';
   const COLOR_TONE={'绿金':'green','黑金':'black','黄金':'gold','白金':'white','红金':'red'};
 
   function appendTextBlock(parent,title,text){

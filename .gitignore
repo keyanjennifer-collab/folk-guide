@@ -16,6 +16,8 @@ node_modules/
 miniprogram_npm/
 storage/
 backend/storage/
+deploy/.env.production
+!deploy/.env.production.example
 project.private.config.json
 docs/
 tools/generate_quick_run_report_doc.py

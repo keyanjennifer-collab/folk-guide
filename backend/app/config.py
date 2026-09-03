@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     # 只由自动化测试进程开启，确保测试不会读取本机微信配置或访问真实微信接口。
     testing: bool = False
     database_url: str = "sqlite:///./folk_guide.db"
+    # 生产环境由部署前的 Alembic 迁移建表；开发环境保留自动建表便于联调。
+    auto_create_schema: bool = True
+    # 浏览器预览/运营页面的明确来源，逗号分隔；小程序请求不依赖 CORS。
+    cors_origins: str = ""
     # TODO（上线前）：必须使用高强度随机值覆盖默认值，并放进服务器密钥管理系统。
     jwt_secret: str = "development-only-secret"
     jwt_expire_minutes: int = 7 * 24 * 60
@@ -73,4 +77,33 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """缓存配置对象，避免每个请求重复解析 .env 文件。"""
     return Settings()
+
+
+def validate_runtime_settings(settings: Settings | None = None) -> None:
+    """生产启动前拒绝开发默认值和不安全的关键配置。
+
+    开发/测试环境仍允许使用 SQLite 和测试替身；生产环境如果配置不完整，
+    应在进程启动时直接失败，而不是启动后才在真实请求中暴露问题。
+    """
+    runtime = settings or get_settings()
+    if runtime.environment.lower() != "production":
+        return
+
+    errors: list[str] = []
+    if runtime.testing:
+        errors.append("TESTING 必须为 false")
+    if runtime.auto_create_schema:
+        errors.append("生产环境必须关闭 AUTO_CREATE_SCHEMA，并在启动前执行 Alembic")
+    if runtime.database_url.lower().startswith("sqlite"):
+        errors.append("DATABASE_URL 必须使用 PostgreSQL，不能使用 SQLite")
+    if len(runtime.jwt_secret) < 32 or runtime.jwt_secret == "development-only-secret":
+        errors.append("JWT_SECRET 必须是至少32位的随机密钥")
+    if not runtime.wechat_app_id or not runtime.wechat_app_secret:
+        errors.append("WECHAT_APP_ID 和 WECHAT_APP_SECRET 必须同时配置")
+    if not runtime.admin_api_key or runtime.admin_api_key == "dev-admin-key" or len(runtime.admin_api_key) < 24:
+        errors.append("ADMIN_API_KEY 必须是至少24位的随机密钥")
+    if not runtime.cors_origins.strip():
+        errors.append("CORS_ORIGINS 必须明确列出允许的来源")
+    if errors:
+        raise RuntimeError("生产配置校验失败：" + "；".join(errors))
 """集中读取环境变量和 .env 配置，业务代码不要直接读取系统环境变量。"""

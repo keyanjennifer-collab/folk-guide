@@ -15,7 +15,7 @@ from .auth import create_token, current_user
 from .ai_routes import router as ai_router
 from .ai_service import quota_for_user
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
-from .config import get_settings
+from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
 from .daily_color_cache_service import warm_personal_color_cache, warm_public_color_cache
 from .daily_color_rule_routes import router as daily_color_rule_router
@@ -45,9 +45,12 @@ from .time_service import beijing_today
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """建表迁移、启动时预热公共缓存，并管理北京时间每日调度任务。"""
-    Base.metadata.create_all(engine)
-    migrate_development_schema(engine)
     runtime_settings = get_settings()
+    # 生产表结构由部署命令 ``alembic upgrade head`` 管理；只有开发/测试环境
+    # 才允许启动时自动建表和执行 SQLite 兼容迁移，避免线上隐式改表。
+    if runtime_settings.environment.lower() != "production" and runtime_settings.auto_create_schema:
+        Base.metadata.create_all(engine)
+        migrate_development_schema(engine)
     scheduler_task: asyncio.Task | None = None
     # 正式运行时由带数据库租约的任务统一完成启动补跑，避免多worker在lifespan中
     # 同时写公共缓存。测试或显式关闭调度时仍同步预热，保持接口开箱即用。
@@ -69,6 +72,7 @@ async def lifespan(_: FastAPI):
 
 
 settings = get_settings()
+validate_runtime_settings(settings)
 
 # Swagger /docs 按真实业务域分组。说明中明确用户端与运营端的认证方式，
 # 避免联调人员把管理员接口接入小程序，或误把原型接口当成正式能力。
@@ -129,7 +133,11 @@ app.add_middleware(
     CORSMiddleware,
     # 小程序客户端不受浏览器CORS约束；这里主要服务本地浏览器预览和运营页。
     # TODO（上线前）：配置明确的后台管理域名，禁止生产环境使用通配来源。
-    allow_origins=["*"] if settings.environment == "development" else [],
+    allow_origins=(
+        ["*"]
+        if settings.environment == "development"
+        else [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+    ),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -16,6 +16,9 @@ cp .env.production.example .env.production
 nano .env.production
 ```
 
+> 注意：服务器当前使用 `docker-compose` 1.x。它不会自动读取 `.env.production`，
+> 因此下面每条 Compose 命令都要显式加上 `--env-file .env.production`。
+
 至少替换以下值（如果暂时不开放微信登录，可先把 API 保持在预发布状态，不要提交审核）：
 
 - `POSTGRES_PASSWORD`：随机、较长、建议只使用字母数字，避免 URL 特殊字符；
@@ -36,10 +39,10 @@ openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24  # PostgreSQL密码
 先启动数据库并执行一次迁移，再启动 API 和 Caddy：
 
 ```bash
-docker-compose up -d db
-docker-compose run --rm migrate
-docker-compose up -d api caddy
-docker-compose ps
+docker-compose --env-file .env.production up -d db
+docker-compose --env-file .env.production run --rm migrate
+docker-compose --env-file .env.production up -d api caddy
+docker-compose --env-file .env.production ps
 ```
 
 首次构建镜像时，服务器需要能访问 Docker 镜像仓库和 PyPI；如果下载超时，先配置
@@ -48,8 +51,8 @@ Docker 镜像加速或使用腾讯云网络后重试。`migrate` 必须显示成
 检查日志和接口：
 
 ```bash
-docker-compose logs --tail=100 migrate
-docker-compose logs --tail=100 api
+docker-compose --env-file .env.production logs --tail=100 migrate
+docker-compose --env-file .env.production logs --tail=100 api
 curl -fsS https://api.wusezhishi.com/health
 ```
 
@@ -61,11 +64,11 @@ curl -fsS https://api.wusezhishi.com/health
 cd ~/folk-guide
 git pull --ff-only
 cd deploy
-docker-compose down --remove-orphans
-docker-compose build api migrate
-docker-compose up -d db
-docker-compose run --rm migrate
-docker-compose up -d api caddy
+docker-compose --env-file .env.production down --remove-orphans
+docker-compose --env-file .env.production build api migrate
+docker-compose --env-file .env.production up -d db
+docker-compose --env-file .env.production run --rm migrate
+docker-compose --env-file .env.production up -d api caddy
 ```
 
 如果迁移失败，不要删除 PostgreSQL 数据卷；先查看迁移日志并修复后再重试。

@@ -10,6 +10,7 @@ pytest==8.4.1
 pytest-asyncio==1.1.0
 lunar-python==1.4.8
 openpyxl==3.1.5
+python-docx==1.2.0
 python-multipart==0.0.32
 pypdf==6.16.1
 agno==2.9.0

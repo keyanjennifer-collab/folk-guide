@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>五色知时 · 深色交互版</title>
+  <style>
+    :root {
+      --ink: #0d0e0d;
+      --ink-soft: #161714;
+      --paper: #e7cfab;
+      --gold: #c99c5f;
+      --gold-bright: #e1b97f;
+      --line: rgba(215, 177, 119, .24);
+      --accent: #667052;
+      --accent-deep: #353d29;
+      --accent-pale: #aeb694;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #090a09; }
+    body {
+      color: var(--paper);
+      font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+      -webkit-font-smoothing: antialiased;
+      display: grid;
+      place-items: start center;
+    }
+    button { font: inherit; }
+
+    .phone {
+      position: relative;
+      width: min(100%, 430px);
+      min-height: 100dvh;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 18% 9%, rgba(255,255,255,.025), transparent 28%),
+        radial-gradient(circle at 76% 41%, rgba(202,156,95,.035), transparent 30%),
+        linear-gradient(135deg, #121311 0%, #090a09 46%, #151613 100%);
+      box-shadow: 0 0 56px rgba(0,0,0,.55);
+    }
+    .phone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: .16;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+
+    .statusbar {
+      height: 44px;
+      padding: 15px 28px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #f5f3ec;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: -.25px;
+    }
+    .system-icons { display: flex; align-items: center; gap: 6px; }
+    .signal { display: flex; align-items: end; gap: 2px; height: 14px; }
+    .signal i { width: 3px; border-radius: 2px; background: currentColor; }
+    .signal i:nth-child(1) { height: 5px; }
+    .signal i:nth-child(2) { height: 8px; }
+    .signal i:nth-child(3) { height: 11px; }
+    .signal i:nth-child(4) { height: 14px; }
+    .wifi { width: 17px; height: 12px; border: 3px solid currentColor; border-color: currentColor transparent transparent; border-radius: 50%; transform: translateY(3px); }
+    .battery { width: 25px; height: 12px; border: 1.5px solid currentColor; border-radius: 3px; padding: 2px; position: relative; }
+    .battery::before { content: ""; display: block; height: 100%; border-radius: 1px; background: currentColor; }
+    .battery::after { content: ""; position: absolute; width: 2px; height: 5px; right: -4px; top: 2px; border-radius: 0 2px 2px 0; background: currentColor; opacity: .55; }
+
+    .brandbar {
+      height: 76px;
+      padding: 5px 18px 3px;
+      display: grid;
+      grid-template-columns: 64px 1fr 64px;
+      align-items: center;
+    }
+    .brand-logo { grid-column: 2; width: 98px; height: 68px; object-fit: contain; justify-self: center; }
+    .menu-button {
+      grid-column: 3;
+      justify-self: end;
+      width: 62px;
+      height: 34px;
+      border: 1px solid rgba(231,207,171,.24);
+      border-radius: 20px;
+      color: #f5f3ec;
+      background: rgba(12,13,12,.58);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .menu-button span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+    .today {
+      height: 540px;
+      display: grid;
+      grid-template-columns: 52% 48%;
+      border-bottom: 1px solid rgba(231,207,171,.2);
+    }
+    .ranking {
+      padding: 14px 0 18px 20px;
+      border-right: 1px solid rgba(211,168,104,.34);
+    }
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--gold);
+      font-size: 9px;
+      letter-spacing: .24em;
+    }
+    .today-title {
+      margin: 0;
+      color: #ead3b0;
+      font-size: 31px;
+      line-height: 1.15;
+      font-weight: 500;
+      letter-spacing: .1em;
+    }
+    .subtitle-line {
+      margin: 8px 12px 13px 0;
+      display: block;
+    }
+    .today-subtitle {
+      margin: 0 0 8px;
+      color: #cdb99b;
+      font-size: 11px;
+      letter-spacing: .09em;
+      white-space: nowrap;
+    }
+    .color-guide-button {
+      width: 100%;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid rgba(225,185,127,.58);
+      color: var(--gold-bright);
+      background: linear-gradient(100deg, rgba(201,156,95,.17), rgba(201,156,95,.045));
+      box-shadow: inset 0 0 18px rgba(201,156,95,.045);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-align: left;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease;
+    }
+    .color-guide-button::after { content: "查看 ›"; float: right; color: #edd0a1; letter-spacing: .08em; }
+    .color-guide-button:hover { border-color: var(--gold-bright); background: rgba(201,156,95,.22); }
+    .color-guide-button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+    .rank-list {
+      position: relative;
+      margin-left: 0;
+      border: 1px solid rgba(231,207,171,.12);
+      border-right: 0;
+    }
+    .rank-row {
+      position: relative;
+      width: 100%;
+      height: 67px;
+      padding: 0;
+      border: 0;
+      border-bottom: 1px solid rgba(231,207,171,.16);
+      color: #eaddc8;
+      background: linear-gradient(100deg, var(--row-deep), var(--row));
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      text-align: left;
+      cursor: pointer;
+      transition: filter .22s ease, transform .22s ease;
+    }
+    .rank-row:last-child { border-bottom: 0; }
+    .rank-row:hover { filter: brightness(1.1); }
+    .rank-row:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: -2px; z-index: 3; }
+    .rank-row[aria-selected="true"] { filter: brightness(1.17) saturate(1.06); }
+    .rank-row[aria-selected="true"]::before {
+      content: "";
+      position: absolute;
+      left: -11px;
+      top: 25px;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 10px solid var(--gold-bright);
+      filter: drop-shadow(0 0 5px rgba(225,185,127,.25));
+    }
+    .rank-no {
+      display: grid;
+      place-items: center;
+      border-right: 1px solid rgba(244,227,201,.19);
+      font-size: 25px;
+      font-variant-numeric: tabular-nums;
+      color: rgba(246,231,207,.88);
+    }
+    .rank-copy { padding: 9px 10px 7px 15px; min-width: 0; }
+    .rank-main { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+    .rank-color { font-size: 17px; letter-spacing: .03em; }
+    .rank-slash { color: rgba(245,229,203,.42); font-size: 12px; }
+    .rank-status { font-size: 11px; color: rgba(247,231,206,.8); }
+    .rank-note { display: block; margin-top: 5px; font-size: 10px; color: rgba(247,231,206,.72); letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .scent-stage {
+      position: relative;
+      overflow: hidden;
+      padding: 16px 8px;
+      text-align: center;
+    }
+    .scent-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 56%);
+      opacity: .7;
+      pointer-events: none;
+    }
+    .scent-heading { position: relative; z-index: 4; margin: 2px 0 6px; color: var(--gold-bright); font-size: 15px; letter-spacing: .12em; font-weight: 500; }
+    .emblem-frame { position: relative; z-index: 4; width: 62px; height: 62px; margin: 0 auto 1px; display: grid; place-items: center; }
+    .emblem-frame::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(220,211,164,.19), transparent 35%); box-shadow: 0 7px 15px rgba(0,0,0,.44), inset 0 0 13px rgba(186,174,118,.1); }
+    #productEmblem { position: relative; z-index: 1; width: 58px; height: 58px; object-fit: contain; filter: sepia(.22) saturate(.55) hue-rotate(25deg) brightness(.72) contrast(1.15); transition: opacity .18s ease, filter .22s ease; }
+    .scent-name { position: relative; z-index: 4; margin: 1px 0 0; color: var(--gold-bright); font-size: 28px; line-height: 1.1; font-weight: 500; letter-spacing: .06em; }
+    .scent-mood { position: relative; z-index: 4; margin: 5px 0 0; font-size: 13px; color: #d6c19f; letter-spacing: .1em; }
+    .scent-notes { position: relative; z-index: 4; margin: 6px -8px 0; font-size: 10px; color: #bda887; letter-spacing: .05em; white-space: nowrap; }
+    .inline-aroma {
+      position: relative;
+      z-index: 5;
+      margin: 9px 3px 0;
+      padding-top: 7px;
+      border-top: 1px solid rgba(225,185,127,.2);
+      text-align: left;
+    }
+    .inline-aroma-summary { margin: 0 0 6px; color: #c8b79d; font-size: 9px; line-height: 1.55; letter-spacing: .02em; }
+    .inline-aroma-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .inline-aroma-notes span { min-width: 0; padding-right: 3px; border-right: 1px solid rgba(225,185,127,.16); }
+    .inline-aroma-notes span:last-child { padding-right: 0; border-right: 0; }
+    .inline-aroma-notes small { display: block; margin-bottom: 2px; color: var(--gold); font-size: 7px; letter-spacing: .12em; }
+    .inline-aroma-notes strong { display: block; overflow: hidden; color: #ead5b5; font-size: 8px; line-height: 1.35; font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
+    .visual-frame {
+      position: absolute;
+      z-index: 2;
+      left: 0;
+      right: 0;
+      top: 198px;
+      bottom: 0;
+      overflow: hidden;
+      background: #0a0b0a;
+    }
+    .visual-frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(to bottom, #0a0b0a 0, rgba(10,11,10,.18) 8%, transparent 22%, transparent 88%, rgba(10,11,10,.28) 100%);
+    }
+    .product-visual {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 1;
+      transform: scale(1.16);
+      transform-origin: 50% 100%;
+      transition: opacity .2s ease, transform .25s ease;
+    }
+    .gift {
+      position: relative;
+      height: 232px;
+      overflow: hidden;
+      border-top: 1px solid rgba(0,0,0,.65);
+      background:
+        radial-gradient(circle at 73% 30%, rgba(202,157,96,.08), transparent 36%),
+        linear-gradient(120deg, #171815, #0a0b0a 62%, #191a16);
+    }
+    .gift-copy { position: relative; z-index: 4; width: 48%; padding: 21px 0 0 20px; }
+    .gift-kicker { margin: 0 0 7px; color: var(--gold); font-size: 9px; letter-spacing: .22em; }
+    .gift h2 { margin: 0; color: var(--gold-bright); font-size: 23px; line-height: 1.2; font-weight: 500; letter-spacing: .06em; }
+    .gift-desc { margin: 7px 0 0; font-size: 11px; color: #c8b493; letter-spacing: .08em; }
+    .price { margin: 10px 0 8px; font-size: 27px; color: var(--gold-bright); }
+    .gift-button {
+      min-width: 112px;
+      height: 36px;
+      border: 1px solid var(--gold);
+      color: #17120c;
+      background: linear-gradient(120deg, #e0b574, #b98142);
+      cursor: pointer;
+      letter-spacing: .08em;
+      box-shadow: 0 7px 18px rgba(0,0,0,.24);
+    }
+    .gift-image {
+      position: absolute;
+      z-index: 2;
+      width: 292px;
+      max-width: none;
+      right: -58px;
+      bottom: -8px;
+      filter: brightness(.76) contrast(1.08) saturate(.83);
+    }
+    .gift::after { content: ""; position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgba(9,10,9,.2) 0 33%, transparent 62%); pointer-events: none; }
+
+    .bottom-nav {
+      position: relative;
+      z-index: 8;
+      height: calc(100px + var(--safe-bottom));
+      padding: 10px 28px calc(8px + var(--safe-bottom));
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: linear-gradient(90deg, #1d1c18, #0b0c0b 52%, #1b1a16);
+      border-top: 1px solid rgba(231,207,171,.11);
+    }
+    .nav-button { border: 0; color: #74716a; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; font-size: 14px; letter-spacing: .06em; }
+    .nav-button[aria-current="page"] { color: var(--gold-bright); }
+    .nav-symbol { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-family: sans-serif; font-size: 15px; }
+    .nav-button:nth-child(2) .nav-symbol, .nav-button:nth-child(3) .nav-symbol { border-color: transparent; font-size: 23px; }
+    .home-indicator { position: absolute; width: 150px; height: 5px; left: 50%; bottom: calc(5px + var(--safe-bottom)); border-radius: 5px; background: #f5f4ef; transform: translateX(-50%); opacity: .95; }
+
+    .scrim {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      background: rgba(0,0,0,.56);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+    }
+    .scrim.is-open { opacity: 1; pointer-events: auto; }
+    .sheet {
+      position: absolute;
+      z-index: 21;
+      left: 12px;
+      right: 12px;
+      bottom: calc(10px + var(--safe-bottom));
+      max-height: 76dvh;
+      overflow: auto;
+      border: 1px solid rgba(225,185,127,.3);
+      border-radius: 22px 22px 14px 14px;
+      color: #e8d8bd;
+      background:
+        radial-gradient(circle at 90% 0, color-mix(in srgb, var(--accent) 20%, transparent), transparent 34%),
+        linear-gradient(145deg, #1c1d1a, #0c0d0c 68%);
+      box-shadow: 0 -18px 44px rgba(0,0,0,.42);
+      transform: translateY(calc(100% + 28px));
+      opacity: 0;
+      visibility: hidden;
+      transition: transform .32s cubic-bezier(.22,.78,.25,1), opacity .2s ease, visibility .32s;
+    }
+    .sheet[aria-hidden="false"] { transform: translateY(0); opacity: 1; visibility: visible; }
+    .sheet-handle { width: 40px; height: 4px; margin: 9px auto 0; border-radius: 4px; background: rgba(231,207,171,.28); }
+    .sheet-close { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border: 1px solid rgba(231,207,171,.22); border-radius: 50%; color: #dbc39e; background: rgba(0,0,0,.18); cursor: pointer; }
+    .sheet-body { padding: 18px 20px 25px; }
+    .sheet-kicker { margin: 0 0 6px; color: var(--gold); font-size: 10px; letter-spacing: .2em; }
+    .sheet-title { margin: 0; color: #ead2ad; font-size: 26px; font-weight: 500; letter-spacing: .06em; }
+    .sheet-tier { display: inline-flex; margin-top: 10px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent-pale) 55%, transparent); color: #f0dcc0; background: color-mix(in srgb, var(--accent) 27%, transparent); font-size: 11px; letter-spacing: .08em; }
+    .swatches { display: flex; margin: 18px 0 15px; }
+    .swatch { width: 40px; height: 40px; margin-right: -5px; border: 2px solid rgba(236,217,187,.68); border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,.28); }
+    .why-title, .advice-title { margin: 18px 0 7px; color: var(--gold-bright); font-size: 14px; font-weight: 500; letter-spacing: .08em; }
+    .why-copy { margin: 0; color: #cdbda5; font-size: 12px; line-height: 1.8; }
+    .advice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .advice-card { padding: 13px; border: 1px solid rgba(231,207,171,.14); background: rgba(255,255,255,.025); }
+    .advice-card h4 { margin: 0 0 9px; font-size: 13px; color: #e1c49a; font-weight: 500; }
+    .advice-card ul { margin: 0; padding-left: 1.1em; color: #bfb09a; font-size: 11px; line-height: 1.75; }
+    .aroma-intro { margin: 12px 0 15px; color: #cdbda5; font-size: 12px; line-height: 1.8; }
+    .aroma-notes { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid rgba(231,207,171,.14); }
+    .aroma-note { min-height: 82px; padding: 12px 9px; border-right: 1px solid rgba(231,207,171,.14); background: rgba(255,255,255,.022); }
+    .aroma-note:last-child { border-right: 0; }
+    .aroma-note span { display: block; margin-bottom: 8px; color: var(--gold); font-size: 9px; letter-spacing: .15em; }
+    .aroma-note strong { color: #e0ccb0; font-size: 12px; line-height: 1.55; font-weight: 400; }
+    .gift-sheet-image { display: block; width: 100%; margin: 16px 0 12px; border-radius: 10px; filter: brightness(.86) saturate(.84); }
+    .gift-sheet-copy { margin: 0; color: #c8b89f; font-size: 12px; line-height: 1.8; }
+    .toast { position: absolute; z-index: 25; left: 50%; bottom: 116px; padding: 10px 16px; border: 1px solid rgba(225,185,127,.22); border-radius: 20px; color: #e6cfaa; background: rgba(16,17,15,.92); font-size: 11px; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; transition: .25s ease; white-space: nowrap; }
+    .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (min-width: 431px) {
+      body { padding: 20px 0; }
+      .phone { border: 1px solid rgba(231,207,171,.14); border-radius: 30px; }
+      .scrim { position: absolute; }
+    }
+    @media (max-height: 780px) {
+      .phone { overflow: auto; }
+      .bottom-nav { position: sticky; bottom: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" id="app" aria-label="五色知时首页交互原型">
+    <div class="statusbar" aria-hidden="true">
+      <span>9:41</span>
+      <div class="system-icons"><span class="signal"><i></i><i></i><i></i><i></i></span><span class="wifi"></span><span class="battery"></span></div>
+    </div>
+
+    <header class="brandbar">
+      <img class="brand-logo" src="../miniprogram/assets/brand/logo.png" alt="五色知时 WUSE ZHI SHI 品牌标志">
+      <button class="menu-button" id="menuButton" type="button" aria-label="打开菜单"><span></span><span></span><span></span></button>
+    </header>
+
+    <section class="today" aria-labelledby="todayTitle">
+      <section class="ranking">
+        <p class="eyebrow">09 · 05　今日主势 · 木</p>
+        <h1 class="today-title" id="todayTitle">今日五色</h1>
+        <div class="subtitle-line"><p class="today-subtitle">依今日节律，先看用色次序</p><button class="color-guide-button" id="colorGuideButton" type="button">查看今日色序依据</button></div>
+
+        <div class="rank-list" role="listbox" aria-label="今日五色次序">
+          <button class="rank-row" style="--row-deep:#303823;--row:#62694d" type="button" role="option" aria-selected="true" data-index="0">
+            <span class="rank-no">01</span><span class="rank-copy"><span class="rank-main"><span class="rank-color">青木绿</span><span class="rank-slash">/</span><span class="rank-status">得时之色</span></span><span class="rank-note">今日助力最明显</span></span>
+          </button>
+          <button class="rank-row" style="--row-deep:#151616;--row:#292b2b" type="button" role="option" aria-selected="false" data-index="1">
+            <span class="rank-no">02</span><span class="rank-copy"><span class="rank-main"><span class="rank-color">墨沉黑</span><span class="rank-slash">/</span><span class="rank-status">相助之色</span></span><span class="rank-note">有助沉静与梳理</span></span>
+          </button>
+          <button class="rank-row" style="--row-deep:#874609;--row:#b66d19" type="button" role="option" aria-selected="false" data-index="2">
+            <span class="rank-no">03</span><span class="rank-copy"><span class="rank-main"><span class="rank-color">黄檀金</span><span class="rank-slash">/</span><span class="rank-status">守衡之色</span></span><span class="rank-note">影响平稳，宜守常</span></span>
+          </button>
+          <button class="rank-row" style="--row-deep:#9d8f7b;--row:#cbbba2" type="button" role="option" aria-selected="false" data-index="3">
+            <span class="rank-no">04</span><span class="rank-copy"><span class="rank-main"><span class="rank-color">白桂白</span><span class="rank-slash">/</span><span class="rank-status">费力之色</span></span><span class="rank-note">容易分散今日助力</span></span>
+          </button>
+          <button class="rank-row" style="--row-deep:#671012;--row:#982126" type="button" role="option" aria-selected="false" data-index="4">
+            <span class="rank-no">05</span><span class="rank-copy"><span class="rank-main"><span class="rank-color">朱蜜红</span><span class="rank-slash">/</span><span class="rank-status">慎行之色</span></span><span class="rank-note">今日消耗感较强</span></span>
+          </button>
+        </div>
+      </section>
+
+      <article class="scent-stage" tabindex="-1" aria-live="polite">
+        <h2 class="scent-heading">今日相应之香</h2>
+        <div class="emblem-frame"><img id="productEmblem" data-color="青色" src="../miniprogram/assets/brand/green-emblem.png" alt="木 · 青龙纹样"></div>
+        <h3 class="scent-name" id="scentName">青木香</h3>
+        <p class="scent-mood" id="scentMood">草木清润</p>
+        <p class="scent-notes" id="scentNotes">沉香凉甜 · 檀木 · 灵香排草</p>
+        <div class="inline-aroma" id="inlineAroma">
+          <p class="inline-aroma-summary" id="inlineAromaSummary">清凉木气转入柔润檀香，余韵微甜而清醒。</p>
+          <div class="inline-aroma-notes">
+            <span><small>前调</small><strong id="inlineTopNote">凉甜沉香</strong></span>
+            <span><small>中调</small><strong id="inlineHeartNote">檀木与青草</strong></span>
+            <span><small>余韵</small><strong id="inlineBaseNote">微甜灵香</strong></span>
+          </div>
+        </div>
+        <div class="visual-frame"><img class="product-visual" id="productVisual" data-index="0" src="../miniprogram/assets/brand/green.jpg" alt="青木香完整香盒主视觉"></div>
+      </article>
+    </section>
+
+    <section class="gift" id="giftSection" aria-labelledby="giftTitle">
+      <div class="gift-copy">
+        <p class="gift-kicker">五色应时 · 知时而行</p>
+        <h2 id="giftTitle">五色应时礼盒</h2>
+        <p class="gift-desc">随时序择色，也随心择香</p>
+        <p class="price">¥239</p>
+        <button class="gift-button" id="giftButton" type="button">查看礼盒</button>
+      </div>
+      <img class="gift-image" src="../miniprogram/assets/brand/gift.jpg" alt="五色应时礼盒与手提袋">
+    </section>
+
+    <nav class="bottom-nav" aria-label="底部导航">
+      <button class="nav-button" type="button" aria-current="page" data-nav="today"><span class="nav-symbol">◒</span><span>今日</span></button>
+      <button class="nav-button" type="button" data-nav="scents"><span class="nav-symbol">♨</span><span>五色香</span></button>
+      <button class="nav-button" type="button" data-nav="mine"><span class="nav-symbol">♙</span><span>我的</span></button>
+      <span class="home-indicator" aria-hidden="true"></span>
+    </nav>
+
+    <div class="scrim" id="scrim"></div>
+    <section class="sheet" id="colorSheet" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="colorSheetTitle">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" id="closeColorSheet" type="button" aria-label="关闭">×</button>
+      <div class="sheet-body">
+        <p class="sheet-kicker" id="colorSheetElement">今日主势 · 木</p>
+        <h2 class="sheet-title" id="colorSheetTitle">为何今日是青色</h2>
+        <span class="sheet-tier" id="colorSheetTier">得时之色 · 今日助力最明显</span>
+        <div class="swatches" id="swatches" aria-label="青色建议色阶"></div>
+        <h3 class="why-title">今日用色依据</h3>
+        <p class="why-copy" id="whyCopy"></p>
+        <div class="advice-grid">
+          <section class="advice-card"><h4>适合</h4><ul id="suitableList"></ul></section>
+          <section class="advice-card"><h4>不太适合</h4><ul id="unsuitableList"></ul></section>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet" id="giftSheet" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="giftSheetTitle">
+      <div class="sheet-handle"></div>
+      <button class="sheet-close" id="closeGiftSheet" type="button" aria-label="关闭">×</button>
+      <div class="sheet-body">
+        <p class="sheet-kicker">五色应时 · 知时而行</p>
+        <h2 class="sheet-title" id="giftSheetTitle">五色应时礼盒</h2>
+        <img class="gift-sheet-image" src="../miniprogram/assets/brand/gift-open.jpg" alt="五色应时礼盒内衬">
+        <p class="gift-sheet-copy">五色线香、五枚矿石香插与时序择色指引收于一盒。可依今日节律选择，也可循当下心境闻香。</p>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status">此功能将在下一版展开</div>
+  </main>
+
+  <script>
+    const scents = [
+      {
+        color: '青色', tier: '得时之色', summary: '今日助力最明显', scent: '青木香', mood: '草木清润', notes: '沉香凉甜 · 檀木 · 灵香排草', element: '木', beast: '青龙',
+        beastImage: '../miniprogram/assets/brand/green-emblem.png', emblemFilter: 'sepia(.22) saturate(.55) hue-rotate(25deg) brightness(.72) contrast(1.15)', visual: '../miniprogram/assets/brand/green.jpg', accent: '#667052', deep: '#353d29', pale: '#aeb694',
+        swatches: ['#263c31', '#536c56', '#7e9b72'],
+        aromaIntro: '先是清凉的沉香木气，随后转入柔润檀木。尾端留下一点草叶与微甜，清醒，但不尖锐。',
+        aroma: ['凉甜沉香', '檀木与青草', '微甜灵香'],
+        why: '今日以木为主势，青色与当日节律同向。可放在上半身或视线中心，用来承接今天更适合主动开启、清楚表达的节奏。',
+        suitable: ['开启新计划', '沟通提案', '推进重要事项'], unsuitable: ['长时间犹豫', '反复修改已定方案', '把节奏拖得过慢']
+      },
+      {
+        color: '黑色', tier: '相助之色', summary: '有助沉静与梳理', scent: '墨沉香', mood: '幽沉安定', notes: '沉香木韵 · 岩兰草 · 广藿香', element: '水', beast: '玄武',
+        beastImage: '../miniprogram/assets/brand/black-emblem.png', emblemFilter: 'grayscale(1) brightness(.72) contrast(1.18)', visual: '../miniprogram/assets/brand/black.jpg', accent: '#353a3b', deep: '#171919', pale: '#7e8582',
+        swatches: ['#111313', '#293038', '#4c5860'],
+        aromaIntro: '初闻像雨后沉木，气息低而安静。岩兰草带出微湿的土壤感，最后落在温厚的广藿香上。',
+        aroma: ['湿润沉木', '岩兰与土壤', '温厚广藿'],
+        why: '水能滋木。黑色适合做一层安静的底色，把注意力收回来，先理清脉络，再往前推进。',
+        suitable: ['复盘整理', '深度思考', '独立完成'], unsuitable: ['同时处理过多任务', '冲动表态', '无准备地仓促决定']
+      },
+      {
+        color: '黄色', tier: '守衡之色', summary: '影响平稳，宜守常', scent: '黄檀香', mood: '温润从容', notes: '老山檀 · 安息香 · 雪松', element: '土', beast: '麒麟',
+        beastImage: '../miniprogram/assets/brand/gold-emblem.png', emblemFilter: 'sepia(.28) saturate(1.2) brightness(.9) contrast(1.12)', visual: '../miniprogram/assets/brand/gold.jpg', accent: '#a96819', deep: '#70400e', pale: '#d6a35d',
+        swatches: ['#8d5012', '#bd7c27', '#d7aa62'],
+        aromaIntro: '檀木先铺开温暖、干净的木香，安息香慢慢透出柔甜。雪松收尾，让香气稳而不闷。',
+        aroma: ['温暖檀木', '柔甜安息香', '干净雪松'],
+        why: '黄色落在今天的中段，不明显放大助力，也不过分牵制。适合照计划完成已有安排，少做临时变动。',
+        suitable: ['处理日常事务', '按计划执行', '稳步收尾'], unsuitable: ['期待快速突破', '临时改变方向', '一次承担太多变化']
+      },
+      {
+        color: '白色', tier: '费力之色', summary: '容易分散今日助力', scent: '白桂香', mood: '清简收敛', notes: '白檀 · 桂花 · 零陵香', element: '金', beast: '白虎',
+        beastImage: '../miniprogram/assets/brand/white-emblem.png', emblemFilter: 'grayscale(1) brightness(1.35) contrast(.95)', visual: '../miniprogram/assets/brand/white.jpg', accent: '#afa38f', deep: '#746b5e', pale: '#e1d6c3',
+        swatches: ['#eee9df', '#d2c7b5', '#aaa092'],
+        aromaIntro: '白檀的干净木香先出现，桂花只留一层淡淡的甜。零陵香把尾韵收得轻，闻起来清简。',
+        aroma: ['清净白檀', '淡甜桂花', '轻柔零陵香'],
+        why: '金气对木有约束。白色大面积出现，今天所需的行动感容易被收紧；小面积使用，反而能带来清晰与秩序。',
+        suitable: ['小面积点缀', '校对审核', '收纳取舍'], unsuitable: ['作为全身主色', '高压沟通', '强势推进']
+      },
+      {
+        color: '赤色', tier: '慎行之色', summary: '今日消耗感较强', scent: '朱蜜香', mood: '暖甜明烈', notes: '降真香 · 蜂蜜 · 肉桂', element: '火', beast: '朱雀',
+        beastImage: '../miniprogram/assets/brand/red-emblem.png', emblemFilter: 'sepia(.55) saturate(3) hue-rotate(315deg) brightness(.72) contrast(1.15)', visual: '../miniprogram/assets/brand/red.jpg', accent: '#8d2528', deep: '#5b1113', pale: '#c56c65',
+        swatches: ['#762025', '#a63c40', '#c8645b'],
+        aromaIntro: '降真香带一点明亮辛感，蜂蜜随后变得柔软。肉桂在尾端添暖，甜意有轮廓，不黏腻。',
+        aroma: ['明亮降真香', '柔软蜂蜜', '温暖肉桂'],
+        why: '木生火，赤色会加快能量向外释放，容易让节奏偏急，也增加心力消耗。若想使用，宜缩小面积，让它只承担提气作用。',
+        suitable: ['小范围提气', '短时社交', '局部配饰'], unsuitable: ['重要决策', '长时间争辩', '大面积使用']
+      }
+    ];
+
+    const app = document.querySelector('#app');
+    const rows = [...document.querySelectorAll('.rank-row')];
+    const productEmblem = document.querySelector('#productEmblem');
+    const productVisual = document.querySelector('#productVisual');
+    const scentName = document.querySelector('#scentName');
+    const scentMood = document.querySelector('#scentMood');
+    const scentNotes = document.querySelector('#scentNotes');
+    const colorSheet = document.querySelector('#colorSheet');
+    const giftSheet = document.querySelector('#giftSheet');
+    const scrim = document.querySelector('#scrim');
+    const toast = document.querySelector('#toast');
+    let currentIndex = 0;
+
+    function fillList(element, items) {
+      element.replaceChildren(...items.map(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        return li;
+      }));
+    }
+
+    function updateDetails(data) {
+      document.querySelector('#inlineAromaSummary').textContent = data.aromaIntro;
+      document.querySelector('#inlineTopNote').textContent = data.aroma[0];
+      document.querySelector('#inlineHeartNote').textContent = data.aroma[1];
+      document.querySelector('#inlineBaseNote').textContent = data.aroma[2];
+      document.querySelector('#colorSheetElement').textContent = `今日主势 · ${data.element}`;
+      document.querySelector('#colorSheetTitle').textContent = `为何今日是${data.color}`;
+      document.querySelector('#colorSheetTier').textContent = `${data.tier} · ${data.summary}`;
+      document.querySelector('#whyCopy').textContent = data.why;
+      document.querySelector('#swatches').replaceChildren(...data.swatches.map(color => {
+        const dot = document.createElement('span');
+        dot.className = 'swatch';
+        dot.style.background = color;
+        return dot;
+      }));
+      fillList(document.querySelector('#suitableList'), data.suitable);
+      fillList(document.querySelector('#unsuitableList'), data.unsuitable);
+    }
+
+    function selectScent(index) {
+      currentIndex = Number(index);
+      const data = scents[currentIndex];
+      rows.forEach((row, rowIndex) => row.setAttribute('aria-selected', String(rowIndex === currentIndex)));
+      app.style.setProperty('--accent', data.accent);
+      app.style.setProperty('--accent-deep', data.deep);
+      app.style.setProperty('--accent-pale', data.pale);
+      productEmblem.style.opacity = '0';
+      productVisual.style.opacity = '.18';
+      window.setTimeout(() => {
+        productEmblem.src = data.beastImage;
+        productEmblem.alt = `${data.element} · ${data.beast}纹样`;
+        productEmblem.dataset.color = data.color;
+        productEmblem.style.filter = data.emblemFilter;
+        scentName.textContent = data.scent;
+        scentMood.textContent = data.mood;
+        scentNotes.textContent = data.notes;
+        productVisual.src = data.visual;
+        productVisual.dataset.index = String(currentIndex);
+        productVisual.alt = `${data.scent}完整香盒与烟形主视觉`;
+        productEmblem.style.opacity = '1';
+        productVisual.style.opacity = '.94';
+      }, 135);
+      updateDetails(data);
+    }
+
+    function openSheet(sheet) {
+      [colorSheet, giftSheet].forEach(item => item.setAttribute('aria-hidden', String(item !== sheet)));
+      scrim.classList.add('is-open');
+      window.setTimeout(() => sheet.querySelector('.sheet-close').focus(), 330);
+    }
+
+    function closeSheets() {
+      colorSheet.setAttribute('aria-hidden', 'true');
+      giftSheet.setAttribute('aria-hidden', 'true');
+      scrim.classList.remove('is-open');
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove('is-visible'), 1800);
+    }
+
+    rows.forEach(row => row.addEventListener('click', () => selectScent(row.dataset.index)));
+    document.querySelector('#colorGuideButton').addEventListener('click', () => openSheet(colorSheet));
+    document.querySelector('#giftButton').addEventListener('click', () => openSheet(giftSheet));
+    document.querySelector('#closeColorSheet').addEventListener('click', closeSheets);
+    document.querySelector('#closeGiftSheet').addEventListener('click', closeSheets);
+    scrim.addEventListener('click', closeSheets);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSheets(); });
+    document.querySelector('#menuButton').addEventListener('click', () => showToast('菜单结构将在下一版展开'));
+    document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.nav-button').forEach(item => item.removeAttribute('aria-current'));
+      button.setAttribute('aria-current', 'page');
+      if (button.dataset.nav === 'today') document.querySelector('.today').scrollIntoView({ behavior: 'smooth' });
+      if (button.dataset.nav === 'scents') {
+        const scentStage = document.querySelector('.scent-stage');
+        scentStage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        scentStage.focus({ preventScroll: true });
+      }
+      if (button.dataset.nav === 'mine') showToast('「我的」将在下一版接入');
+    }));
+
+    updateDetails(scents[0]);
+  </script>
+</body>
+</html>

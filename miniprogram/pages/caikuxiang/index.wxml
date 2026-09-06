@@ -1,53 +1,32 @@
 <view class="shop-page">
-  <view class="shop-hero">
-    <view class="incense-smoke smoke-one"></view><view class="incense-smoke smoke-two"></view><view class="hero-window"></view>
-    <view class="hero-brand-row">
-      <view class="incense-brand-logo" aria-label="财库香">
-        <text class="logo-smoke logo-smoke-left"></text><text class="logo-smoke logo-smoke-right"></text>
-        <text class="logo-stick"></text><text class="logo-base"></text>
-      </view>
-      <view><view class="hero-kicker">FIVE ELEMENT INCENSE</view><view class="hero-title">财库香</view></view>
-    </view>
-    <view class="hero-copy">五色齐备，依今日节奏自在选择。关注香气、原料与日常仪式，不承诺确定结果。</view>
-    <view class="hero-points"><text>天然香材</text><text>五色五行</text><text>大部分地区包邮</text></view>
-  </view>
-
-  <view class="flagship-card">
-    <view class="flagship-visual"><view class="sun-disc"></view><view class="silk-mountain"></view><view class="incense-tubes"><text class="tube black"></text><text class="tube gold"></text><text class="tube green"></text><text class="tube red"></text><text class="tube white"></text></view><view class="flagship-label"><text>五行五色</text><small>一盒纳五气 · 随心择香</small></view></view>
-    <view class="flagship-info"><view class="product-badge">首购推荐</view><view class="flagship-title">五色旗舰套装</view><view class="flagship-spec">五色各30支 · 共150支</view><view class="flagship-copy">一次备齐五种颜色，按每日公共或个人五色建议灵活选择。</view>
-      <view class="rights-box"><view class="rights-icon">30</view><view><strong>赠30天个人服务卡</strong><text>确认收货后发放，可立即开启、暂存或赠送好友</text></view></view>
-      <view class="price-line"><view><text class="currency">¥</text><text class="price">199</text><text class="shipping">包邮</text></view><button class="buy-button" bindtap="buyFlagship">立即选购</button></view>
-    </view>
-  </view>
-
-  <view class="section-head">
-    <view class="collection-heading">
-      <view class="collection-logo" aria-label="五色香品"><text class="mini-green"></text><text class="mini-black"></text><text class="mini-gold"></text><text class="mini-white"></text><text class="mini-red"></text></view>
-      <view><view class="section-kicker">REFILL COLLECTION</view><view class="section-title">单色补充装</view></view>
-    </view>
-    <view class="section-note">任一颜色 · 30支</view>
-  </view>
-  <view class="notice">按实际消耗补充。单色商品累计确认收货实付满199元，再赠一张30天服务卡。</view>
+  <view class="shop-heading"><view><view class="eyebrow">五色应时 · 知时而行</view><view class="screen-title">一色一香，一时一境</view></view><image class="shop-logo" src="/assets/brand/logo.png" mode="aspectFit"/></view>
+  <button class="shop-hero" bindtap="toGift">
+    <image src="/assets/brand/gift.jpg" mode="aspectFill"/>
+    <view class="hero-copy"><view class="hero-title">五色知时线香套装</view><view>随时序择色，也随心择香</view><text>赏阅礼盒　↗</text></view>
+  </button>
+  <view class="catalog-header"><view class="filters"><button wx:for="{{filters}}" wx:key="id" data-id="{{item.id}}" bindtap="filterProducts" class="{{category === item.id ? 'active' : ''}}">{{item.name}}</button></view><text>{{visibleProducts.length}} 款</text></view>
   <view class="product-grid">
-    <view wx:for="{{products}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
-      <view class="product-visual tone-bg-{{item.tone}}"><view class="single-tube tone-{{item.tone}}"></view><view class="element-mark">{{item.element}}</view></view>
-      <view class="product-info"><view class="product-name">{{item.name}} <text>· {{item.element}}</text></view><view class="product-scent">{{item.scent}}</view><view class="product-bottom"><view><text class="currency">¥</text><text class="single-price">59</text></view><button class="plus" data-id="{{item.id}}" catchtap="addProduct">＋</button></view></view>
-    </view>
+    <button wx:for="{{visibleProducts}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
+      <view class="product-picture"><image src="{{item.image}}" mode="aspectFill"/><text class="product-tag">{{item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
+      <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price">¥{{item.price}}<text>参考价</text><text class="product-arrow">↗</text></view></view>
+    </button>
   </view>
-
-  <view class="service-card"><view class="section-title">购买与权益说明</view><view class="service-row"><text>01</text><view><strong>商品确认收货后发卡</strong><small>物流签收不直接发卡，减少售后争议</small></view></view><view class="service-row"><text>02</text><view><strong>服务卡一年内开启</strong><small>开启后连续使用30天，同一时间只使用一张</small></view></view><view class="service-row"><text>03</text><view><strong>支持赠送好友</strong><small>领取前可撤回，好友领取后不可再次转赠</small></view></view></view>
-  <view class="safety-note">香品用于日常香气体验与传统文化生活仪式。请注意用火和通风，远离儿童、宠物及易燃物。</view>
-
-  <view class="cart-float" bindtap="openCart"><view class="cart-icon"><text></text></view><text>购物车</text><view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view></view>
-
-  <view wx:if="{{selectedProduct}}" class="overlay" catchtap="closeProduct"><view class="product-sheet" catchtap="noop">
-    <view class="sheet-handle"></view><view class="sheet-visual tone-bg-{{selectedProduct.tone}}"><view class="single-tube large tone-{{selectedProduct.tone}}"></view><view class="element-mark large-mark">{{selectedProduct.element}}</view></view>
-    <view class="sheet-content"><view class="sheet-title">{{selectedProduct.name}} · {{selectedProduct.element}}</view><view class="sheet-spec">{{selectedProduct.spec}} · 大部分地区包邮</view><view class="sheet-section"><text>香气</text><view>{{selectedProduct.scent}}</view></view><view class="sheet-section"><text>配方</text><view>{{selectedProduct.ingredients}}</view></view><view class="sheet-price"><view><text class="currency">¥</text><text class="price">{{selectedProduct.price}}</text></view><button bindtap="addSelected">加入购物车</button></view></view>
-  </view></view>
-
-  <view wx:if="{{showCart}}" class="overlay" catchtap="closeCart"><view class="cart-sheet" catchtap="noop"><view class="sheet-handle"></view><view class="cart-title">购物车 <text>{{cartCount}}件</text></view>
-    <view wx:if="{{!cartItems.length}}" class="empty-cart">购物车还是空的，先挑选喜欢的香品吧。</view>
-    <view wx:for="{{cartItems}}" wx:key="id" class="cart-item"><view class="mini-swatch tone-{{item.tone}}"></view><view class="cart-main"><strong>{{item.name}}</strong><text>¥{{item.price}} · {{item.spec}}</text></view><view class="quantity"><button data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity">−</button><text>{{item.quantity}}</text><button data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity">＋</button></view></view>
-    <view wx:if="{{cartItems.length}}" class="checkout"><view><text>合计</text><strong>¥{{cartTotal}}</strong></view><button bindtap="checkout">去结算</button></view>
-  </view></view>
+  <view class="shop-note">目前为商品展示，价格与规格以正式开售信息为准。</view>
+  <view class="shop-story"><view class="eyebrow">五方图腾 · 五色香气</view><view>从一缕香开始，<text>把时间还给自己。</text></view></view>
+  <view class="bag-bar"><button class="bag-open" bindtap="openCart">购物袋 <text>{{cartCount}}</text></button><text class="bag-total">{{cartCount ? '参考合计 ¥' + cartTotal : '循心选香'}}</text><button class="bag-view" bindtap="openCart">查看清单 ›</button></view>
+  <view wx:if="{{showCart}}" class="scrim" bindtap="closeCart" catchtouchmove="noop"/>
+  <view wx:if="{{showCart}}" class="sheet">
+    <view class="sheet-head"><view class="sheet-title">我的购物袋</view><button class="sheet-close" bindtap="closeCart" aria-label="关闭">×</button></view>
+    <view wx:if="{{!cartItems.length}}" class="empty-state"><view class="empty-mark">香</view><view class="empty-title">还没有选中的香</view><view class="muted">在商品详情中，把喜欢的香加入购物袋。</view><button class="outline-button" bindtap="closeCart">继续选香</button></view>
+    <block wx:else>
+      <view wx:for="{{cartItems}}" wx:key="id" class="cart-row">
+        <image src="{{item.image}}" mode="aspectFill"/>
+        <view class="cart-copy"><view>{{item.name}}</view><text>¥{{item.price}} · 参考价</text></view>
+        <view class="quantity"><button data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity" aria-label="减少数量">−</button><text>{{item.quantity}}</text><button data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity" disabled="{{item.quantity >= 99}}" aria-label="增加数量">＋</button></view>
+      </view>
+      <view class="cart-summary"><text>共 {{cartCount}} 件</text><text>参考合计 ¥{{cartTotal}}</text></view>
+      <button class="solid-button" bindtap="checkout">开售说明</button>
+      <view class="cart-note">本机选香清单 · 暂未开放下单</view>
+    </block>
+  </view>
 </view>

@@ -1,29 +1,53 @@
 {
   "pages": [
     "pages/home/index",
-    "pages/chat/index",
     "pages/caikuxiang/index",
+    "pages/chat/index",
     "pages/settings/index",
-    "pages/profile/index"
+    "pages/profile/index",
+    "pages/product/index",
+    "pages/orders/index"
   ],
   "window": {
     "navigationBarTitleText": "今日五色",
-    "navigationBarBackgroundColor": "#F4EFE5",
-    "navigationBarTextStyle": "black",
-    "backgroundColor": "#F4EFE5"
+    "navigationBarBackgroundColor": "#0D0E0D",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0D0E0D",
+    "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "color": "#77756E",
-    "selectedColor": "#183F35",
-    "backgroundColor": "#FBF9F4",
-    "borderStyle": "white",
+    "custom": true,
+    "color": "#97866C",
+    "selectedColor": "#E1B97F",
+    "backgroundColor": "#0D0E0D",
+    "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/home/index", "text": "今日五色" },
-      { "pagePath": "pages/chat/index", "text": "AI国学" },
-      { "pagePath": "pages/caikuxiang/index", "text": "财库香" },
-      { "pagePath": "pages/settings/index", "text": "我的" }
+      {
+        "pagePath": "pages/home/index",
+        "text": "今日五色",
+        "iconPath": "assets/nav/today.png",
+        "selectedIconPath": "assets/nav/today-active.png"
+      },
+      {
+        "pagePath": "pages/caikuxiang/index",
+        "text": "产品商城",
+        "iconPath": "assets/nav/shop.png",
+        "selectedIconPath": "assets/nav/shop-active.png"
+      },
+      {
+        "pagePath": "pages/chat/index",
+        "text": "AI国学",
+        "iconPath": "assets/nav/ai.png",
+        "selectedIconPath": "assets/nav/ai-active.png"
+      },
+      {
+        "pagePath": "pages/settings/index",
+        "text": "我的",
+        "iconPath": "assets/nav/mine.png",
+        "selectedIconPath": "assets/nav/mine-active.png"
+      }
     ]
   },
-  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
 }

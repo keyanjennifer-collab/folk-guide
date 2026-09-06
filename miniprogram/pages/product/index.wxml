@@ -1,0 +1,18 @@
+<view class="product-page">
+  <block wx:if="{{product}}">
+    <swiper class="product-gallery" indicator-dots="{{images.length > 1}}" indicator-color="#625b4b" indicator-active-color="#d3bb87">
+      <swiper-item wx:for="{{images}}" wx:key="*this"><image src="{{item}}" mode="aspectFit"/></swiper-item>
+    </swiper>
+    <view class="product-body">
+      <view class="detail-heading"><view><view class="eyebrow">{{product.element}} · {{product.beast}}</view><view class="product-title">{{product.name}}</view><view class="product-mood">{{product.mood}}</view></view><image class="product-emblem" src="{{product.emblem}}" mode="aspectFit"/></view>
+      <view class="price-row"><text class="price">¥{{product.price}}</text><text>参考价 · 尚未开售</text></view>
+      <view class="quantity-row"><text>数量</text><view><button bindtap="changeQuantity" data-delta="-1" disabled="{{quantity <= 1}}" aria-label="减少数量">−</button><text>{{quantity}}</text><button bindtap="changeQuantity" data-delta="1" disabled="{{quantity >= 99}}" aria-label="增加数量">＋</button></view></view>
+      <view class="detail-section"><view class="detail-label">香气札记</view><view class="story">{{product.story}}</view><view class="notes">{{product.scent}}</view></view>
+      <view class="detail-section"><view class="detail-label">{{product.category === 'set' ? '一盒五色' : '五色之中，循心选择'}}</view><view class="story">{{product.category === 'set' ? '青木香、朱蜜香、黄檀香、白桂香、墨沉香。五款线香与对应矿石香插，承载一份应时心意。' : '香盒沿用五行图腾与色彩。可依今日五色选择，也可循自己的气息偏好。'}}</view></view>
+      <view class="detail-section"><view class="detail-label">使用与养护</view><view class="care-row">置于稳固、耐热的香插上，在通风处点燃。</view><view class="care-row">远离易燃物、儿童与宠物；离开时请将余火熄灭。</view><view class="care-row">密封存放于阴凉干燥处，避免日晒与受潮。</view></view>
+      <view class="purchase-note">当前为商品展示。最终规格、库存、价格及配送信息将在开售时公布。</view>
+    </view>
+    <view class="product-actions"><button class="back-shop" bindtap="toShop">商城 / 购物袋</button><button class="add-bag" bindtap="addToBag">{{added ? '已加入 · 再添一份' : '加入购物袋'}}</button></view>
+  </block>
+  <view wx:else class="empty-state"><view class="empty-title">没有找到这款香品</view><button class="outline-button" bindtap="toShop">返回商城</button></view>
+</view>

@@ -1,9 +1,9 @@
 {
-  "description": "民俗生活助手微信小程序",
+  "description": "五色知时 · 今日五色、产品商城、AI国学与我的",
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
-  "appid": "wx349bf6810a9a559a",
-  "projectname": "folk-guide",
+  "appid": "wx071d4f5e34e12c95",
+  "projectname": "五色知时",
   "setting": {
     "useCompilerPlugins": [
       "typescript"
@@ -22,17 +22,20 @@
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
-    "condition": false,
+    "condition": true,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
     }
   },
-  "simulatorPluginLibVersion": {},
+  "simulatorPluginLibVersion": {
+    "wxext14566970e7e9f62": "2.27.3"
+  },
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "editorSetting": {}
+  "editorSetting": {},
+  "projectArchitecture": "multiPlatform"
 }

@@ -1,0 +1,27 @@
+<view class="orders-page">
+  <view class="screen-heading"><view><view class="eyebrow">每一份香，都有来处</view><view class="screen-title">我的订单</view></view><image class="order-logo" src="/assets/brand/logo.png" mode="aspectFit"/></view>
+  <scroll-view class="order-tabs" scroll-x enable-flex><button wx:for="{{tabs}}" wx:key="id" class="{{status === item.id ? 'active' : ''}}" bindtap="selectTab" data-id="{{item.id}}">{{item.label}}</button></scroll-view>
+  <view wx:if="{{!loggedIn}}" class="empty-state"><view class="empty-mark">匣</view><view class="empty-title">登录后，查看你的订单</view><view class="muted">订单与物流信息会保存在你的账号中。</view><button class="outline-button" bindtap="toLogin">去登录</button></view>
+  <view wx:elif="{{error}}" class="empty-state"><view class="empty-title">暂时无法读取订单</view><view class="muted">{{error}}</view><button class="outline-button" bindtap="retry">重新读取</button></view>
+  <view wx:elif="{{loading && !orders.length}}" class="empty-state"><view class="muted">正在读取你的订单…</view></view>
+  <view wx:elif="{{!orders.length}}" class="empty-state"><view class="empty-mark">香</view><view class="empty-title">{{status === 'all' ? '还没有订单' : '这里还没有相关订单'}}</view><view class="muted">去看看五色香，为日常留一缕香气。</view><button class="outline-button" bindtap="toShop">逛逛五色香</button></view>
+  <view wx:else class="order-list">
+    <button wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="showDetail">
+      <view class="order-top"><text>{{item.dateLabel}}</text><text>{{item.statusLabel}}</text></view>
+      <view class="order-product"><image src="{{item.thumbnail}}" mode="aspectFill"/><view><view>{{item.itemLabel}}</view><text>共 {{item.quantity}} 件</text></view></view>
+      <view class="order-total"><text>合计 ¥{{item.amount}}</text><text>订单详情 ›</text></view>
+    </button>
+    <view class="page-foot">{{loading ? '正在读取…' : hasMore ? '上拉查看更多' : '已显示全部订单'}}</view>
+  </view>
+  <view wx:if="{{selected}}" class="scrim" bindtap="closeDetail" catchtouchmove="noop"/>
+  <view wx:if="{{selected}}" class="sheet">
+    <view class="sheet-head"><view class="sheet-title">订单详情</view><button class="sheet-close" bindtap="closeDetail" aria-label="关闭">×</button></view>
+    <view class="detail-status">{{selected.statusLabel}}</view>
+    <view class="order-detail-row" wx:for="{{selected.items}}" wx:key="product_id"><text>{{item.name}}</text><text>× {{item.quantity}}</text></view>
+    <view class="order-detail-row"><text>订单金额</text><text>¥{{selected.amount}}</text></view>
+    <view class="order-detail-row"><text>订单编号</text><button class="text-button" bindtap="copyNumber">{{selected.number}} · 复制</button></view>
+    <view class="order-detail-row"><text>下单日期</text><text>{{selected.dateLabel}}</text></view>
+    <block wx:if="{{selected.tracking_number}}"><view class="order-detail-row"><text>物流公司</text><text>{{selected.carrier || '承运中'}}</text></view><button class="outline-button" bindtap="copyTracking">复制物流单号</button></block>
+    <view class="muted order-tip">订单状态由服务端更新。在线支付与售后申请尚未开放。</view>
+  </view>
+</view>

@@ -26,6 +26,7 @@ from .models import AIConversationMessage, AIServiceGrant, BirthProfile, ChatMes
 from .profile_service import profile_output
 from .public_guide_routes import router as public_guide_router
 from .knowledge_routes import router as knowledge_router
+from .order_routes import Order, router as order_router
 from .schemas import (
     BirthProfileInput,
     BirthProfileOutput,
@@ -147,6 +148,7 @@ app.include_router(daily_color_rule_router)
 app.include_router(knowledge_router)
 app.include_router(ai_router)
 app.include_router(daily_update_router)
+app.include_router(order_router)
 
 
 @app.get("/health", tags=["系统状态"], summary="检查后端服务是否正常")
@@ -365,6 +367,7 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(AIServiceGrant).filter(AIServiceGrant.user_id == user.id).delete()
     db.query(ChatMessage).filter(ChatMessage.user_id == user.id).delete()
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
+    db.query(Order).filter(Order.user_id == user.id).delete()
     db.delete(user)
     db.commit()
     return Response(status_code=204)

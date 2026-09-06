@@ -1,0 +1,6 @@
+<view class="tabbar">
+  <button wx:for="{{tabs}}" wx:key="path" class="tab {{selected === index ? 'active' : ''}}" data-index="{{index}}" bindtap="switchTab" aria-label="{{item.label}}" aria-role="tab" aria-selected="{{selected === index}}">
+    <image src="{{'/assets/nav/' + item.icon + (selected === index ? '-active' : '') + '.png'}}" mode="aspectFit"/>
+    <text>{{item.label}}</text>
+  </button>
+</view>

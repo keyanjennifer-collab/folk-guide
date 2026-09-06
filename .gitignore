@@ -22,3 +22,10 @@ project.private.config.json
 docs/
 tools/generate_quick_run_report_doc.py
 .DS_Store
+# 本机服务与模拟器验收材料不参与共享部署
+backend/com.wusezhishi.local-api.plist
+preview/qa/
+# 开发者工具自动生成的独立 App 适配配置；当前交付为微信小程序
+project.miniapp.json
+miniprogram/app.miniapp.json
+i18n/

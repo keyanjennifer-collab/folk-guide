@@ -1,4 +1,5 @@
-import { getApiErrorMessage, isApiError } from "../../services/api";
+import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
+import { productForElement } from "../../data/products";
 import {
   AIHistoryRecord,
   AIQuota,
@@ -30,6 +31,7 @@ const WELCOME: ChatItem = {
   role: "assistant",
   text: "你好。你可以问我传统典籍、五行五色、历法时序以及相关文化问题。",
 };
+let chatLoadVersion = 0;
 
 function daysLeft(expiresAt: string | null): number {
   if (!expiresAt) return 0;
@@ -59,6 +61,10 @@ function historyMessages(records: AIHistoryRecord[]): ChatItem[] {
 
 Page({
   data: {
+    isLoggedIn: false,
+    activeGroup: 0,
+    personalOpen: false,
+    inputFocus: false,
     loading: true,
     serviceActive: false,
     answerReady: false,
@@ -96,9 +102,19 @@ Page({
   },
 
   async onShow() {
+    const loadVersion = ++chatLoadVersion;
+    if (!getToken()) {
+      this.setData({ isLoggedIn: false, loading: false, serviceActive: false, answerReady: false,
+        serviceTitle: "登录后开启国学对话", serviceCopy: "保存问答记录，查看个人五色",
+        messages: [WELCOME], personalState: "locked", personalColors: [],
+        remainingQuestions: 0, dailyLimit: 0, personalOpen: false, sending: false });
+      return;
+    }
+    this.setData({ isLoggedIn: true });
     this.setData({ loading: true });
     try {
       const [quota, history] = await Promise.all([getAIQuota(), getAIHistory(20)]);
+      if (loadVersion !== chatLoadVersion || !getToken()) return;
       this.applyQuota(quota);
       this.setData({ messages: historyMessages(history) });
       // 先确认权益，再决定是否请求个人接口；无权益时不加载生辰计算结果。
@@ -110,6 +126,7 @@ Page({
       });
       this.setData({ loading: false });
     } catch (error: unknown) {
+      if (loadVersion !== chatLoadVersion) return;
       this.setData({
         loading: false,
         serviceActive: false,
@@ -120,6 +137,9 @@ Page({
       });
     }
   },
+
+  onHide() { chatLoadVersion++; },
+  onUnload() { chatLoadVersion++; },
 
   applyQuota(quota: AIQuota) {
     const remainingDays = daysLeft(quota.expires_at);
@@ -144,15 +164,20 @@ Page({
   },
 
   async loadPersonalDaily() {
+    const token = getToken();
     this.setData({ personalState: "loading", personalStatusCopy: "正在按本人档案计算今日五色…" });
     try {
       const result = await getPersonalDailyGuidance();
+      if (getToken() !== token) return;
       this.setData({
         personalState: "ready",
         personalStatusCopy: "今日个人五色已按档案与北京时间时序生成。",
         personalDate: result.date,
         personalPrecision: result.precision_mode === "four_pillars" ? "完整四柱" : "三柱参考",
-        personalColors: result.colors.map((item) => ({ ...item, tone: PERSONAL_TONE_MAP[item.name] || "" })),
+        personalColors: result.colors.map((item) => {
+          const product = productForElement(item.element);
+          return { ...item, name: product?.color || item.name, incense: product?.name || item.incense, scent: product?.scent || item.scent, tone: PERSONAL_TONE_MAP[item.name] || "" };
+        }),
         expandedPersonalRank: 1,
         personalPrimaryColor: result.primary_color,
         personalSupportingColors: result.supporting_colors.join("、"),
@@ -164,6 +189,7 @@ Page({
         personalCultureNote: result.culture_note,
       });
     } catch (error: unknown) {
+      if (getToken() !== token) return;
       if (isApiError(error, 409)) {
         this.setData({
           personalState: "missing",
@@ -203,10 +229,13 @@ Page({
     this.setData({ question: event.detail.value });
   },
 
+  toLogin() { wx.switchTab({ url: "/pages/settings/index" }); },
+  chooseGroup(event: WechatMiniprogram.TouchEvent) { this.setData({ activeGroup: Number(event.currentTarget.dataset.index) }); },
+  togglePersonal() { this.setData({ personalOpen: !this.data.personalOpen }); },
+
   chooseQuestion(event: WechatMiniprogram.TouchEvent) {
     const question = String(event.currentTarget.dataset.question || "");
-    this.setData({ question });
-    this.sendQuestion(question);
+    this.setData({ question, inputFocus: true });
   },
 
   send() {
@@ -215,6 +244,7 @@ Page({
 
   async sendQuestion(question: string) {
     if (!question || this.data.sending) return;
+    if (!getToken()) { this.toLogin(); return; }
     if (!this.data.serviceActive) {
       wx.showModal({ title: "问答服务未开通", content: "当前没有可用的AI国学体验或服务权益。", showCancel: false });
       return;
@@ -231,8 +261,11 @@ Page({
 
     const pendingMessages: ChatItem[] = [...this.data.messages, { role: "user", text: question }];
     this.setData({ sending: true, question: "", messages: pendingMessages });
+    wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 250 }));
+    const tokenAtSend = getToken();
     try {
       const result = await askAI(question, comparison ? "seven_day_comparison" : "normal");
+      if (getToken() !== tokenAtSend) { this.setData({ sending: false, messages: [WELCOME] }); return; }
       const assistant: ChatItem = {
         role: "assistant",
         text: result.answer,
@@ -247,8 +280,9 @@ Page({
         messages: [...pendingMessages, assistant],
         [quotaField]: result.remaining_today,
       });
+      wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 250 }));
     } catch (error: unknown) {
-      this.setData({ sending: false });
+      this.setData({ sending: false, question });
       if (isApiError(error, 429)) {
         wx.showModal({ title: "今日次数已用完", content: error.message, showCancel: false });
       } else if (isApiError(error, 403)) {
@@ -277,7 +311,7 @@ Page({
   showRules() {
     wx.showModal({
       title: "服务与回答范围",
-      content: "新用户赠送3天体验，每日20次普通问答、2次七日比较。内容用于传统文化学习和生活参考，不提供医疗、投资、灾祸或确定命运的结论。",
+      content: "可询问传统典籍、五行五色与历法时序，问答权益以当前账号显示为准。个人五色需先完善本人档案。回答仅作文化学习和生活参考，保留自己的判断。",
       showCancel: false,
     });
   },

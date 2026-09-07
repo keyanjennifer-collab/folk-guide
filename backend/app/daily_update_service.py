@@ -491,6 +491,18 @@ async def daily_cache_scheduler_loop() -> None:
             run_daily_cache_update_with_retry,
             trigger="scheduler",
         )
+        # 最终失败不能直接睡到下一个零点，否则当天内容会整日断更。
+        # 失败日期下一轮会接管 failed 租约并按幂等缓存重试；限制间隔避免
+        # 外部依赖持续故障时形成紧循环，同时不影响跨零点的日期切换。
+        if result.status == "failed":
+            retry_delay = max(min(get_settings().daily_cache_retry_seconds, 300.0), 1.0)
+            logger.warning(
+                "daily_cache_scheduler_retry_after_failure target_date=%s delay_seconds=%.1f",
+                result.target_date,
+                retry_delay,
+            )
+            await asyncio.sleep(retry_delay)
+            continue
         # 极端情况下任务在23:59启动并跨过零点，应立即补跑新的北京时间日期。
         if result.target_date != beijing_today():
             continue

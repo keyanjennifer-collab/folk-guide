@@ -18,7 +18,7 @@ def test_orders_are_owner_scoped_and_read_only():
         with SessionLocal() as db:
             for uid, number, status in [(alice_id, "TEST-A1", "pending"), (alice_id, "TEST-A2", "shipped"), (bob_id, "TEST-B1", "paid")]:
                 db.add(Order(user_id=uid, number=number, status=status, total_fen=5900,
-                    items_json=json.dumps([{"product_id": "green", "name": "青木香", "quantity": 1, "unit_price_fen": 5900}])))
+                    items_json=json.dumps([{"product_id": "green", "name": "青木", "quantity": 1, "unit_price_fen": 5900}])))
             db.commit()
         assert client.get("/api/orders").status_code in (401, 403)
         result = client.get("/api/orders", headers=alice, params={"limit": 1}).json()

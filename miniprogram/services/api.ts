@@ -43,13 +43,26 @@ export class ApiError extends Error {
   readonly statusCode: number;
   readonly kind: ApiErrorKind;
   readonly responseData?: unknown;
+  /** 后端返回的稳定机器码，例如 daily_guide_pending。 */
+  readonly code?: string;
+  /** 后端业务状态，例如 pending_confirmation 或 unavailable。 */
+  readonly status?: string;
 
-  constructor(message: string, statusCode = 0, kind: ApiErrorKind = "http", responseData?: unknown) {
+  constructor(
+    message: string,
+    statusCode = 0,
+    kind: ApiErrorKind = "http",
+    responseData?: unknown,
+    code?: string,
+    status?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.kind = kind;
     this.responseData = responseData;
+    this.code = code;
+    this.status = status;
   }
 }
 
@@ -86,7 +99,25 @@ function extractFastApiDetail(data: unknown): string {
       .filter(Boolean);
     return messages.join("；");
   }
+  if (detail && typeof detail === "object") {
+    const message = (detail as { message?: unknown; detail?: unknown }).message
+      ?? (detail as { detail?: unknown }).detail;
+    return typeof message === "string" ? message : "";
+  }
   return "";
+}
+
+/** 读取后端错误对象中的稳定机器码和业务状态。 */
+function extractFastApiMetadata(data: unknown): { code?: string; status?: string } {
+  if (!data || typeof data !== "object") return {};
+  const detail = (data as { detail?: unknown }).detail;
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) return {};
+  const code = (detail as { code?: unknown }).code;
+  const status = (detail as { status?: unknown }).status;
+  return {
+    code: typeof code === "string" ? code : undefined,
+    status: typeof status === "string" ? status : undefined,
+  };
 }
 
 /** 后端没有提供 detail 时，根据状态码给出稳定的中文提示。 */
@@ -145,9 +176,10 @@ function sendOnce<T>(options: ApiRequestOptions): Promise<T> {
           resolve(response.data as T);
           return;
         }
+        const metadata = extractFastApiMetadata(response.data);
         const detail = extractFastApiDetail(response.data) || statusFallback(response.statusCode);
         const kind: ApiErrorKind = response.statusCode === 401 || response.statusCode === 403 ? "auth" : "http";
-        reject(new ApiError(detail, response.statusCode, kind, response.data));
+        reject(new ApiError(detail, response.statusCode, kind, response.data, metadata.code, metadata.status));
       },
       fail: (error) => reject(networkError(error)),
     });

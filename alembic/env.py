@@ -15,6 +15,7 @@ if str(BACKEND) not in sys.path:
 
 from app.database import Base  # noqa: E402
 from app import models  # noqa: F401,E402
+from app.order_routes import Order  # noqa: F401,E402
 
 config = context.config
 database_url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")

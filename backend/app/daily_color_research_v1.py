@@ -30,6 +30,8 @@ from .daily_color_rule_config import (
 
 PUBLIC_RESEARCH_VERSION = "wuse-public-research-v1.0"
 PERSONAL_RESEARCH_VERSION = "wuse-personal-research-v1.0"
+# 公共与个人引擎均使用同一确定性同分顺序，避免两份列表日后漂移。
+COLOR_TIE_BREAK_ORDER = ["绿金", "红金", "黄金", "白金", "黑金"]
 
 
 # 二十四节气按其所在月建的主五行归类：寅卯木、辰土、巳午火、未土、申酉金、
@@ -74,7 +76,7 @@ PUBLIC_RESEARCH_CONFIG = PublicRuleConfiguration(
     solar_term_elements=SOLAR_TERM_ELEMENT_V1,
     # 精确同分仅用于保证缓存和测试的确定性。顺序采用木→火→土→金→水的相生循环，
     # 不表示在任何日期木色天然优先。
-    tie_break_color_order=["绿金", "红金", "黄金", "白金", "黑金"],
+    tie_break_color_order=COLOR_TIE_BREAK_ORDER,
     tendency_thresholds=TendencyThresholds(
         strong_support_min=18,
         support_min=8,
@@ -159,7 +161,7 @@ PERSONAL_RESEARCH_CONFIG = PersonalRuleConfiguration(
     deficiency_adjustment_limit=15.0,
     birth_structure_weight=70,
     public_environment_weight=30,
-    tie_break_color_order=["绿金", "红金", "黄金", "白金", "黑金"],
+    tie_break_color_order=COLOR_TIE_BREAK_ORDER,
     tendency_thresholds=TendencyThresholds(
         strong_support_min=22,
         support_min=10,
@@ -174,4 +176,3 @@ PERSONAL_RESEARCH_CONFIG = PersonalRuleConfiguration(
         "《协纪辨方书》主要用于历法与择日义例，本版本不把其宜忌条目直接换算成个人颜色分。",
     ],
 )
-

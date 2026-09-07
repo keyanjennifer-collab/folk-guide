@@ -1,26 +1,20 @@
-import { getApiErrorMessage, isApiError, request } from "../../services/api";
-import { Product, PRODUCTS, SINGLE_PRODUCTS, SCENT_DETAILS, productForElement } from "../../data/products";
+import { Product, PRODUCTS, SINGLE_PRODUCTS, SCENT_DETAILS } from "../../data/products";
+import { getPublicDailyGuide, isPublicDailyGuidePending, isPublicDailyGuideUnavailable, PublicDailyGuide } from "../../services/daily";
 
-type Guide = {
-  rank: number; name: string; element: string; status: string; suitable: string[];
-  resistance: string; advice: string; product: Product;
-};
-type PublicGuide = {
-  guide_date: string; weekday: string; lunar_date: string; solar_term: string; day_ganzhi: string;
-  items: { rank: number; color: string; element: string; smoothness: string; suitable: string[]; resistance: string; advice: string }[];
-  share_title: string;
-};
+type Guide = { rank: number; name: string; element: string; status: string; suitable: string[]; resistance: string; advice: string; product: Product; [key: string]: any };
+
+const COLOR_TO_PRODUCT: Record<string, string> = { 白金: "white", 绿金: "green", 黑金: "black", 红金: "red", 黄金: "gold" };
+const ELEMENT_TO_PRODUCT: Record<string, string> = { 金: "white", 木: "green", 水: "black", 火: "red", 土: "gold" };
+const beijingDate = () => new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
 let midnightTimer: ReturnType<typeof setTimeout> | undefined;
-const ordinal = ["壹", "贰", "叁", "肆", "伍"];
-
 Page({
   data: {
     guides: [] as Guide[], selected: null as Guide | null,
     details: SCENT_DETAILS, statusBarHeight: 44, primaryElement: "",
-    rankLabels: ["得时之色", "相助之色", "守衡之色", "费力之色", "慎行之色"],
-    scent: SINGLE_PRODUCTS[0], scents: SINGLE_PRODUCTS, gift: PRODUCTS[0], ordinal,
-    contentSource: "loading", contentMessage: "", dateLabel: "", calendarLabel: "每日按北京时间更新",
-    term: "静候时序", showGuide: false, shareTitle: "五色知时 · 今日五色",
+    scent: SINGLE_PRODUCTS[0], scents: SINGLE_PRODUCTS, gift: PRODUCTS[0], source: "每日公开资料",
+    contentSource: "loading", contentMessage: "", dateLabel: "", calendarLabel: "",
+    term: "", showGuide: false, isToday: false, summary: "",
+    shareTitle: "五色知时 · 今日五色",
   },
   onLoad() { this.setData({ statusBarHeight: wx.getWindowInfo().statusBarHeight }); },
   onShow() { void this.loadToday(); this.scheduleRefresh(); },
@@ -34,43 +28,50 @@ Page({
     midnightTimer = setTimeout(() => { void this.loadToday(); this.scheduleRefresh(); }, Math.max(1000, next - now + 1000));
   },
   async loadToday() {
-    this.setData({ contentSource: "loading", selected: null, guides: [], showGuide: false });
+    this.setData({ contentSource: "loading", contentMessage: "正在读取今日公开资料…", selected: null, guides: [], showGuide: false });
     try {
-      const data = await request<PublicGuide>({ path: "/api/public-guides/today", auth: false, showError: false, retryOnUnauthorized: false });
-      const guides = data.items.map(item => {
-        const product = productForElement(item.element);
-        if (!product) throw new Error("Unknown element");
-        return { rank: item.rank, name: product.color, element: item.element, status: item.smoothness,
-          suitable: item.suitable, resistance: item.resistance, advice: item.advice, product };
+      const payload: PublicDailyGuide = await getPublicDailyGuide();
+      const date = payload.guide_date;
+      const isToday = date === beijingDate();
+      const hasPublishedStatus = payload.status === undefined || payload.status === "published";
+      if (!hasPublishedStatus || !date || !Array.isArray(payload.items) || payload.items.length !== 5) throw new Error("not-published");
+      const guides = payload.items.map<Guide>(item => {
+        const code = item.product_code || "";
+        const codeKey = code.match(/(?:JIN|MU|SHUI|HUO|TU)/)?.[0];
+        const productId = COLOR_TO_PRODUCT[item.color] || ELEMENT_TO_PRODUCT[item.element] || (codeKey ? { JIN: "white", MU: "green", SHUI: "black", HUO: "red", TU: "gold" }[codeKey] : undefined);
+        const product = PRODUCTS.find(p => p.id === productId);
+        if (!product) throw new Error("unknown-product");
+        return { ...item, name: product.color, element: item.element, tier: item.smoothness, status: item.smoothness,
+          palette: item.suitable.join("、"), product };
       }).sort((a, b) => a.rank - b.rank);
-      if (guides.length !== 5 || new Set(guides.map(item => item.element)).size !== 5) throw new Error("Invalid guides");
-      this.setData({ guides, selected: guides[0], scent: guides[0].product, contentSource: "ready",
-        primaryElement: guides[0].element,
-        dateLabel: data.guide_date.slice(5).replace("-", " · "), term: data.solar_term,
-        calendarLabel: data.lunar_date + " · " + data.day_ganzhi + "日 · " + data.weekday,
-        shareTitle: "五色知时 · 今日主色 " + guides[0].name,
-      });
+      if (new Set(guides.map(item => item.element)).size !== 5) throw new Error("invalid-ranking");
+      this.setData({ guides, selected: guides[0], scent: guides[0].product, contentSource: "ready", showGuide: false,
+        primaryElement: guides[0].element, dateLabel: date.slice(5).replace("-", " · "), term: payload.solar_term,
+        isToday, summary: payload.share_summary,
+        source: payload.rule_version || "每日公开资料",
+        calendarLabel: payload.lunar_date + " · " + payload.day_ganzhi + "日 · " + payload.weekday,
+        shareTitle: payload.share_title || `五色知时 · ${date} 今日五色` });
     } catch (error) {
-      this.setData({ contentSource: "error", guides: [], selected: null, dateLabel: "", term: "静候时序",
-        primaryElement: "",
-        calendarLabel: "每日按北京时间更新",
-        contentMessage: isApiError(error, 404) ? "今日内容正在准备，请稍后再来。" : getApiErrorMessage(error, "暂时无法读取今日五色，请重新读取。") });
+      const pending = isPublicDailyGuidePending(error);
+      const unavailable = isPublicDailyGuideUnavailable(error) || !pending;
+      this.setData({ contentSource: unavailable ? "error" : "waiting", guides: [], selected: null, isToday: false, dateLabel: "", term: pending ? "待更新" : "暂时不可用", primaryElement: "", summary: "",
+        calendarLabel: pending ? "公开资料发布后会显示今日色序" : "服务器恢复后可重新读取", contentMessage: pending ? "今日暂无已发布的五色资料，请稍后再来看看。" : "今日五色暂时无法读取，请点击重试。" });
     }
   },
   selectGuide(event: WechatMiniprogram.TouchEvent) {
-    const guide = this.data.guides.find(item => item.rank === Number(event.currentTarget.dataset.rank));
-    if (guide) this.setData({ selected: guide, scent: guide.product });
+    const guide=this.data.guides.find(item=>item.rank===Number(event.currentTarget.dataset.rank));
+    if(guide)this.setData({selected:guide,scent:guide.product});
   },
   selectScent(event: WechatMiniprogram.TouchEvent) {
-    const scent = SINGLE_PRODUCTS.find(item => item.id === event.currentTarget.dataset.id);
-    if (scent) this.setData({ scent });
+    const scent=SINGLE_PRODUCTS.find(item=>item.id===event.currentTarget.dataset.id);
+    if(scent)this.setData({scent});
   },
-  openGuide() { if (this.data.selected) this.setData({ showGuide: true }); },
-  closeGuide() { this.setData({ showGuide: false }); },
-  noop() {},
-  toProduct() { wx.navigateTo({ url: "/pages/product/index?id=" + this.data.scent.id }); },
-  toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
-  toAi() { wx.switchTab({ url: "/pages/chat/index" }); },
-  toMine() { wx.switchTab({ url: "/pages/settings/index" }); },
-  onShareAppMessage() { return { title: this.data.shareTitle, path: "/pages/home/index" }; },
+  openGuide(){if(this.data.selected)this.setData({showGuide:true});},
+  closeGuide(){this.setData({showGuide:false});}, noop(){},
+  toProduct(){wx.navigateTo({url:"/pages/product/index?id="+this.data.scent.id});},
+  toGift(){wx.navigateTo({url:"/pages/product/index?id=gift"});},
+  toExplore(event: WechatMiniprogram.TouchEvent){wx.navigateTo({url:"/pages/explore/index?tab="+(event.currentTarget.dataset.tab||"daily")});},
+  toAi(){wx.switchTab({url:"/pages/chat/index"});},
+  toMine(){wx.switchTab({url:"/pages/settings/index"});},
+  onShareAppMessage(){return{title:this.data.shareTitle,path:"/pages/home/index"};},
 });

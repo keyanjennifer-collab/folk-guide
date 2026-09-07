@@ -1,5 +1,6 @@
 """今日五色公开读取和运营后台接口。"""
 
+import logging
 from datetime import date, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -10,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .admin_auth import require_admin
 from .database import get_db
-from .daily_color_cache_service import ensure_public_color_cache, warm_public_color_cache
+from .daily_color_cache_service import warm_public_color_cache
 from .models import PublicGuide, PublicGuideAudit
 from .public_guide_schemas import AuditOutput, ImportResult, PublicGuideInput, PublicGuideOutput, ScheduleGuideInput
 from .public_guide_service import (
@@ -26,9 +27,36 @@ from .time_service import beijing_today
 
 
 router = APIRouter()
+logger = logging.getLogger("folk_guide.public_guides")
 PUBLIC_TAG = "今日五色·用户端"
 ADMIN_TAG = "今日五色·运营后台"
 ADMIN_PAGE = Path(__file__).with_name("static") / "admin_public_guides.html"
+
+
+def _pending_error(guide_date: date) -> HTTPException:
+    """返回稳定机器状态，避免客户端误把旧内容当作当天内容。"""
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "daily_guide_pending",
+            "status": "pending_confirmation",
+            "guide_date": guide_date.isoformat(),
+            "message": "该日期内容待人工确认",
+        },
+    )
+
+
+def _unavailable_error(guide_date: date) -> HTTPException:
+    """屏蔽数据库/规则引擎异常细节，同时让客户端知道应重试。"""
+    return HTTPException(
+        status_code=503,
+        detail={
+            "code": "daily_guide_unavailable",
+            "status": "unavailable",
+            "guide_date": guide_date.isoformat(),
+            "message": "今日五色暂时无法读取，请稍后重试",
+        },
+    )
 
 
 @router.get("/admin/public-guides", include_in_schema=False)
@@ -52,16 +80,44 @@ def get_guide_or_404(db: Session, guide_date: date) -> PublicGuide:
     summary="读取今日已发布的五色内容",
 )
 def public_today(db: Session = Depends(get_db)):
-    """人工发布内容优先；没有人工内容时返回规则缓存并预热未来7天。"""
-    publish_due_guides(db)
+    """只返回已人工发布内容；没有确认时明确返回待更新状态。"""
     # “今天”必须按北京时间自然日计算，不能依赖服务器安装在哪个时区。
     today = beijing_today()
-    # 无论今天是否有人工发布内容，都维护未来7天自动规则缓存；两者分表保存，不覆盖。
-    automatic_payloads = warm_public_color_cache(db, today)
-    guide = db.scalar(select(PublicGuide).where(PublicGuide.guide_date == today, PublicGuide.status == "published"))
+    try:
+        publish_due_guides(db)
+        guide = db.scalar(select(PublicGuide).where(
+            PublicGuide.guide_date == today,
+            PublicGuide.status == "published",
+        ))
+    except Exception as exc:  # noqa: BLE001 - 对外只暴露稳定状态，详细信息写日志
+        logger.exception(
+            "public_daily_guide_unavailable guide_date=%s error_type=%s",
+            today,
+            type(exc).__name__,
+        )
+        raise _unavailable_error(today) from exc
     if guide is not None:
-        return payload_dict(guide)
-    return automatic_payloads[today]
+        # 已确认内容是主链路；自动预热失败不应让已发布内容断供。
+        try:
+            warm_public_color_cache(db, today)
+        except Exception:  # noqa: BLE001 - 预热失败只记录，不能覆盖已确认内容
+            logger.exception("public_daily_guide_warm_failed guide_date=%s", today)
+        try:
+            return payload_dict(guide)
+        except Exception as exc:  # noqa: BLE001 - 已损坏内容也要返回可识别状态
+            logger.exception("public_daily_guide_invalid_payload guide_date=%s", today)
+            raise _unavailable_error(today) from exc
+    try:
+        # 自动规则缓存仍由每日任务维护，但绝不能作为未经人工确认的公开内容。
+        warm_public_color_cache(db, today)
+    except Exception as exc:  # noqa: BLE001 - 对外只暴露稳定状态，详细信息写日志
+        logger.exception(
+            "public_daily_guide_unavailable guide_date=%s error_type=%s",
+            today,
+            type(exc).__name__,
+        )
+        raise _unavailable_error(today) from exc
+    raise _pending_error(today)
 
 
 @router.get(
@@ -71,16 +127,29 @@ def public_today(db: Session = Depends(get_db)):
     summary="按日期读取已发布的五色内容",
 )
 def public_by_date(guide_date: date, db: Session = Depends(get_db)):
-    """人工发布内容优先；未来7天范围内允许读取自动规则缓存。"""
-    publish_due_guides(db)
-    guide = db.scalar(select(PublicGuide).where(PublicGuide.guide_date == guide_date, PublicGuide.status == "published"))
+    """只返回已人工发布内容；近期尚未确认的日期返回待更新状态。"""
+    try:
+        publish_due_guides(db)
+        guide = db.scalar(select(PublicGuide).where(
+            PublicGuide.guide_date == guide_date,
+            PublicGuide.status == "published",
+        ))
+    except Exception as exc:  # noqa: BLE001 - 对外只暴露稳定状态，详细信息写日志
+        logger.exception(
+            "public_daily_guide_unavailable guide_date=%s error_type=%s",
+            guide_date,
+            type(exc).__name__,
+        )
+        raise _unavailable_error(guide_date) from exc
     if guide is not None:
-        return payload_dict(guide)
+        try:
+            return payload_dict(guide)
+        except Exception as exc:  # noqa: BLE001 - 已损坏内容也要返回可识别状态
+            logger.exception("public_daily_guide_invalid_payload guide_date=%s", guide_date)
+            raise _unavailable_error(guide_date) from exc
     today = beijing_today()
     if today <= guide_date < today + timedelta(days=7):
-        payload = ensure_public_color_cache(db, guide_date)
-        db.commit()
-        return payload
+        raise _pending_error(guide_date)
     raise HTTPException(status_code=404, detail="该日期没有已发布内容")
 
 

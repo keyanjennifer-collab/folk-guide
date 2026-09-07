@@ -1,7 +1,14 @@
 import { PRODUCTS, Product } from "../../data/products";
 import { changeCart } from "../../services/cart";
 Page({
-  data: { product: null as Product | null, quantity: 1, images: [] as string[], added: false },
+  data: {
+    product: null as Product | null,
+    quantity: 1,
+    images: [] as string[],
+    added: false,
+    // 礼盒内容直接来自商品目录，避免在模板中重复维护单品名称。
+    setContents: PRODUCTS.filter(item => item.category === "single").map(item => item.name).join("、") + "。五款线香与对应矿石香插，承载一份应时心意。",
+  },
   onLoad(options: Record<string, string>) {
     const product = PRODUCTS.find(item => item.id === options.id);
     if (product) {

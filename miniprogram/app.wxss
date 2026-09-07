@@ -32,3 +32,19 @@ input, picker { margin: 12rpx 0 24rpx; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
 .sheet-title { font-family: "Songti SC", serif; font-size: 36rpx; }
 .sheet-close { background: transparent; padding: 0 10rpx; color: #c99c5f; font-size: 40rpx; line-height: 1.5; }
+
+/* 明亮材质基线：岩石纹理负责触感，纸白与墨灰负责可读性 */
+page { --paper: #e7e0d3; --ink: #3d3a34; --gold: #9a7139; --line: #c6b9a5; --muted: #756c5c; background: #e7e0d3; color: #3d3a34; }
+.page, .mine-page, .explore-page { background-color: #e7e0d3; background-image: linear-gradient(rgba(235,230,220,.78),rgba(235,230,220,.9)),url('/assets/brand/stone-texture.jpg'); background-size: auto, 640rpx; }
+
+/* C 方向视觉基线：深墨骨架 + 提亮岩面，铜色只做行动与状态强调。 */
+page { --paper: #dcd4c7; --ink: #303531; --gold: #a87945; --line: #b9ad9d; --muted: #706b61; background: #dcd4c7; color: #303531; }
+.page, .mine-page, .explore-page { background-color: #dcd4c7; background-image: linear-gradient(rgba(229,224,215,.82),rgba(214,205,193,.9)),url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.card { background: #292e2a; border-color: #4c554d; color: #eee7db; box-shadow: 0 10rpx 24rpx rgba(44,38,30,.10); }
+.outline-button { border-color: #9e7645; color: #835d32; background: rgba(250,246,237,.36); }
+.solid-button, .button { background: #a87945; color: #fffaf2; }
+.text-button { color: #8d6235; }
+.sheet { background: #262b27; color: #eee7db; border-top: 1rpx solid #5c655d; box-shadow: 0 -12rpx 36rpx rgba(33,29,24,.2); }
+.sheet-title { color: #f0e7d9; }
+.sheet-close { color: #d4a66d; }
+.empty-state .empty-mark { color: #a87945; }

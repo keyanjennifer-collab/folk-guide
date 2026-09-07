@@ -1,5 +1,5 @@
 <view class="orders-page">
-  <view class="screen-heading"><view><view class="eyebrow">每一份香，都有来处</view><view class="screen-title">我的订单</view></view><image class="order-logo" src="/assets/brand/logo.png" mode="aspectFit"/></view>
+  <view class="screen-heading"><view><view class="eyebrow">每一份香，都有来处</view><view class="screen-title">我的订单</view></view><image class="order-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <scroll-view class="order-tabs" scroll-x enable-flex><button wx:for="{{tabs}}" wx:key="id" class="{{status === item.id ? 'active' : ''}}" bindtap="selectTab" data-id="{{item.id}}">{{item.label}}</button></scroll-view>
   <view wx:if="{{!loggedIn}}" class="empty-state"><view class="empty-mark">匣</view><view class="empty-title">登录后，查看你的订单</view><view class="muted">订单与物流信息会保存在你的账号中。</view><button class="outline-button" bindtap="toLogin">去登录</button></view>
   <view wx:elif="{{error}}" class="empty-state"><view class="empty-title">暂时无法读取订单</view><view class="muted">{{error}}</view><button class="outline-button" bindtap="retry">重新读取</button></view>

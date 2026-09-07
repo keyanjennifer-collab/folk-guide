@@ -1,5 +1,5 @@
 <view class="ai-page">
-  <view class="ai-heading"><image src="/assets/brand/logo.png" mode="aspectFit"/><button bindtap="showRules">服务说明</button></view>
+  <view class="ai-heading"><image src="/assets/brand/logo-ai.png" mode="aspectFit"/><button bindtap="showRules">服务说明</button></view>
   <view class="ai-intro"><view class="eyebrow">AI 国学 · 与古今对话</view><view class="ai-title">问典籍，也问生活</view><view class="ai-subtitle">从一问开始，读懂时序里的日常。</view></view>
   <view class="service-strip">
     <view><view class="service-title">{{serviceTitle}}</view><view class="service-copy">{{serviceCopy}}</view></view>

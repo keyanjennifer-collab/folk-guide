@@ -106,4 +106,3 @@ def validate_runtime_settings(settings: Settings | None = None) -> None:
         errors.append("CORS_ORIGINS 必须明确列出允许的来源")
     if errors:
         raise RuntimeError("生产配置校验失败：" + "；".join(errors))
-"""集中读取环境变量和 .env 配置，业务代码不要直接读取系统环境变量。"""

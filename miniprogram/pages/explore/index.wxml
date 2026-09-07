@@ -1,0 +1,21 @@
+<view class="explore-page">
+  <view class="explore-heading"><view class="eyebrow">把兴趣，过成日常</view><view class="screen-title">知时小趣</view><text>一个人慢慢看，也可以一起玩。</text></view>
+  <view class="explore-tabs"><button wx:for="{{tabs}}" wx:key="id" class="{{tab===item.id?'active':''}}" data-id="{{item.id}}" bindtap="switchSection">{{item.label}}</button></view>
+  <view wx:if="{{tab==='daily'}}">
+    <view class="section-title">在身边，发现时序</view><view class="section-copy">不必等一个特别的日子。从观察、书写或一次聊天开始。</view>
+    <button wx:for="{{ideas}}" wx:key="title" class="idea-card" data-index="{{index}}" bindtap="toggleIdea"><view class="idea-tag">{{item.tag}}</view><view class="idea-title">{{item.title}}<text>{{expanded===index?'−':'＋'}}</text></view><view wx:if="{{expanded===index}}" class="idea-copy">{{item.copy}}</view></button>
+    <view class="note">日常灵感不受年龄限制，也不与五色排行或打卡奖励绑定。</view>
+  </view>
+  <view wx:if="{{tab==='scent'}}">
+    <view class="section-title">此刻，你想闻见什么？</view><view class="section-copy">按场景与香调选香，不是性格或运势测试。</view>
+    <view wx:for="{{scentQuestions}}" wx:key="title" wx:for-item="step" wx:for-index="stepIndex" class="taste-step"><view class="question-label">{{stepIndex+1}} / 2</view><view class="question-title">{{step.title}}</view><view class="taste-options"><button wx:for="{{step.options}}" wx:key="id" data-step="{{stepIndex}}" data-id="{{item.id}}" class="{{(stepIndex===0?moment:note)===item.id?'selected':''}}" bindtap="chooseTaste">{{item.label}}</button></view></view>
+    <view wx:if="{{result}}" class="taste-result"><image src="{{result.image}}" mode="aspectFit"/><view><view class="eyebrow">你可以从这一款开始</view><view class="result-title">{{result.name}}</view><view class="section-copy">{{result.scent}}</view><button class="outline-button" bindtap="toProduct">了解这款香 ›</button><button class="text-button reset-taste" bindtap="resetTaste">重新选一选</button></view></view>
+    <view class="note">气味感受因人而异。未点燃也可观察包装、阅读香调，不需要购买才能参与。</view>
+  </view>
+  <view wx:if="{{tab==='quiz'}}">
+    <view class="question-label">第 {{questionIndex+1}} / {{total}} 题 · 不计时</view><view class="question-title">{{question.question}}</view>
+    <view class="quiz-options"><button wx:for="{{question.options}}" wx:key="*this" data-index="{{index}}" bindtap="chooseAnswer" class="{{revealed && index===question.answer?'correct':''}} {{chosen===index?'selected':''}}" disabled="{{revealed}}"><text>{{index===0?'甲':index===1?'乙':'丙'}}</text>{{item}}<text wx:if="{{revealed && index===question.answer}}">✓</text></button></view>
+    <view wx:if="{{revealed}}" class="answer-card"><view class="answer-title">{{chosen===question.answer?'答对了，记住这个小知识':'差一点，看看答案'}}</view><view>{{question.explanation}}</view><button class="source-link" bindtap="copySource">资料来源：{{question.sourceTitle}} · 复制链接</button><button class="outline-button" bindtap="nextQuestion">{{questionIndex===total-1?'再玩一轮':'下一题 ›'}}</button></view>
+    <view wx:else class="note">选一个答案，展开解析。没有分数，也没有排行榜。</view>
+  </view>
+</view>

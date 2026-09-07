@@ -1,32 +1,32 @@
 <view class="home-page">
   <view style="height:{{statusBarHeight}}px"/>
-  <view class="brandbar"><image class="brand-logo" src="/assets/brand/logo.png" mode="aspectFit" aria-label="五色知时"/></view>
+  <view class="brandbar"><image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/></view>
   <view class="today">
     <view class="ranking">
       <view class="ranking-heading">
-        <view class="eyebrow">{{dateLabel}}　{{primaryElement ? '今日主势 · ' + primaryElement : '每日时序'}}</view>
+        <view class="eyebrow">{{dateLabel}} · 今日色序</view>
         <view class="today-title">今日五色</view>
-        <view class="today-subtitle">依今日节律，先看用色次序</view>
-        <button class="color-guide-button" bindtap="openGuide" disabled="{{!selected}}">今日色序依据 <text>查看 ›</text></button>
+        <view class="today-subtitle">顺应时序，给今天一个颜色方向</view>
+        <button class="color-guide-button" bindtap="openGuide" disabled="{{!selected}}">查看今日说明 <text>查看 ›</text></button>
       </view>
       <view class="rank-list" wx:if="{{contentSource === 'ready'}}">
         <button wx:for="{{guides}}" wx:key="rank" class="rank-row tone-{{item.product.id}} {{selected.rank === item.rank ? 'selected' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}" aria-label="{{item.name + '，第' + item.rank + '位，' + item.status}}">
-          <view class="rank-no">0{{item.rank}}</view>
-          <view class="rank-copy"><view class="rank-main"><text class="rank-color">{{details[item.product.id].label}}</text><text class="rank-slash">/</text><text class="rank-status">{{rankLabels[item.rank - 1]}}</text></view><view class="rank-note">{{item.suitable[0]}}</view></view>
+          <view class="rank-accent tone-{{item.product.id}}" aria-hidden="true"/><view class="rank-no">0{{item.rank}}</view>
+          <view class="rank-copy"><view class="rank-main"><text class="rank-color">{{details[item.product.id].label}}</text><text class="rank-slash">/</text><text class="rank-status">{{item.tier}}</text></view><view class="rank-note">{{item.status}} · {{item.product.name}}</view></view>
         </button>
       </view>
-      <view wx:else class="rank-empty"><view>{{contentSource === 'loading' ? '正在读取今日五色' : '静候今日'}}</view><text>{{contentMessage}}</text><button wx:if="{{contentSource === 'error'}}" class="outline-button" bindtap="loadToday">重新读取</button></view>
-      <view class="calendar-line">{{term}} · {{calendarLabel}}</view>
+      <view wx:else class="rank-empty"><view>{{contentSource === 'loading' ? '正在读取今日五色' : (contentSource === 'error' ? '今日五色暂时不可用' : '今日待更新')}}</view><text>{{contentMessage}}</text><button wx:if="{{contentSource !== 'loading'}}" class="outline-button" bindtap="loadToday">重新读取</button></view>
+      <view class="calendar-line">{{calendarLabel}}</view>
     </view>
     <view class="scent-stage">
-      <view class="scent-heading">{{selected ? '今日相应之香' : '循心择香'}}</view>
+      <view class="scent-heading">{{selected ? '色系对应香款' : '循心择香'}}</view>
       <image class="product-emblem" src="{{scent.emblem}}" mode="aspectFit"/>
       <view class="scent-name">{{scent.name}}</view>
       <view class="scent-mood">{{scent.mood}}</view>
       <view class="scent-notes">{{details[scent.id].notes}}</view>
       <view class="inline-aroma"><view class="aroma-intro">{{details[scent.id].intro}}</view><view class="aroma-notes"><view wx:for="{{details[scent.id].aroma}}" wx:key="*this"><text>{{index === 0 ? '前调' : index === 1 ? '中调' : '余韵'}}</text><view>{{item}}</view></view></view></view>
       <view class="visual-frame" bindtap="toProduct" role="button" aria-label="{{'查看' + scent.name}}"><image class="product-visual" src="{{scent.image}}" mode="aspectFill"/><view class="visual-fade"/></view>
-      <button class="aroma-button" bindtap="toProduct">轻触闻香　↗</button>
+      <button class="aroma-button" bindtap="toProduct">了解这款香　›</button>
     </view>
   </view>
   <view class="gift">
@@ -38,11 +38,10 @@
   <view wx:if="{{showGuide}}" class="scrim" bindtap="closeGuide" catchtouchmove="noop"/>
   <view wx:if="{{showGuide}}" class="sheet">
     <view class="sheet-head"><view class="sheet-title">{{selected.name}} · 今日用色</view><button class="sheet-close" bindtap="closeGuide" aria-label="关闭">×</button></view>
-    <view class="guide-status">第{{selected.rank}}位 · {{selected.status}}</view>
+    <view class="guide-status">第{{selected.rank}}位 · {{selected.tier}} · {{selected.status}}</view>
     <view class="guide-swatches"><view wx:for="{{selected.product.swatches}}" wx:key="*this" style="background:{{item}}"/></view>
-    <view class="detail-title">今日用色依据</view><view class="detail-text">{{selected.advice}}</view>
-    <view class="detail-title">适合处理</view><view wx:for="{{selected.suitable}}" wx:key="*this" class="detail-text">· {{item}}</view>
-    <view class="detail-title">留意之处</view><view class="detail-text">{{selected.resistance}}</view>
-    <view class="muted guide-note">按当日时序生成公共五色；个人结果可在「我的」中查看。</view>
+    <view class="detail-title">今日用色说明</view><view class="detail-text">{{selected.advice}}</view>
+    <view class="detail-title">同色系搭配</view><view class="detail-text">{{selected.palette}}</view>
+    <view class="muted guide-note">资料来源：《{{source}}》 · {{dateLabel}}。传统文化参考，给日常提供一个观察角度。</view>
   </view>
 </view>

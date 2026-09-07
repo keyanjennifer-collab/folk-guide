@@ -1,5 +1,6 @@
 import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
 import { productForElement } from "../../data/products";
+import { isPublicRankingQuestion } from "../../data/confirmed-colors";
 import {
   AIHistoryRecord,
   AIQuota,
@@ -244,6 +245,10 @@ Page({
 
   async sendQuestion(question: string) {
     if (!question || this.data.sending) return;
+    if (isPublicRankingQuestion(question)) {
+      wx.showModal({ title: "今日色序说明", content: "首页的五色内容来自每日整理的资料，只用于传统文化学习与日常观察。想看当天的色序和说明，可以回到首页。", confirmText: "查看五色", success: result => { if (result.confirm) wx.switchTab({ url: "/pages/home/index" }); } });
+      return;
+    }
     if (!getToken()) { this.toLogin(); return; }
     if (!this.data.serviceActive) {
       wx.showModal({ title: "问答服务未开通", content: "当前没有可用的AI国学体验或服务权益。", showCancel: false });

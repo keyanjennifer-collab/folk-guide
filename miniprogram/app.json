@@ -4,23 +4,24 @@
     "pages/caikuxiang/index",
     "pages/chat/index",
     "pages/settings/index",
+    "pages/explore/index",
     "pages/profile/index",
     "pages/product/index",
     "pages/orders/index"
   ],
   "window": {
     "navigationBarTitleText": "今日五色",
-    "navigationBarBackgroundColor": "#0D0E0D",
+    "navigationBarBackgroundColor": "#272C28",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#0D0E0D",
-    "backgroundTextStyle": "light"
+    "backgroundColor": "#DCD4C7",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#97866C",
-    "selectedColor": "#E1B97F",
-    "backgroundColor": "#0D0E0D",
-    "borderStyle": "black",
+    "color": "#AAA99B",
+    "selectedColor": "#DBB27A",
+    "backgroundColor": "#262B27",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/home/index",

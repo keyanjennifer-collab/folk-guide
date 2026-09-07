@@ -1,5 +1,5 @@
 <view class="mine-page">
-  <view class="mine-heading"><view class="screen-title">我的</view><image class="brand-logo" src="/assets/brand/logo.png" mode="aspectFit"/></view>
+  <view class="mine-heading"><view class="screen-title">我的</view><image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <view class="identity-card">
     <view class="identity-top"><view class="identity-seal">时</view><view class="identity-copy"><view class="identity-title">{{dashboardLoading ? '正在读取账号' : isLoggedIn ? '知时，亦知己' : '与五色，朝夕相伴'}}</view><view>{{isLoggedIn ? '微信用户 · ' + phoneDisplay : '登录后查看订单与专属五色'}}</view></view></view>
     <button wx:if="{{!isLoggedIn}}" class="login-button" bindtap="realLogin" disabled="{{loginBusy || dashboardLoading}}" loading="{{loginBusy}}">微信登录</button>

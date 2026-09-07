@@ -153,8 +153,8 @@ def test_admin_page_is_available():
         assert "今日五色运营后台" in response.text
 
 
-def test_today_returns_rule_cache_when_no_manual_content(monkeypatch):
-    """没有人工发布内容时，首页应返回资料综合规则缓存而不是空白或演示数据。"""
+def test_today_returns_pending_when_no_manual_content(monkeypatch):
+    """没有人工发布内容时，首页必须明确待人工确认，不能回退到自动或历史内容。"""
     fixed_day = date(2036, 8, 19)
     cleanup_guide(fixed_day)
     monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
@@ -162,12 +162,45 @@ def test_today_returns_rule_cache_when_no_manual_content(monkeypatch):
     with TestClient(app) as client:
         response = client.get("/api/public-guides/today")
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["guide_date"] == fixed_day.isoformat()
-    assert payload["rule_version"] == "wuse-public-research-v1.0"
-    assert len(payload["items"]) == 5
-    assert {item["color"] for item in payload["items"]} == {"白金", "绿金", "黑金", "红金", "黄金"}
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "daily_guide_pending"
+    assert detail["status"] == "pending_confirmation"
+    assert detail["guide_date"] == fixed_day.isoformat()
+
+
+def test_future_unconfirmed_date_returns_pending_instead_of_rule_cache(monkeypatch):
+    """未来可预热日期也不能把自动缓存伪装成已确认内容。"""
+    fixed_day = date(2036, 8, 21)
+    cleanup_guide(fixed_day)
+    monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
+
+    with TestClient(app) as client:
+        response = client.get(f"/api/public-guides/{fixed_day + timedelta(days=2)}")
+
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "daily_guide_pending"
+    assert detail["status"] == "pending_confirmation"
+
+
+def test_today_returns_unavailable_when_cache_generation_fails(monkeypatch):
+    """规则缓存异常时返回可识别503，而不是泄露异常或沿用旧内容。"""
+    fixed_day = date(2036, 8, 22)
+    cleanup_guide(fixed_day)
+    monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
+    monkeypatch.setattr(
+        "app.public_guide_routes.warm_public_color_cache",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("cache down")),
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/public-guides/today")
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["code"] == "daily_guide_unavailable"
+    assert detail["status"] == "unavailable"
 
 
 def test_today_returns_published_content_for_beijing_date(monkeypatch):

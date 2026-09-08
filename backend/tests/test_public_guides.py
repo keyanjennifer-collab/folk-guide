@@ -24,11 +24,11 @@ def cleanup_guide(day: date) -> None:
 
 def guide_payload(day: date) -> dict:
     fixed = [
-        (1, "绿金", "木", "今天很顺", "GREEN"),
-        (2, "黑金", "水", "比较合适", "BLACK"),
-        (3, "黄金", "土", "平稳一般", "GOLD"),
-        (4, "白金", "金", "会比较累", "WHITE"),
-        (5, "红金", "火", "成效偏弱", "RED"),
+        (1, "绿色系", "木", "今天很顺", "GREEN", "青木"),
+        (2, "黑色系", "水", "比较合适", "BLACK", "墨沉"),
+        (3, "黄色系", "土", "平稳一般", "GOLD", "黄檀"),
+        (4, "白色系", "金", "会比较累", "WHITE", "白桂"),
+        (5, "红色系", "火", "成效偏弱", "RED", "朱蜜"),
     ]
     return {
         "guide_date": day.isoformat(),
@@ -46,10 +46,10 @@ def guide_payload(day: date) -> dict:
                 "resistance": "可能需要更多耐心",
                 "advice": "先确认重点再行动",
                 "product_code": product,
-                "incense_name": f"{color}财库香",
+                "incense_name": incense_name,
                 "scent": "香气描述",
             }
-            for rank, color, element, smoothness, product in fixed
+            for rank, color, element, smoothness, product, incense_name in fixed
         ],
         "share_title": "今日五色排名",
         "share_summary": "今日完整建议已更新",
@@ -99,6 +99,7 @@ def test_excel_template_and_import():
         assert template.status_code == 200
         workbook = load_workbook(io.BytesIO(template.content))
         sheet = workbook.active
+        assert [sheet.cell(row=row, column=14).value for row in range(2, 7)] == ["青木", "墨沉", "黄檀", "白桂", "朱蜜"]
         for row in range(2, 7):
             sheet.cell(row=row, column=1, value=day.isoformat())
         output = io.BytesIO()

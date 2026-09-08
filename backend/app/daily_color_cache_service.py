@@ -23,6 +23,7 @@ PUBLIC_CACHE_DAYS = 7
 PERSONAL_CACHE_DAYS = 3
 PERSONAL_CONTENT_VERSION = "personal-guidance-v1.1"
 DISCLAIMER = "内容用于传统文化了解和生活搭配参考，不构成医疗、法律、投资或其他专业意见。"
+PUBLIC_COLOR_LABELS = {"白金": "白色系", "绿金": "绿色系", "黑金": "黑色系", "红金": "红色系", "黄金": "黄色系"}
 
 TENDENCY_TO_LABEL = {
     "strong_support": "今天很顺",
@@ -97,7 +98,7 @@ def _public_payload(target_date: date) -> tuple[dict, str]:
         content = ELEMENT_CONTENT[item.element]
         items.append({
             "rank": item.rank,
-            "color": item.color,
+            "color": PUBLIC_COLOR_LABELS[item.color],
             "element": item.element,
             "smoothness": TENDENCY_TO_LABEL[item.tendency],
             "suitable": content["suitable"],

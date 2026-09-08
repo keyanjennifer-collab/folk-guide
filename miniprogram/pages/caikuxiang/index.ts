@@ -6,7 +6,7 @@ Page({
     filters: [{ id: "all", name: "全部香品" }, { id: "set", name: "线香套装" }, { id: "single", name: "五色单香" }],
     cartItems: [] as CartItem[], cartCount: 0, cartTotal: 0, showCart: false,
   },
-  onShow() { this.syncCart(); },
+  onShow() { (this as any).getTabBar?.()?.setData({ selected: 1 }); this.syncCart(); },
   syncCart() {
     const cartItems = readCart();
     this.setData({ cartItems, cartCount: cartItems.reduce((sum, item) => sum + item.quantity, 0), cartTotal: cartItems.reduce((sum, item) => sum + item.subtotal, 0) });

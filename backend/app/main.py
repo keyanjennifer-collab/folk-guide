@@ -124,7 +124,7 @@ app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     description=(
-        "五行五色财库香小程序 Python API。用户端受保护接口使用 `Authorization: Bearer <JWT>`；"
+        "五色知时小程序 Python API。用户端受保护接口使用 `Authorization: Bearer <JWT>`；"
         "运营后台接口使用 `X-Admin-Key`。接口文档中的“原型”或“旧版”分组不能作为正式业务能力。"
     ),
     openapi_tags=OPENAPI_TAGS,

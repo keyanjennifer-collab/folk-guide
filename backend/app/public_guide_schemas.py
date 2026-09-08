@@ -13,6 +13,16 @@ COLOR_ELEMENT_MAP = {
     "黄金": "土",
 }
 
+# 公开运营内容只使用用户确认的“色系”命名；旧键仅保留给既有确定性规则引擎，
+# 不再出现在小程序和每日内容录入模板中。
+PUBLIC_COLOR_ELEMENT_MAP = {
+    "白色系": "金",
+    "绿色系": "木",
+    "黑色系": "水",
+    "红色系": "火",
+    "黄色系": "土",
+}
+
 SMOOTHNESS_VALUES = {"今天很顺", "比较合适", "平稳一般", "会比较累", "成效偏弱"}
 
 
@@ -32,7 +42,7 @@ class PublicGuideItemInput(BaseModel):
     @model_validator(mode="after")
     def validate_fixed_values(self):
         """检查颜色与五行映射，并清理适合事项列表。"""
-        expected = COLOR_ELEMENT_MAP.get(self.color)
+        expected = PUBLIC_COLOR_ELEMENT_MAP.get(self.color)
         if not expected:
             raise ValueError(f"不支持的五色名称：{self.color}")
         if self.element != expected:
@@ -65,8 +75,8 @@ class PublicGuideInput(BaseModel):
         colors = [item.color for item in self.items]
         if sorted(ranks) != [1, 2, 3, 4, 5]:
             raise ValueError("排名必须完整且不重复地包含1至5")
-        if set(colors) != set(COLOR_ELEMENT_MAP):
-            raise ValueError("每天必须完整包含白金、绿金、黑金、红金、黄金")
+        if set(colors) != set(PUBLIC_COLOR_ELEMENT_MAP):
+            raise ValueError("每天必须完整包含白色系、绿色系、黑色系、红色系、黄色系")
         self.items.sort(key=lambda item: item.rank)
         return self
 

@@ -14,7 +14,7 @@ Page({
     historySummary: "登录后查看自己的问答", orderCounts: EMPTY_COUNTS, orderError: "",
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
   },
-  onShow() { void this.loadAccount(); },
+  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); void this.loadAccount(); },
   onHide() { loadVersion++; this.setData({ dashboardLoading: false }); },
   onPullDownRefresh() { void this.loadAccount().finally(() => wx.stopPullDownRefresh()); },
   resetAccount() {

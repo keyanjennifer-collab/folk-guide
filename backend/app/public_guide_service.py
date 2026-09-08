@@ -110,13 +110,19 @@ def build_excel_template() -> bytes:
     sheet = workbook.active
     sheet.title = "每日五色导入"
     sheet.append(EXCEL_HEADERS)
-    colors = [(1, "绿金", "木", "GREEN"), (2, "黑金", "水", "BLACK"), (3, "黄金", "土", "GOLD"), (4, "白金", "金", "WHITE"), (5, "红金", "火", "RED")]
+    colors = [
+        (1, "绿色系", "木", "GREEN", "青木"),
+        (2, "黑色系", "水", "BLACK", "墨沉"),
+        (3, "黄色系", "土", "GOLD", "黄檀"),
+        (4, "白色系", "金", "WHITE", "白桂"),
+        (5, "红色系", "火", "RED", "朱蜜"),
+    ]
     smoothness = ["今天很顺", "比较合适", "平稳一般", "会比较累", "成效偏弱"]
-    for index, (rank, color, element, product) in enumerate(colors):
+    for index, (rank, color, element, product, incense_name) in enumerate(colors):
         sheet.append([
             beijing_today().isoformat(), "星期一", "农历示例", "节气示例", "甲子", rank, color, element,
             smoothness[index], "合作、沟通", "可能需要更多耐心", "先确认重点再行动", product,
-            f"{color}财库香", "香气描述示例", "今日五色排名", "完整五色建议已更新",
+            incense_name, "香气描述示例", "今日五色排名", "完整五色建议已更新",
             "今日五色已更新", "manual-v1",
         ])
     for column in sheet.columns:

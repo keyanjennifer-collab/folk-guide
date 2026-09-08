@@ -4,12 +4,12 @@
   <view class="today">
     <view class="ranking">
       <view class="ranking-heading">
-        <view class="eyebrow">{{dateLabel}} · 今日色序</view>
-        <view class="today-title">今日五色</view>
-        <view class="today-subtitle">顺应时序，给今天一个颜色方向</view>
-        <button class="color-guide-button" bindtap="openGuide" disabled="{{!selected}}">查看今日说明 <text>查看 ›</text></button>
+        <view class="eyebrow">{{dateLabel || '北京时间'}} · {{contentSource === 'archive' ? '已确认色序' : '今日色序'}}</view>
+        <view class="today-title">{{contentSource === 'archive' ? '最近确认' : '今日五色'}}</view>
+        <view class="today-subtitle">{{contentSource === 'archive' ? contentMessage : '顺应时序，给今天一个颜色方向'}}</view>
+        <button class="color-guide-button" bindtap="openGuide" disabled="{{!selected}}">{{contentSource === 'archive' ? '查看原始说明' : '查看今日说明'}} <text>展开 ›</text></button>
       </view>
-      <view class="rank-list" wx:if="{{contentSource === 'ready'}}">
+      <view class="rank-list" wx:if="{{contentSource === 'ready' || contentSource === 'archive'}}">
         <button wx:for="{{guides}}" wx:key="rank" class="rank-row tone-{{item.product.id}} {{selected.rank === item.rank ? 'selected' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}" aria-label="{{item.name + '，第' + item.rank + '位，' + item.status}}">
           <view class="rank-accent tone-{{item.product.id}}" aria-hidden="true"/><view class="rank-no">0{{item.rank}}</view>
           <view class="rank-copy"><view class="rank-main"><text class="rank-color">{{details[item.product.id].label}}</text><text class="rank-slash">/</text><text class="rank-status">{{item.tier}}</text></view><view class="rank-note">{{item.status}} · {{item.product.name}}</view></view>
@@ -17,6 +17,7 @@
       </view>
       <view wx:else class="rank-empty"><view>{{contentSource === 'loading' ? '正在读取今日五色' : (contentSource === 'error' ? '今日五色暂时不可用' : '今日待更新')}}</view><text>{{contentMessage}}</text><button wx:if="{{contentSource !== 'loading'}}" class="outline-button" bindtap="loadToday">重新读取</button></view>
       <view class="calendar-line">{{calendarLabel}}</view>
+      <view wx:if="{{contentSource === 'archive'}}" class="archive-badge">非今日排行 · 不作当日建议</view>
     </view>
     <view class="scent-stage">
       <view class="scent-heading">{{selected ? '色系对应香款' : '循心择香'}}</view>
@@ -27,6 +28,14 @@
       <view class="inline-aroma"><view class="aroma-intro">{{details[scent.id].intro}}</view><view class="aroma-notes"><view wx:for="{{details[scent.id].aroma}}" wx:key="*this"><text>{{index === 0 ? '前调' : index === 1 ? '中调' : '余韵'}}</text><view>{{item}}</view></view></view></view>
       <view class="visual-frame" bindtap="toProduct" role="button" aria-label="{{'查看' + scent.name}}"><image class="product-visual" src="{{scent.image}}" mode="aspectFill"/><view class="visual-fade"/></view>
       <button class="aroma-button" bindtap="toProduct">了解这款香　›</button>
+    </view>
+  </view>
+  <view class="life-section">
+    <view class="life-heading"><view>知时小趣</view><text>一个人慢慢看，也可以一起玩</text></view>
+    <view class="life-entries">
+      <button data-tab="daily" bindtap="toExplore"><text class="life-mark">时</text><view>节气日常<text>观察、散步与书写</text></view><text>›</text></button>
+      <button data-tab="scent" bindtap="toExplore"><text class="life-mark">香</text><view>选香小测<text>按此刻偏好循心择香</text></view><text>›</text></button>
+      <button data-tab="quiz" bindtap="toExplore"><text class="life-mark">问</text><view>国学一题<text>适合独答，也适合共玩</text></view><text>›</text></button>
     </view>
   </view>
   <view class="gift">

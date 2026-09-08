@@ -38,7 +38,8 @@ async function main() {
   assert.equal(app.tabBar.list.length, 4);
   assert.equal(app.tabBar.custom, true);
   assert.equal(app.window.navigationBarTextStyle, 'white');
-  assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262b27');
+  assert.equal(app.window.navigationBarBackgroundColor.toLowerCase(), '#262626');
+  assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262626');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
     assert(app.pages.includes(item.pagePath));
@@ -72,7 +73,7 @@ async function main() {
   assert.equal(isPublicRankingQuestion('明天穿什么颜色'),true);
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
   publicResult={guide_date:'2026-09-07',weekday:'星期一',lunar_date:'七月廿五',solar_term:'白露前',day_ganzhi:'甲子',
-    items:[['白金','金','白桂'],['黄金','土','黄檀'],['绿金','木','青木'],['红金','火','朱蜜'],['黑金','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:'比较合适',suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
+    items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:'比较合适',suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'manual-v1'};
   const homeRequests=requests;
   const home=instance('pages/home/index.ts');
@@ -87,11 +88,12 @@ async function main() {
   assert.equal(home.data.scent.name,'墨沉');
   publicResult=new Error('network');
   await home.loadToday();
-  assert.equal(home.data.contentSource,'error','network failures never reuse stale ranking');
-  assert.equal(home.data.guides.length,0);
+  assert.equal(home.data.contentSource,'archive','network failures may only use an explicitly dated confirmed record');
+  assert.equal(home.data.guides.length,5);
+  assert.equal(home.data.dateLabel,'09 · 06');
   publicResult=Object.assign(new Error('pending'),{__api:true,code:'daily_guide_pending',status:'pending_confirmation'});
   await home.loadToday();
-  assert.equal(home.data.contentSource,'waiting','pending confirmation has a distinct waiting state');
+  assert.equal(home.data.contentSource,'archive','pending today keeps the confirmed record explicitly marked as non-today');
   const {SCENT_QUIZ,matchScent,QUIZ}=load('data/discovery.ts');
   for (const moment of SCENT_QUIZ[0].options) for (const note of SCENT_QUIZ[1].options) {
     assert(PRODUCTS.some(p=>p.id===matchScent(moment.id,note.id)), 'every taste combination yields an existing SKU');

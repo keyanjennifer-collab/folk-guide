@@ -1,15 +1,45 @@
-.shop-page{padding:24rpx 30rpx 140rpx}.shop-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:26rpx}.shop-heading .screen-title{font-size:38rpx;letter-spacing:3rpx;margin-top:10rpx}.shop-heading .eyebrow{font-size:21rpx}.shop-logo{width:90rpx;height:80rpx;margin-left:12rpx}
-.shop-hero{position:relative;display:block;padding:0;width:100%;height:480rpx;background:#151613;border-radius:0;text-align:left;color:#e0cca0;overflow:hidden}.shop-hero image{width:100%;height:100%}.hero-copy{position:absolute;left:28rpx;right:28rpx;bottom:24rpx;padding-top:50rpx;background:linear-gradient(transparent,rgba(12,13,10,.88));text-shadow:0 2rpx 8rpx #000}.hero-title{font-family:"Songti SC",serif;font-size:34rpx;letter-spacing:3rpx}.hero-copy>view:nth-child(2){font-size:22rpx;color:#d4c7ad;margin-top:5rpx}.hero-copy>text{display:block;margin-top:13rpx;font-size:23rpx;color:#d9bd84}
-.catalog-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1rpx solid #3c3428;margin:30rpx 0 24rpx;color:#8c826f;font-size:22rpx}.filters{display:flex;gap:28rpx}.filters button{padding:14rpx 0;background:transparent;border-radius:0;color:#8b816c;font-size:25rpx;line-height:1.8;border-bottom:3rpx solid transparent}.filters button.active{color:#e1b97f;border-bottom-color:#c99c5f}
-.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:30rpx 20rpx}.product-card{min-width:0;padding:0;border-radius:0;text-align:left;background:transparent;line-height:1.6;color:#e7cfab}.product-picture{position:relative;height:354rpx;background:#181916;overflow:hidden}.product-picture image{width:100%;height:100%}.product-tag{position:absolute;left:12rpx;top:12rpx;padding:4rpx 10rpx;color:#dfcba0;background:rgba(18,19,16,.75);font-size:19rpx;letter-spacing:1rpx}.product-info{padding:16rpx 2rpx 0}.product-name{font-family:"Songti SC",serif;font-size:30rpx;line-height:1.5}.product-mood{font-size:20rpx;color:#a4947e;margin-top:4rpx}.product-price{display:flex;align-items:center;font-family:Georgia,serif;font-size:31rpx;margin-top:12rpx;color:#e1b97f}.product-price>text{font-family:sans-serif;font-size:18rpx;color:#968973;margin-left:10rpx}.product-price .product-arrow{margin-left:auto;font-size:28rpx}
-.shop-note{text-align:center;color:#8e8270;font-size:20rpx;padding:28rpx 5rpx;border-bottom:1rpx solid #3c3428}.shop-story{text-align:center;padding:48rpx 0}.shop-story>view:last-child{font-family:"Songti SC",serif;font-size:36rpx;color:#ccb58f;letter-spacing:4rpx;margin-top:20rpx}.shop-story text{display:block}
-.bag-bar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;align-items:center;height:104rpx;padding:0 30rpx;background:#171814;border-top:1rpx solid #3c3428}.bag-open{padding:0;background:transparent;color:#e7cfab;font-size:25rpx;line-height:1.6}.bag-open text{background:#c99c5f;color:#fff7e7;padding:2rpx 10rpx;border-radius:30rpx;margin-left:8rpx;font-size:21rpx}.bag-total{font-size:21rpx;color:#8a795c;flex:1;text-align:right;margin-right:22rpx}.bag-view{background:#b58c52;color:#e3d2ac;font-size:22rpx;line-height:60rpx;border-radius:2rpx;padding:0 18rpx}
-.cart-row{display:flex;align-items:center;border-bottom:1rpx solid #3c3428;padding:22rpx 0}.cart-row image{width:82rpx;height:106rpx;flex:none}.cart-copy{flex:1;padding:0 16rpx;min-width:0}.cart-copy>view{font-family:serif;font-size:26rpx}.cart-copy>text{font-size:22rpx;color:#968059}.quantity{display:flex;align-items:center;gap:14rpx}.quantity button{padding:0;width:44rpx;height:52rpx;line-height:52rpx;font-size:25rpx;color:#e1b97f;background:#292820;border-radius:2rpx}.quantity text{font-size:24rpx}.cart-summary{display:flex;justify-content:space-between;margin:26rpx 0}.cart-note{font-size:21rpx;color:#8c806a;text-align:center;margin-top:18rpx}
-.shop-page{padding-bottom:calc(260rpx + env(safe-area-inset-bottom))}.bag-bar{bottom:calc(110rpx + env(safe-area-inset-bottom))}.bag-view{background:#b58c52;color:#10110e}
-
-/* 石材纹理：让商城像一张有触感的器物陈列台 */
-.shop-page{background-color:#171613;background-image:linear-gradient(rgba(20,19,16,.84),rgba(20,19,16,.93)),url('/assets/brand/stone-texture.jpg');background-size:auto,640rpx;background-repeat:repeat,repeat}
-.shop-hero{border:1rpx solid rgba(215,187,133,.32);border-radius:2rpx;box-shadow:0 12rpx 24rpx rgba(0,0,0,.2)}
-.product-picture{background-image:linear-gradient(rgba(20,19,16,.2),rgba(20,19,16,.2)),url('/assets/brand/stone-texture.jpg');background-size:auto,cover}
-.shop-page{color:#484238;background-color:#e7e0d3;background-image:linear-gradient(rgba(235,230,220,.76),rgba(226,217,204,.88)),url('/assets/brand/stone-texture.jpg')}.shop-heading .screen-title,.product-name{color:#4d4335}.shop-heading .eyebrow,.product-price{color:#8e6736}.catalog-header{border-bottom-color:#c4b6a0;color:#766c5d}.filters button{color:#817664}.filters button.active{color:#8d6331;border-bottom-color:#ad8144}.product-card{color:#4c4338}.product-picture{border:1rpx solid rgba(133,108,72,.26)}.product-mood,.product-price>text{color:#7d7262}.shop-note{color:#796d5c;border-bottom-color:#c4b6a0}.shop-story>view:last-child{color:#66523a}.bag-bar{background:rgba(239,233,222,.97);border-top-color:#c4b6a0}.bag-open{color:#594b39}.bag-total{color:#81725d}
-.shop-page{color:#ebe4d7;background-color:#272c28;background-image:linear-gradient(rgba(39,44,40,.9),rgba(29,34,30,.95)),url('/assets/brand/stone-texture.jpg');background-size:auto,720rpx}.shop-heading .screen-title,.product-name{color:#eee5d7}.shop-heading .eyebrow,.product-price{color:#d0a36a}.shop-hero{background:#343a35;border-color:#5d685f;box-shadow:0 14rpx 28rpx rgba(22,24,21,.3)}.catalog-header{border-bottom-color:#59645b;color:#aea99d}.filters button{color:#aaa99a}.filters button.active{color:#e3bc84;border-bottom-color:#c69658}.product-card{color:#eee5d7}.product-picture{background:#353b36;border-color:#606b61;box-shadow:0 8rpx 18rpx rgba(20,22,19,.18)}.product-mood,.product-price>text{color:#b8b1a4}.shop-note{color:#aaa99d;border-bottom-color:#59645b}.shop-story>view:last-child{color:#dcc095}.bag-bar{background:rgba(37,43,39,.98);border-top-color:#59645b}.bag-open{color:#eee5d7}.bag-total{color:#b8b1a4}.bag-view{background:#a87945;color:#fffaf2}
+.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.shop-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28rpx; }
+.shop-heading .screen-title { margin-top: 8rpx; font-size: 40rpx; letter-spacing: 3rpx; }
+.shop-heading .eyebrow { font-size: 21rpx; }
+.shop-logo { width: 100rpx; height: 86rpx; margin-left: 12rpx; }
+.shop-hero { position: relative; display: block; width: 100%; height: 480rpx; padding: 0; overflow: hidden; color: #f0dfc2; background: #303631; border: 1rpx solid #606b61; border-radius: 7rpx; box-shadow: 0 16rpx 34rpx rgba(11, 13, 11, .3); text-align: left; }
+.shop-hero image { width: 100%; height: 100%; }
+.hero-copy { position: absolute; right: 0; bottom: 0; left: 0; padding: 82rpx 30rpx 28rpx; background: linear-gradient(transparent, rgba(10, 12, 10, .9)); text-shadow: 0 2rpx 8rpx #000; }
+.hero-title { font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 3rpx; }
+.hero-copy>view:nth-child(2) { margin-top: 4rpx; color: #d5cabc; font-size: 23rpx; }
+.hero-copy>text { display: block; margin-top: 12rpx; color: #e7bd82; font-size: 24rpx; }
+.catalog-header { display: flex; align-items: center; justify-content: space-between; margin: 32rpx 0 24rpx; color: var(--muted); border-bottom: 1rpx solid var(--line); font-size: 22rpx; }
+.filters { display: flex; gap: 28rpx; }
+.filters button { padding: 14rpx 0; color: #aeb0a6; background: transparent; border-bottom: 3rpx solid transparent; border-radius: 0; font-size: 26rpx; line-height: 1.8; }
+.filters button.active { color: #e3bd84; border-bottom-color: #c89455; }
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 34rpx 20rpx; }
+.product-card { min-width: 0; padding: 0; color: var(--text); background: transparent; border-radius: 0; line-height: 1.6; text-align: left; }
+.product-picture { position: relative; height: 356rpx; overflow: hidden; background: var(--surface); border: 1rpx solid #59645b; border-radius: 5rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); }
+.product-picture image { width: 100%; height: 100%; }
+.product-tag { position: absolute; top: 12rpx; left: 12rpx; padding: 5rpx 10rpx; color: #f0d4aa; background: rgba(23, 28, 24, .82); border: 1rpx solid rgba(216, 170, 108, .35); font-size: 20rpx; letter-spacing: 1rpx; }
+.product-info { padding: 16rpx 3rpx 0; }
+.product-name { color: var(--cream); font-family: "Songti SC", serif; font-size: 32rpx; line-height: 1.5; }
+.product-mood { margin-top: 3rpx; color: var(--muted); font-size: 22rpx; }
+.product-price { display: flex; align-items: center; margin-top: 10rpx; color: var(--copper); font-family: Georgia, serif; font-size: 32rpx; }
+.product-price>text { margin-left: 9rpx; color: #a7a69c; font-family: sans-serif; font-size: 19rpx; }
+.product-price .product-arrow { margin-left: auto; color: #d8aa70; font-size: 28rpx; }
+.shop-note { padding: 30rpx 6rpx; color: #aaa99f; border-bottom: 1rpx solid var(--line); font-size: 21rpx; text-align: center; }
+.shop-story { padding: 48rpx 0; text-align: center; }
+.shop-story>view:last-child { margin-top: 18rpx; color: #ddc096; font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 4rpx; }
+.shop-story text { display: block; }
+.bag-bar { position: fixed; z-index: 10; right: 0; bottom: calc(110rpx + env(safe-area-inset-bottom)); left: 0; display: flex; align-items: center; height: 104rpx; padding: 0 30rpx; background: rgba(35, 41, 36, .98); border-top: 1rpx solid var(--line); }
+.bag-open { padding: 0; color: var(--cream); background: transparent; font-size: 25rpx; line-height: 1.6; }
+.bag-open text { margin-left: 8rpx; padding: 2rpx 10rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 30rpx; font-size: 21rpx; }
+.bag-total { flex: 1; margin-right: 22rpx; color: var(--muted); font-size: 21rpx; text-align: right; }
+.bag-view { padding: 0 18rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 4rpx; font-size: 22rpx; line-height: 60rpx; }
+.cart-row { display: flex; align-items: center; padding: 22rpx 0; border-bottom: 1rpx solid var(--line); }
+.cart-row image { width: 82rpx; height: 106rpx; flex: none; border-radius: 3rpx; }
+.cart-copy { min-width: 0; flex: 1; padding: 0 16rpx; }
+.cart-copy>view { font-family: serif; font-size: 27rpx; }
+.cart-copy>text { color: var(--muted); font-size: 22rpx; }
+.quantity { display: flex; align-items: center; gap: 14rpx; }
+.quantity button { width: 44rpx; height: 52rpx; padding: 0; color: #e4bc82; background: #3a423b; border-radius: 3rpx; font-size: 25rpx; line-height: 52rpx; }
+.quantity text { font-size: 24rpx; }
+.cart-summary { display: flex; justify-content: space-between; margin: 26rpx 0; }
+.cart-note { margin-top: 18rpx; color: var(--muted); font-size: 21rpx; text-align: center; }

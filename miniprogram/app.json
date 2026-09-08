@@ -11,16 +11,16 @@
   ],
   "window": {
     "navigationBarTitleText": "今日五色",
-    "navigationBarBackgroundColor": "#272C28",
+    "navigationBarBackgroundColor": "#262626",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#DCD4C7",
-    "backgroundTextStyle": "dark"
+    "backgroundColor": "#262626",
+    "backgroundTextStyle": "light"
   },
   "tabBar": {
     "custom": true,
     "color": "#AAA99B",
     "selectedColor": "#DBB27A",
-    "backgroundColor": "#262B27",
+    "backgroundColor": "#262626",
     "borderStyle": "white",
     "list": [
       {

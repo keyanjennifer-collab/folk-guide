@@ -27,6 +27,9 @@ type PersonalColorView = PersonalDailyColor & { tone: string };
 const PERSONAL_TONE_MAP: Record<string, string> = {
   "绿金": "green", "黑金": "black", "黄金": "gold", "白金": "white", "红金": "red",
 };
+const PERSONAL_COLOR_LABEL: Record<string, string> = {
+  "绿金": "绿色系", "黑金": "黑色系", "黄金": "黄色系", "白金": "白色系", "红金": "红色系",
+};
 
 const WELCOME: ChatItem = {
   role: "assistant",
@@ -103,6 +106,7 @@ Page({
   },
 
   async onShow() {
+    (this as any).getTabBar?.()?.setData({ selected: 2 });
     const loadVersion = ++chatLoadVersion;
     if (!getToken()) {
       this.setData({ isLoggedIn: false, loading: false, serviceActive: false, answerReady: false,
@@ -177,11 +181,11 @@ Page({
         personalPrecision: result.precision_mode === "four_pillars" ? "完整四柱" : "三柱参考",
         personalColors: result.colors.map((item) => {
           const product = productForElement(item.element);
-          return { ...item, name: product?.color || item.name, incense: product?.name || item.incense, scent: product?.scent || item.scent, tone: PERSONAL_TONE_MAP[item.name] || "" };
+          return { ...item, name: PERSONAL_COLOR_LABEL[item.name] || item.name, incense: product?.name || item.incense, scent: product?.scent || item.scent, tone: PERSONAL_TONE_MAP[item.name] || "" };
         }),
         expandedPersonalRank: 1,
-        personalPrimaryColor: result.primary_color,
-        personalSupportingColors: result.supporting_colors.join("、"),
+        personalPrimaryColor: PERSONAL_COLOR_LABEL[result.primary_color] || result.primary_color,
+        personalSupportingColors: result.supporting_colors.map(color => PERSONAL_COLOR_LABEL[color] || color).join("、"),
         personalCombinationAdvice: result.combination_advice,
         personalFocus: result.personal_focus,
         personalComparisonNote: result.comparison_note,

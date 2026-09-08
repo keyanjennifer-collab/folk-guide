@@ -44,7 +44,7 @@ async function main() {
   const homeWxml=fs.readFileSync(path.join(root,'pages/home/index.wxml'),'utf8');
   const homeWxss=fs.readFileSync(path.join(root,'pages/home/index.wxss'),'utf8');
   assert(!homeWxml.includes('today-subtitle') && !homeWxml.includes('calendar-pill'),'home hero stays compact');
-  assert(homeWxml.includes('class="guide-emblem"'),'every guide card exposes its divine-beast emblem');
+  assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
@@ -56,6 +56,7 @@ async function main() {
   assert.equal(PRODUCTS.length,6);
   assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,6);
   assert.equal(PRODUCTS.filter(p=>p.category==='single').map(p=>p.name).join('|'),'青木|朱蜜|黄檀|白桂|墨沉');
+  assert(PRODUCTS.filter(p=>p.category==='single').every(p=>p.emblem.endsWith('-emblem-v2.png')),'all five beasts use the unified relief set');
   for (const p of PRODUCTS) for (const image of [p.image,p.emblem]) assert(fs.existsSync(path.join(root,image)));
   const productPage = instance('pages/product/index.ts');
   assert.equal(productPage.data.setContents,'青木、朱蜜、黄檀、白桂、墨沉。五款线香与对应矿石香插，承载一份应时心意。');

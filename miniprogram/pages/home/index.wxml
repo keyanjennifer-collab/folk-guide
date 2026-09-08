@@ -39,7 +39,6 @@
         </view>
         <view class="featured-image-wrap">
           <image class="featured-image" src="{{selected.product.image}}" mode="aspectFill"/>
-          <image class="featured-emblem" src="{{selected.product.emblem}}" mode="aspectFit"/>
         </view>
       </view>
     </view>
@@ -52,7 +51,6 @@
       <view wx:for="{{guides}}" wx:key="rank" class="guide-card tone-card-{{item.product.id}}">
         <view class="guide-head">
           <view class="guide-rank">0{{item.rank}}</view>
-          <image class="guide-emblem" src="{{item.product.emblem}}" mode="aspectFit"/>
           <view class="guide-identity"><view>{{item.name}}</view><text>{{item.element}} · {{item.tier}}</text></view>
           <view class="guide-actions"><view class="status-chip">{{item.status}}</view><button bindtap="toggleGuide" data-rank="{{item.rank}}" aria-label="{{item.expanded ? '收起详情' : '展开详情'}}">{{item.expanded ? '收起 −' : '展开 ＋'}}</button></view>
         </view>

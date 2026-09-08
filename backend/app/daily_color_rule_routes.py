@@ -8,7 +8,7 @@ from .daily_color_rule_template import build_rule_template, parse_rule_template
 
 
 router = APIRouter()
-ADMIN_TAG = "今日五色·运营后台"
+ADMIN_TAG = "每日缓存·运维"
 
 
 @router.get(

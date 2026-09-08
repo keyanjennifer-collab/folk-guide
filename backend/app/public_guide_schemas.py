@@ -1,6 +1,6 @@
-"""今日五色内容、排期、导入和审计的数据模型。"""
+"""今日五色自动生成内容的数据模型。"""
 
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -66,7 +66,7 @@ class PublicGuideInput(BaseModel):
     share_title: str = Field(min_length=1, max_length=100)
     share_summary: str = Field(min_length=1, max_length=300)
     push_summary: str = Field(min_length=1, max_length=200)
-    rule_version: str = Field(default="manual-v1", max_length=64)
+    rule_version: str = Field(default="daily-rule-v1", max_length=64)
 
     @model_validator(mode="after")
     def validate_complete_ranking(self):
@@ -79,39 +79,3 @@ class PublicGuideInput(BaseModel):
             raise ValueError("每天必须完整包含白色系、绿色系、黑色系、红色系、黄色系")
         self.items.sort(key=lambda item: item.rank)
         return self
-
-
-class ScheduleGuideInput(BaseModel):
-    """定时发布请求。"""
-    scheduled_at: datetime
-
-
-class PublicGuideOutput(PublicGuideInput):
-    """内容字段加上数据库状态与审计时间。"""
-    id: int
-    status: str
-    version: int
-    scheduled_at: datetime | None
-    published_at: datetime | None
-    created_at: datetime
-    updated_at: datetime
-
-
-class ImportResult(BaseModel):
-    """批量导入的成功数量和逐行错误。"""
-    created: int
-    updated: int
-    dates: list[date]
-
-
-class AuditOutput(BaseModel):
-    """运营动作审计返回结构。"""
-    id: int
-    action: str
-    operator: str
-    before_status: str | None
-    after_status: str | None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-"""今日五色内容、排期、导入结果和审计记录的数据契约。"""

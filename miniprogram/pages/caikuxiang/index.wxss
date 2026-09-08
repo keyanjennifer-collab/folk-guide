@@ -1,21 +1,21 @@
-.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
 .shop-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28rpx; }
 .shop-heading .screen-title { margin-top: 8rpx; font-size: 40rpx; letter-spacing: 3rpx; }
 .shop-heading .eyebrow { font-size: 21rpx; }
 .shop-logo { width: 100rpx; height: 86rpx; margin-left: 12rpx; }
-.shop-hero { position: relative; display: block; width: 100%; height: 480rpx; padding: 0; overflow: hidden; color: #f0dfc2; background: #303631; border: 1rpx solid #606b61; border-radius: 7rpx; box-shadow: 0 16rpx 34rpx rgba(11, 13, 11, .3); text-align: left; }
+.shop-hero { position: relative; display: block; width: 100%; height: 480rpx; padding: 0; overflow: hidden; color: #f0dfc2; background: #303030; border-radius: 24rpx; box-shadow: 0 16rpx 34rpx rgba(11, 13, 11, .3); text-align: left; }
 .shop-hero image { width: 100%; height: 100%; }
 .hero-copy { position: absolute; right: 0; bottom: 0; left: 0; padding: 82rpx 30rpx 28rpx; background: linear-gradient(transparent, rgba(10, 12, 10, .9)); text-shadow: 0 2rpx 8rpx #000; }
 .hero-title { font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 3rpx; }
 .hero-copy>view:nth-child(2) { margin-top: 4rpx; color: #d5cabc; font-size: 23rpx; }
 .hero-copy>text { display: block; margin-top: 12rpx; color: #e7bd82; font-size: 24rpx; }
-.catalog-header { display: flex; align-items: center; justify-content: space-between; margin: 32rpx 0 24rpx; color: var(--muted); border-bottom: 1rpx solid var(--line); font-size: 22rpx; }
+.catalog-header { display: flex; align-items: center; justify-content: space-between; margin: 32rpx 0 24rpx; color: var(--muted); font-size: 22rpx; }
 .filters { display: flex; gap: 28rpx; }
 .filters button { padding: 14rpx 0; color: #aeb0a6; background: transparent; border-bottom: 3rpx solid transparent; border-radius: 0; font-size: 26rpx; line-height: 1.8; }
 .filters button.active { color: #e3bd84; border-bottom-color: #c89455; }
 .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 34rpx 20rpx; }
 .product-card { min-width: 0; padding: 0; color: var(--text); background: transparent; border-radius: 0; line-height: 1.6; text-align: left; }
-.product-picture { position: relative; height: 356rpx; overflow: hidden; background: var(--surface); border: 1rpx solid #59645b; border-radius: 5rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); }
+.product-picture { position: relative; height: 356rpx; overflow: hidden; background: var(--surface); border-radius: 18rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); }
 .product-picture image { width: 100%; height: 100%; }
 .product-tag { position: absolute; top: 12rpx; left: 12rpx; padding: 5rpx 10rpx; color: #f0d4aa; background: rgba(23, 28, 24, .82); border: 1rpx solid rgba(216, 170, 108, .35); font-size: 20rpx; letter-spacing: 1rpx; }
 .product-info { padding: 16rpx 3rpx 0; }
@@ -24,11 +24,11 @@
 .product-price { display: flex; align-items: center; margin-top: 10rpx; color: var(--copper); font-family: Georgia, serif; font-size: 32rpx; }
 .product-price>text { margin-left: 9rpx; color: #a7a69c; font-family: sans-serif; font-size: 19rpx; }
 .product-price .product-arrow { margin-left: auto; color: #d8aa70; font-size: 28rpx; }
-.shop-note { padding: 30rpx 6rpx; color: #aaa99f; border-bottom: 1rpx solid var(--line); font-size: 21rpx; text-align: center; }
+.shop-note { margin-top: 28rpx; padding: 24rpx; color: #aaa99f; background: #343331; border-radius: 18rpx; font-size: 21rpx; text-align: center; }
 .shop-story { padding: 48rpx 0; text-align: center; }
 .shop-story>view:last-child { margin-top: 18rpx; color: #ddc096; font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 4rpx; }
 .shop-story text { display: block; }
-.bag-bar { position: fixed; z-index: 10; right: 0; bottom: calc(110rpx + env(safe-area-inset-bottom)); left: 0; display: flex; align-items: center; height: 104rpx; padding: 0 30rpx; background: rgba(35, 41, 36, .98); border-top: 1rpx solid var(--line); }
+.bag-bar { position: fixed; z-index: 10; right: 0; bottom: calc(110rpx + env(safe-area-inset-bottom)); left: 0; display: flex; align-items: center; height: 104rpx; padding: 0 30rpx; background: rgba(38,38,38,.98); box-shadow: 0 -12rpx 32rpx rgba(0,0,0,.18); }
 .bag-open { padding: 0; color: var(--cream); background: transparent; font-size: 25rpx; line-height: 1.6; }
 .bag-open text { margin-left: 8rpx; padding: 2rpx 10rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 30rpx; font-size: 21rpx; }
 .bag-total { flex: 1; margin-right: 22rpx; color: var(--muted); font-size: 21rpx; text-align: right; }
@@ -39,7 +39,7 @@
 .cart-copy>view { font-family: serif; font-size: 27rpx; }
 .cart-copy>text { color: var(--muted); font-size: 22rpx; }
 .quantity { display: flex; align-items: center; gap: 14rpx; }
-.quantity button { width: 44rpx; height: 52rpx; padding: 0; color: #e4bc82; background: #3a423b; border-radius: 3rpx; font-size: 25rpx; line-height: 52rpx; }
+.quantity button { width: 44rpx; height: 52rpx; padding: 0; color: #e4bc82; background: #403e3a; border-radius: 20rpx; font-size: 25rpx; line-height: 52rpx; }
 .quantity text { font-size: 24rpx; }
 .cart-summary { display: flex; justify-content: space-between; margin: 26rpx 0; }
 .cart-note { margin-top: 18rpx; color: var(--muted); font-size: 21rpx; text-align: center; }

@@ -26,16 +26,16 @@ button[disabled] { opacity: .48; }
 .serif, .title, .section-title, .screen-title { font-family: "Songti SC", "STSong", serif; font-weight: 400; }
 .title { margin-bottom: 20rpx; color: var(--cream); font-size: 40rpx; letter-spacing: 3rpx; }
 .eyebrow { color: var(--copper); font-size: 22rpx; letter-spacing: 3rpx; }
-.screen-heading { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 26rpx; border-bottom: 1rpx solid var(--line); }
+.screen-heading { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 26rpx; }
 .screen-title { color: var(--cream); font-size: 50rpx; line-height: 1.35; letter-spacing: 5rpx; }
 .brand-logo { width: 126rpx; height: 106rpx; }
-.card { margin-bottom: 24rpx; padding: 30rpx; color: var(--text); background: var(--surface); border: 1rpx solid var(--line); border-radius: 8rpx; box-shadow: 0 12rpx 28rpx rgba(8, 11, 9, .18); }
+.card { margin-bottom: 24rpx; padding: 30rpx; color: var(--text); background: var(--surface); border-radius: 20rpx; box-shadow: 0 12rpx 28rpx rgba(8, 11, 9, .18); }
 .muted { color: var(--muted); font-size: 24rpx; }
 .button, .solid-button { padding: 0 28rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 6rpx; font-size: 27rpx; line-height: 80rpx; }
 .button { margin-top: 24rpx; }
-.outline-button { padding: 0 26rpx; color: #e7bd83; background: rgba(52, 59, 52, .72); border: 1rpx solid #a77e4d; border-radius: 6rpx; font-size: 26rpx; line-height: 74rpx; }
+.outline-button { padding: 0 26rpx; color: #e7bd83; background: #3b3936; border-radius: 32rpx; font-size: 26rpx; line-height: 74rpx; }
 .text-button { padding: 0; color: var(--copper); background: transparent; border-radius: 0; font-size: 25rpx; line-height: 1.8; }
-input, textarea, picker { width: 100%; padding: 20rpx; color: var(--text); background: #292f2a; border: 1rpx solid var(--line); border-radius: 6rpx; font-size: 28rpx; }
+input, textarea, picker { width: 100%; padding: 20rpx; color: var(--text); background: #323232; border: 1rpx solid #5a5650; border-radius: 14rpx; font-size: 28rpx; }
 input, picker { margin: 12rpx 0 24rpx; }
 .empty-state { padding: 72rpx 26rpx; text-align: center; }
 .empty-state .empty-mark { margin-bottom: 20rpx; color: var(--copper); font-family: "Songti SC", serif; font-size: 66rpx; }
@@ -43,7 +43,7 @@ input, picker { margin: 12rpx 0 24rpx; }
 .empty-state .outline-button { display: inline-block; margin-top: 30rpx; }
 .page-foot { padding: 40rpx 20rpx; color: #9fa096; font-size: 22rpx; letter-spacing: 2rpx; text-align: center; }
 .scrim { position: fixed; z-index: 40; inset: 0; background: rgba(4, 6, 5, .66); }
-.sheet { position: fixed; z-index: 41; right: 0; bottom: 0; left: 0; max-height: 78vh; padding: 32rpx 36rpx calc(32rpx + env(safe-area-inset-bottom)); overflow-y: auto; color: var(--text); background: #282e29; border-top: 1rpx solid #68736a; border-radius: 24rpx 24rpx 0 0; box-shadow: 0 -16rpx 44rpx rgba(7, 9, 8, .34); }
+.sheet { position: fixed; z-index: 41; right: 0; bottom: 0; left: 0; max-height: 78vh; padding: 32rpx 36rpx calc(32rpx + env(safe-area-inset-bottom)); overflow-y: auto; color: var(--text); background: #30302f; border-radius: 28rpx 28rpx 0 0; box-shadow: 0 -16rpx 44rpx rgba(7, 9, 8, .34); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
 .sheet-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 36rpx; }
 .sheet-close { padding: 0 10rpx; color: var(--copper); background: transparent; font-size: 40rpx; line-height: 1.5; }

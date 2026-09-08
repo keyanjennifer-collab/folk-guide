@@ -5,6 +5,7 @@
 规则版本、配置指纹和档案版本，任何一项变化都会重算。
 """
 
+import hashlib
 import json
 from datetime import date, timedelta
 
@@ -22,6 +23,7 @@ from .public_guide_schemas import PublicGuideInput
 PUBLIC_CACHE_DAYS = 7
 PERSONAL_CACHE_DAYS = 3
 PERSONAL_CONTENT_VERSION = "personal-guidance-v1.1"
+PUBLIC_CACHE_FORMAT_VERSION = "public-guide-v3"
 DISCLAIMER = "内容用于传统文化了解和生活搭配参考，不构成医疗、法律、投资或其他专业意见。"
 PUBLIC_COLOR_LABELS = {"白金": "白色系", "绿金": "绿色系", "黑金": "黑色系", "红金": "红色系", "黄金": "黄色系"}
 
@@ -50,7 +52,7 @@ ELEMENT_CONTENT = {
         "advice": "可用白色、银色或浅金属色作主色或局部点缀，保持简洁清楚。",
         "resistance": "若安排过密，容易只顾效率而忽略沟通余地。",
         "product_code": "WUSE-JIN-01",
-        "incense": "清衡香",
+        "incense": "白桂",
         "scent": "白檀与雪松的清朗木质调，适合整理思路时使用。",
     },
     "木": {
@@ -58,7 +60,7 @@ ELEMENT_CONTENT = {
         "advice": "可用绿色、青色或自然纹理作搭配，给日常安排留出伸展感。",
         "resistance": "推进过快时容易分散精力，宜先确定一件最重要的事。",
         "product_code": "WUSE-MU-01",
-        "incense": "青和香",
+        "incense": "青木",
         "scent": "竹叶与柏木的清润草木调，适合阅读与安静工作。",
     },
     "水": {
@@ -66,7 +68,7 @@ ELEMENT_CONTENT = {
         "advice": "可用黑色、深蓝或低饱和冷色稳定整体，再以浅色平衡。",
         "resistance": "信息过多时容易反复比较，重要决定仍需设定截止时间。",
         "product_code": "WUSE-SHUI-01",
-        "incense": "玄润香",
+        "incense": "墨沉",
         "scent": "沉香与淡苔的静润气息，适合独处、复盘与缓慢思考。",
     },
     "火": {
@@ -74,7 +76,7 @@ ELEMENT_CONTENT = {
         "advice": "可用红色、暖橙或柔和暖色作重点，面积不必过大。",
         "resistance": "表达过满时可能带来急躁感，宜给重要沟通留下停顿。",
         "product_code": "WUSE-HUO-01",
-        "incense": "明心香",
+        "incense": "朱蜜",
         "scent": "桂花与少量辛香的温暖气息，适合需要表达和行动时使用。",
     },
     "土": {
@@ -82,7 +84,7 @@ ELEMENT_CONTENT = {
         "advice": "可用米黄、驼色或大地色形成稳定基底，再搭配少量亮色。",
         "resistance": "过度求稳时可能拖延变化，宜给计划设置一个小的下一步。",
         "product_code": "WUSE-TU-01",
-        "incense": "安土香",
+        "incense": "黄檀",
         "scent": "檀木与谷物的温和气息，适合落地计划与整理空间。",
     },
 }
@@ -126,7 +128,9 @@ def _public_payload(target_date: date) -> tuple[dict, str]:
 
 def ensure_public_color_cache(db: Session, target_date: date) -> dict:
     """取得一天公共缓存；版本或配置变化时原位重算。"""
-    expected_fingerprint = PUBLIC_RESEARCH_CONFIG.fingerprint()
+    expected_fingerprint = hashlib.sha256(
+        f"{PUBLIC_RESEARCH_CONFIG.fingerprint()}:{PUBLIC_CACHE_FORMAT_VERSION}".encode()
+    ).hexdigest()
     cached = db.scalar(select(PublicColorCache).where(PublicColorCache.guide_date == target_date))
     if cached and cached.rule_version == PUBLIC_RESEARCH_CONFIG.version and cached.config_fingerprint == expected_fingerprint:
         return json.loads(cached.payload_json)

@@ -43,7 +43,7 @@ export class ApiError extends Error {
   readonly statusCode: number;
   readonly kind: ApiErrorKind;
   readonly responseData?: unknown;
-  /** 后端返回的稳定机器码，例如 daily_guide_pending。 */
+  /** 后端返回的稳定机器码，例如 daily_guide_unavailable。 */
   readonly code?: string;
   /** 后端业务状态，例如 pending_confirmation 或 unavailable。 */
   readonly status?: string;

@@ -1,56 +1,100 @@
 <view class="home-page">
   <view style="height:{{statusBarHeight}}px"/>
-  <view class="brandbar"><image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/></view>
-  <view class="today">
-    <view class="ranking">
-      <view class="ranking-heading">
-        <view class="eyebrow">{{dateLabel || '北京时间'}} · {{contentSource === 'archive' ? '已确认色序' : '今日色序'}}</view>
-        <view class="today-title">{{contentSource === 'archive' ? '最近确认' : '今日五色'}}</view>
-        <view class="today-subtitle">{{contentSource === 'archive' ? contentMessage : '顺应时序，给今天一个颜色方向'}}</view>
-        <button class="color-guide-button" bindtap="openGuide" disabled="{{!selected}}">{{contentSource === 'archive' ? '查看原始说明' : '查看今日说明'}} <text>展开 ›</text></button>
-      </view>
-      <view class="rank-list" wx:if="{{contentSource === 'ready' || contentSource === 'archive'}}">
-        <button wx:for="{{guides}}" wx:key="rank" class="rank-row tone-{{item.product.id}} {{selected.rank === item.rank ? 'selected' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}" aria-label="{{item.name + '，第' + item.rank + '位，' + item.status}}">
-          <view class="rank-accent tone-{{item.product.id}}" aria-hidden="true"/><view class="rank-no">0{{item.rank}}</view>
-          <view class="rank-copy"><view class="rank-main"><text class="rank-color">{{details[item.product.id].label}}</text><text class="rank-slash">/</text><text class="rank-status">{{item.tier}}</text></view><view class="rank-note">{{item.status}} · {{item.product.name}}</view></view>
+
+  <view class="brandbar">
+    <image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/>
+    <view class="brand-caption">五色应时 · 知时而行</view>
+  </view>
+
+  <view class="today-hero">
+    <view class="hero-glow"/>
+    <view class="eyebrow">{{dateLabel}} · {{term}}</view>
+    <view class="today-title">今日五色</view>
+    <view class="today-subtitle">{{summary}}</view>
+    <view wx:if="{{calendarLabel}}" class="calendar-pill">{{calendarLabel}}</view>
+  </view>
+
+  <view wx:if="{{contentSource === 'loading'}}" class="loading-card">
+    <view class="skeleton wide"/><view class="skeleton"/><view class="skeleton short"/>
+  </view>
+  <view wx:elif="{{contentSource === 'error'}}" class="reload-card">
+    <view class="reload-mark">时</view>
+    <view class="reload-copy"><view>今日内容稍后即来</view><text>网络恢复后可立即重新读取，不会展示过期排行。</text></view>
+    <button bindtap="loadToday">重新读取</button>
+  </view>
+
+  <block wx:else>
+    <view class="overview-card">
+      <view class="section-kicker">TODAY'S ORDER</view>
+      <view class="section-title">今日色序</view>
+      <view class="rank-pills">
+        <button wx:for="{{guides}}" wx:key="rank" class="rank-pill tone-{{item.product.id}} {{selected.rank === item.rank ? 'active' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}">
+          <text>0{{item.rank}}</text><view>{{item.name}}</view><small>{{item.tier}}</small>
         </button>
       </view>
-      <view wx:else class="rank-empty"><view>{{contentSource === 'loading' ? '正在读取今日五色' : (contentSource === 'error' ? '今日五色暂时不可用' : '今日待更新')}}</view><text>{{contentMessage}}</text><button wx:if="{{contentSource !== 'loading'}}" class="outline-button" bindtap="loadToday">重新读取</button></view>
-      <view class="calendar-line">{{calendarLabel}}</view>
-      <view wx:if="{{contentSource === 'archive'}}" class="archive-badge">非今日排行 · 不作当日建议</view>
+      <view class="featured" wx:if="{{selected}}">
+        <view class="featured-copy">
+          <view class="featured-label">今日首选对应香品</view>
+          <view class="featured-name">{{selected.product.name}}</view>
+          <view class="featured-mood">{{selected.product.mood}}</view>
+          <view class="featured-text">{{selected.scent}}</view>
+          <button bindtap="toGuideProduct" data-id="{{selected.product.id}}">查看香品　›</button>
+        </view>
+        <view class="featured-image-wrap">
+          <image class="featured-image" src="{{selected.product.image}}" mode="aspectFill"/>
+          <image class="featured-emblem" src="{{selected.product.emblem}}" mode="aspectFit"/>
+        </view>
+      </view>
     </view>
-    <view class="scent-stage">
-      <view class="scent-heading">{{selected ? '色系对应香款' : '循心择香'}}</view>
-      <image class="product-emblem" src="{{scent.emblem}}" mode="aspectFit"/>
-      <view class="scent-name">{{scent.name}}</view>
-      <view class="scent-mood">{{scent.mood}}</view>
-      <view class="scent-notes">{{details[scent.id].notes}}</view>
-      <view class="inline-aroma"><view class="aroma-intro">{{details[scent.id].intro}}</view><view class="aroma-notes"><view wx:for="{{details[scent.id].aroma}}" wx:key="*this"><text>{{index === 0 ? '前调' : index === 1 ? '中调' : '余韵'}}</text><view>{{item}}</view></view></view></view>
-      <view class="visual-frame" bindtap="toProduct" role="button" aria-label="{{'查看' + scent.name}}"><image class="product-visual" src="{{scent.image}}" mode="aspectFill"/><view class="visual-fade"/></view>
-      <button class="aroma-button" bindtap="toProduct">了解这款香　›</button>
+
+    <view class="detail-section">
+      <view class="section-kicker">DAILY GUIDANCE</view>
+      <view class="section-title">五色详解</view>
+      <view class="section-intro">从适宜之事到行动节奏，把颜色建议落进真实的一天。</view>
+
+      <view wx:for="{{guides}}" wx:key="rank" class="guide-card tone-card-{{item.product.id}}">
+        <view class="guide-head">
+          <view class="guide-rank">0{{item.rank}}</view>
+          <view class="guide-identity"><view>{{item.name}}</view><text>{{item.element}} · {{item.tier}}</text></view>
+          <view class="status-chip">{{item.status}}</view>
+        </view>
+        <view class="swatch-row"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" style="background:{{swatch}}"/><text>{{item.palette}}</text></view>
+        <view class="advice-panel">
+          <view class="micro-title">今日适宜</view>
+          <view class="suitable-list"><text wx:for="{{item.suitable}}" wx:key="*this">{{item}}</text></view>
+          <view class="micro-title">行动建议</view>
+          <view class="body-copy">{{item.advice}}</view>
+          <view class="notice"><text>留意</text><view>{{item.resistance}}</view></view>
+        </view>
+        <view class="product-row">
+          <image src="{{item.product.emblem}}" mode="aspectFit"/>
+          <view><text>对应香品</text><view>{{item.product.name}} · {{item.product.mood}}</view></view>
+          <button bindtap="toGuideProduct" data-id="{{item.product.id}}">了解 ›</button>
+        </view>
+      </view>
+      <view class="source-note">依据每日确定性历法规则自动更新 · {{source}}<br/>传统文化与日常生活参考，请结合实际情境判断。</view>
     </view>
-  </view>
+  </block>
+
   <view class="life-section">
-    <view class="life-heading"><view>知时小趣</view><text>一个人慢慢看，也可以一起玩</text></view>
+    <view class="section-kicker">A MOMENT FOR YOURSELF</view>
+    <view class="section-title">知时小趣</view>
+    <view class="section-intro">一个人慢慢看，也可以和家人朋友一起玩。</view>
     <view class="life-entries">
       <button data-tab="daily" bindtap="toExplore"><text class="life-mark">时</text><view>节气日常<text>观察、散步与书写</text></view><text>›</text></button>
       <button data-tab="scent" bindtap="toExplore"><text class="life-mark">香</text><view>选香小测<text>按此刻偏好循心择香</text></view><text>›</text></button>
-      <button data-tab="quiz" bindtap="toExplore"><text class="life-mark">问</text><view>国学一题<text>适合独答，也适合共玩</text></view><text>›</text></button>
+      <button data-tab="quiz" bindtap="toExplore"><text class="life-mark">问</text><view>国学一题<text>独答或共玩皆有趣</text></view><text>›</text></button>
     </view>
   </view>
+
   <view class="gift">
-    <view class="gift-copy"><view class="gift-kicker">五色应时 · 知时而行</view><view class="gift-title">五色应时礼盒</view><view class="gift-desc">随时序择色，也随心择香</view><view class="gift-price">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看礼盒</button></view>
+    <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
     <image class="gift-image" src="/assets/brand/gift.jpg" mode="aspectFit"/>
   </view>
-  <view class="home-links"><button bindtap="toAi"><text>AI国学</text><view>问典籍，也问生活 ›</view></button><button bindtap="toMine"><text>我的今日五色</text><view>结合本人档案查看 ›</view></button></view>
-  <view class="page-foot">传统文化与日常生活参考</view>
-  <view wx:if="{{showGuide}}" class="scrim" bindtap="closeGuide" catchtouchmove="noop"/>
-  <view wx:if="{{showGuide}}" class="sheet">
-    <view class="sheet-head"><view class="sheet-title">{{selected.name}} · 今日用色</view><button class="sheet-close" bindtap="closeGuide" aria-label="关闭">×</button></view>
-    <view class="guide-status">第{{selected.rank}}位 · {{selected.tier}} · {{selected.status}}</view>
-    <view class="guide-swatches"><view wx:for="{{selected.product.swatches}}" wx:key="*this" style="background:{{item}}"/></view>
-    <view class="detail-title">今日用色说明</view><view class="detail-text">{{selected.advice}}</view>
-    <view class="detail-title">同色系搭配</view><view class="detail-text">{{selected.palette}}</view>
-    <view class="muted guide-note">资料来源：《{{source}}》 · {{dateLabel}}。传统文化参考，给日常提供一个观察角度。</view>
+
+  <view class="home-links">
+    <button bindtap="toAi"><text>AI 国学</text><view>从典籍出发，聊聊此刻的困惑</view><small>进入问答 ›</small></button>
+    <button bindtap="toMine"><text>我的</text><view>登录、个人五色与订单记录</view><small>查看账户 ›</small></button>
   </view>
+  <view class="page-foot">五色知时 · 让传统文化自然进入日常</view>
 </view>

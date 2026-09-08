@@ -62,10 +62,9 @@ class DailyGuidance(Base):
 
 
 class PublicColorCache(Base):
-    """公共五色规则缓存；与人工审核发布的 PublicGuide 相互独立。
+    """公开接口使用的每日五色规则缓存。
 
-    人工已发布内容始终优先。此表保存规则引擎自动生成的结构化预热内容，供批任务
-    和运营校验使用；公开接口不会把尚未人工确认的缓存当作已发布内容。
+    结果来自确定性历法规则；相同日期、规则版本和配置指纹会稳定复用。
     """
     __tablename__ = "public_color_caches"
 

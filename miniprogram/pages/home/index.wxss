@@ -1,80 +1,37 @@
-.home-page { min-height: 100vh; padding-bottom: calc(110rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(135deg, rgba(38, 38, 38, .88), rgba(25, 25, 25, .94)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; font-family: "Songti SC", "STSong", serif; }
-.brandbar { display: flex; align-items: center; justify-content: center; height: 174rpx; background: rgba(28, 33, 29, .62); border-bottom: 1rpx solid rgba(208, 161, 102, .24); }
-.brandbar .brand-logo { width: 226rpx; height: 164rpx; }
-.today { display: flex; min-height: 940rpx; background: rgba(52, 52, 52, .84); border-bottom: 1rpx solid rgba(208, 161, 102, .24); }
-.ranking { width: 52%; flex: none; padding: 30rpx 18rpx 24rpx 28rpx; border-right: 1rpx solid rgba(208, 161, 102, .3); }
-.ranking .eyebrow { overflow: hidden; color: #d8aa70; font-size: 18rpx; letter-spacing: 1rpx; text-overflow: ellipsis; white-space: nowrap; }
-.today-title { margin-top: 8rpx; color: #f3e9da; font-size: 52rpx; line-height: 1.25; letter-spacing: 4rpx; }
-.today-subtitle { min-height: 68rpx; margin: 10rpx 0 14rpx; color: #beb8ac; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 21rpx; line-height: 1.6; }
-.color-guide-button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 62rpx; padding: 0 13rpx; color: #e7c28d; background: rgba(170, 119, 67, .16); border: 1rpx solid #a77e4d; border-radius: 4rpx; font-size: 21rpx; line-height: 1.5; }
-.color-guide-button text { color: #f1d2a5; font-size: 19rpx; }
-.rank-list { margin-top: 20rpx; overflow: hidden; background: rgba(248, 242, 231, .95); border: 1rpx solid rgba(219, 177, 119, .34); border-radius: 6rpx; }
-.rank-row { position: relative; display: flex; align-items: stretch; width: 100%; height: 108rpx; padding: 0; overflow: hidden; color: #554936; background: rgba(248, 242, 231, .96); border-bottom: 1rpx solid rgba(113, 92, 64, .2); border-radius: 0; line-height: 1.5; text-align: left; }
-.rank-row:last-child { border-bottom: 0; }
-.rank-row.selected { background: #dfc8a7; }
-.rank-row.selected::after { position: absolute; top: 0; right: 0; bottom: 0; width: 5rpx; background: #a97743; content: ""; }
-.rank-accent { width: 7rpx; flex: none; background: #b8aa94; }
-.rank-accent.tone-green { background: #667a5c; }
-.rank-accent.tone-black { background: #3d4541; }
-.rank-accent.tone-gold { background: #bd873d; }
-.rank-accent.tone-white { background: #d7ccbb; }
-.rank-accent.tone-red { background: #a84e49; }
-.rank-no { display: flex; width: 60rpx; flex: none; align-items: center; justify-content: center; color: #786449; border-right: 1rpx solid rgba(113, 92, 64, .16); font-family: Georgia, serif; font-size: 30rpx; }
-.rank-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; justify-content: center; padding: 10rpx 7rpx 10rpx 12rpx; }
-.rank-main { display: flex; align-items: baseline; gap: 4rpx; white-space: nowrap; }
-.rank-color { color: #554936; font-size: 26rpx; }
-.rank-slash { color: #aa9476; font-size: 18rpx; }
-.rank-status { color: #946538; font-size: 18rpx; }
-.rank-note { margin-top: 5rpx; overflow: hidden; color: #786b5a; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 19rpx; text-overflow: ellipsis; white-space: nowrap; }
-.calendar-line { padding-top: 18rpx; color: #b5afa4; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 18rpx; line-height: 1.6; }
-.archive-badge { display: inline-block; margin-top: 10rpx; padding: 4rpx 10rpx; color: #e1bd89; background: rgba(166, 116, 64, .14); border: 1rpx solid rgba(204, 153, 91, .46); border-radius: 40rpx; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 18rpx; }
-.rank-empty { padding: 48rpx 8rpx 40rpx 0; color: var(--cream); font-size: 31rpx; }
-.rank-empty>text { display: block; margin: 22rpx 0; color: var(--muted); font-size: 24rpx; line-height: 1.85; }
-.rank-empty .outline-button { padding: 0 18rpx; font-size: 24rpx; }
-.scent-stage { position: relative; width: 48%; min-height: 940rpx; padding: 28rpx 15rpx 0; overflow: hidden; text-align: center; background: linear-gradient(180deg, #ded6c8 0%, #c9bca8 62%, #a99478 100%); }
-.scent-heading { position: relative; z-index: 3; color: #564a3a; font-size: 25rpx; letter-spacing: 2rpx; }
-.product-emblem { position: relative; z-index: 3; width: 92rpx; height: 92rpx; margin: 12rpx auto 0; }
-.scent-name { position: relative; z-index: 3; margin-top: 4rpx; color: #4d4438; font-size: 47rpx; line-height: 1.2; letter-spacing: 3rpx; }
-.scent-mood { position: relative; z-index: 3; margin-top: 7rpx; color: #715e46; font-size: 23rpx; letter-spacing: 2rpx; }
-.scent-notes { position: relative; z-index: 3; margin-top: 8rpx; color: #695e51; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 17rpx; white-space: nowrap; }
-.inline-aroma { position: relative; z-index: 3; margin-top: 13rpx; padding-top: 12rpx; color: #62584d; border-top: 1rpx solid rgba(98, 72, 42, .25); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; text-align: left; }
-.aroma-intro { font-size: 18rpx; line-height: 1.58; }
-.aroma-notes { display: flex; margin-top: 10rpx; }
-.aroma-notes>view { width: 33.33%; padding: 0 4rpx; border-right: 1rpx solid rgba(98, 72, 42, .2); }
-.aroma-notes>view:last-child { border: 0; }
-.aroma-notes text { color: #966937; font-size: 16rpx; }
-.aroma-notes>view>view { color: #695e51; font-size: 16rpx; line-height: 1.5; white-space: nowrap; }
-.visual-frame { position: absolute; top: 428rpx; right: 12rpx; bottom: 14rpx; left: 12rpx; overflow: hidden; background: #343a35; border: 1rpx solid rgba(70, 74, 67, .48); border-radius: 8rpx; box-shadow: 0 10rpx 28rpx rgba(30, 27, 22, .28); }
-.product-visual { width: 100%; height: 100%; transform: scale(1.03); transform-origin: 50% 100%; }
-.visual-fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(38, 42, 37, .1), transparent 42%, rgba(22, 25, 22, .38)); }
-.aroma-button { position: absolute; z-index: 5; right: 27rpx; bottom: 28rpx; padding: 0 17rpx; color: #edc792; background: rgba(37, 42, 37, .88); border: 1rpx solid #b48650; border-radius: 30rpx; font-size: 21rpx; line-height: 54rpx; }
-.life-section { padding: 38rpx 30rpx 40rpx; background: rgba(45, 45, 45, .92); border-bottom: 1rpx solid var(--line); }
-.life-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18rpx; }
-.life-heading>view { color: var(--cream); font-size: 36rpx; letter-spacing: 3rpx; }
-.life-heading>text { color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 21rpx; text-align: right; }
-.life-entries { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14rpx; margin-top: 24rpx; }
-.life-entries button { display: flex; min-height: 202rpx; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 20rpx 16rpx; color: var(--text); background: linear-gradient(145deg, #414141, #353535); border: 1rpx solid #625d56; border-radius: 6rpx; text-align: left; }
-.life-mark { color: var(--copper); font-size: 38rpx; }
-.life-entries button>view { font-size: 24rpx; line-height: 1.5; }
-.life-entries button>view>text { display: block; margin-top: 7rpx; color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 18rpx; line-height: 1.45; }
-.life-entries button>text:last-child { align-self: flex-end; color: var(--copper); font-size: 30rpx; }
-.gift { position: relative; height: 398rpx; overflow: hidden; background: linear-gradient(115deg, rgba(48, 53, 47, .97), rgba(30, 35, 31, .9) 64%, rgba(43, 42, 36, .94)), url('/assets/brand/stone-texture.jpg'); background-size: auto, cover; border-bottom: 1rpx solid rgba(208, 161, 102, .24); }
-.gift-copy { position: relative; z-index: 2; width: 55%; padding: 38rpx 0 0 32rpx; }
-.gift-kicker { margin-bottom: 12rpx; color: #d3a66c; font-size: 19rpx; letter-spacing: 2rpx; }
-.gift-title { color: #f0d5aa; font-size: 41rpx; line-height: 1.3; letter-spacing: 2rpx; }
-.gift-desc { margin-top: 10rpx; color: #c4b9a7; font-size: 22rpx; white-space: nowrap; }
-.gift-price { margin: 14rpx 0; color: #e6bc82; font-family: Georgia, serif; font-size: 46rpx; }
-.gift-price text { color: #aaa295; font-family: sans-serif; font-size: 19rpx; }
-.gift-button { display: inline-block; min-width: 182rpx; height: 64rpx; padding: 0 22rpx; color: #fffaf2; background: #a97743; border: 1rpx solid #d0a166; border-radius: 4rpx; font-size: 26rpx; line-height: 62rpx; letter-spacing: 2rpx; }
-.gift-image { position: absolute; right: -96rpx; bottom: -12rpx; width: 510rpx; height: 384rpx; opacity: .82; }
-.home-links { display: flex; background: rgba(29, 34, 30, .78); border-bottom: 1rpx solid var(--line); }
-.home-links button { width: 50%; padding: 25rpx 30rpx; color: #e3bd86; background: transparent; border-radius: 0; line-height: 1.7; text-align: left; }
-.home-links button+button { border-left: 1rpx solid var(--line); }
-.home-links text { font-size: 29rpx; }
-.home-links view { margin-top: 5rpx; color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 21rpx; }
-.guide-status { padding-bottom: 20rpx; color: var(--copper); border-bottom: 1rpx solid var(--line); }
-.guide-swatches { display: flex; padding-top: 22rpx; }
-.guide-swatches view { width: 58rpx; height: 58rpx; margin-right: -8rpx; border: 2rpx solid #d9bd92; border-radius: 50%; }
-.detail-title { margin: 24rpx 0 10rpx; color: #e4b97e; font-size: 26rpx; }
-.detail-text { color: #d3c9bb; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 28rpx; line-height: 1.9; }
-.guide-note { margin-top: 28rpx; font-size: 22rpx; }
+.home-page { min-height: 100vh; padding-bottom: calc(118rpx + env(safe-area-inset-bottom)); color: #eee4d5; background-color: #262626; background-image: linear-gradient(180deg, rgba(38,38,38,.88), rgba(31,31,31,.96)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 760rpx; font-family: "Songti SC", "STSong", serif; }
+button { font-family: inherit; }
+.brandbar { display: flex; height: 142rpx; align-items: center; padding: 0 30rpx; }
+.brand-logo { width: 186rpx; height: 126rpx; }
+.brand-caption { margin-left: auto; color: #a99e90; font-size: 19rpx; letter-spacing: 3rpx; }
+.today-hero { position: relative; margin: 0 24rpx; padding: 58rpx 40rpx 52rpx; overflow: hidden; background: linear-gradient(145deg, rgba(71,66,59,.96), rgba(43,42,40,.98)); border-radius: 28rpx; box-shadow: 0 24rpx 60rpx rgba(0,0,0,.2); }
+.hero-glow { position: absolute; top: -140rpx; right: -120rpx; width: 420rpx; height: 420rpx; background: radial-gradient(circle, rgba(191,139,80,.18), transparent 66%); }
+.eyebrow,.section-kicker { color: #d3a56f; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 20rpx; letter-spacing: 3rpx; }
+.today-title { position: relative; margin-top: 18rpx; color: #f5eadb; font-size: 72rpx; line-height: 1.15; letter-spacing: 8rpx; }
+.today-subtitle { position: relative; max-width: 570rpx; margin-top: 24rpx; color: #cbc1b4; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 27rpx; line-height: 1.85; }
+.calendar-pill { display: inline-flex; margin-top: 30rpx; padding: 12rpx 22rpx; color: #e7d3b8; background: rgba(207,154,91,.12); border-radius: 999rpx; font-size: 22rpx; }
+.loading-card,.reload-card,.overview-card { margin: 22rpx 24rpx 0; padding: 38rpx 32rpx; background: rgba(54,53,51,.94); border-radius: 24rpx; box-shadow: 0 16rpx 42rpx rgba(0,0,0,.15); }
+.skeleton { width: 68%; height: 28rpx; margin-top: 22rpx; background: linear-gradient(90deg,#454545,#53504c,#454545); border-radius: 20rpx; animation: breathe 1.5s ease-in-out infinite; }.skeleton.wide{width:92%;height:48rpx;margin-top:0}.skeleton.short{width:44%}@keyframes breathe{50%{opacity:.45}}
+.reload-card { display: flex; align-items: center; gap: 20rpx; }
+.reload-mark { display: flex; width: 82rpx; height: 82rpx; flex: none; align-items: center; justify-content: center; color: #e2bc89; background: #45413c; border-radius: 50%; font-size: 38rpx; }
+.reload-copy { flex: 1; }.reload-copy>view{font-size:28rpx}.reload-copy text{display:block;margin-top:8rpx;color:#aaa197;font-family:sans-serif;font-size:21rpx;line-height:1.6}.reload-card button{padding:0 20rpx;color:#e6bc84;background:#4a4137;border-radius:30rpx;font-size:22rpx;line-height:62rpx}
+.section-title { margin-top: 10rpx; color: #f1e6d7; font-size: 44rpx; letter-spacing: 4rpx; }
+.section-intro { margin-top: 13rpx; color: #aaa198; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; font-size: 24rpx; line-height: 1.75; }
+.rank-pills { display: flex; gap: 10rpx; margin-top: 30rpx; }
+.rank-pill { min-width: 0; height: 138rpx; flex: 1; padding: 15rpx 4rpx; color: #d7cec2; background: #41403e; border-radius: 16rpx; line-height: 1.25; }
+.rank-pill text { display:block;color:#a89e92;font-family:Georgia,serif;font-size:18rpx}.rank-pill view{margin-top:9rpx;font-size:24rpx;white-space:nowrap}.rank-pill small{display:block;margin-top:7rpx;color:#a99d8e;font-family:sans-serif;font-size:17rpx;white-space:nowrap}.rank-pill.active{background:#6c5842;box-shadow:inset 0 0 0 2rpx rgba(222,177,121,.5)}.rank-pill.tone-white{box-shadow:inset 0 5rpx #d7ccbb}.rank-pill.tone-gold{box-shadow:inset 0 5rpx #bd873d}.rank-pill.tone-green{box-shadow:inset 0 5rpx #71815e}.rank-pill.tone-red{box-shadow:inset 0 5rpx #a8514b}.rank-pill.tone-black{box-shadow:inset 0 5rpx #202524}
+.featured { display: flex; min-height: 340rpx; margin-top: 24rpx; overflow: hidden; background: #d8cdbc; border-radius: 22rpx; }
+.featured-copy { z-index: 2; width: 52%; padding: 30rpx 0 28rpx 28rpx; color: #51483e; }
+.featured-label { color:#8f673d;font-size:20rpx;letter-spacing:2rpx}.featured-name{margin-top:10rpx;font-size:48rpx;letter-spacing:4rpx}.featured-mood{margin-top:6rpx;color:#725f49;font-size:23rpx}.featured-text{margin-top:18rpx;color:#6a6055;font-family:sans-serif;font-size:21rpx;line-height:1.65}.featured-copy button{display:inline-block;margin-top:20rpx;padding:0 23rpx;color:#f8eee1;background:#5a4b3b;border-radius:30rpx;font-size:21rpx;line-height:58rpx}
+.featured-image-wrap{position:relative;width:48%;overflow:hidden}.featured-image{width:100%;height:100%}.featured-image-wrap::after{position:absolute;inset:0;background:linear-gradient(90deg,#d8cdbc 0%,rgba(216,205,188,.18) 45%,rgba(36,32,28,.05));content:""}.featured-emblem{position:absolute;z-index:2;top:20rpx;right:18rpx;width:78rpx;height:78rpx;filter:drop-shadow(0 5rpx 8rpx rgba(0,0,0,.15))}
+.detail-section,.life-section { padding: 58rpx 24rpx 12rpx; }
+.guide-card { margin-top: 26rpx; padding: 30rpx; background: #3a3937; border-radius: 24rpx; box-shadow: 0 18rpx 44rpx rgba(0,0,0,.16); }
+.tone-card-white{background:linear-gradient(145deg,#4b4844,#373635)}.tone-card-gold{background:linear-gradient(145deg,#514536,#383634)}.tone-card-green{background:linear-gradient(145deg,#42483d,#353735)}.tone-card-red{background:linear-gradient(145deg,#4b3b39,#373535)}.tone-card-black{background:linear-gradient(145deg,#333736,#2f3030)}
+.guide-head { display:flex;align-items:center }.guide-rank{color:#d5a66e;font-family:Georgia,serif;font-size:42rpx}.guide-identity{margin-left:20rpx}.guide-identity>view{font-size:36rpx;letter-spacing:3rpx}.guide-identity text{display:block;margin-top:5rpx;color:#b2a79a;font-family:sans-serif;font-size:20rpx}.status-chip{margin-left:auto;padding:9rpx 17rpx;color:#ead0ad;background:rgba(190,136,75,.16);border-radius:30rpx;font-family:sans-serif;font-size:20rpx}
+.swatch-row{display:flex;align-items:center;margin-top:24rpx}.swatch-row>view{width:40rpx;height:40rpx;margin-right:-5rpx;border:2rpx solid rgba(237,222,202,.55);border-radius:50%}.swatch-row>text{margin-left:20rpx;color:#b9afa3;font-family:sans-serif;font-size:20rpx}
+.advice-panel{margin-top:25rpx;padding:26rpx;background:rgba(24,24,24,.2);border-radius:18rpx}.micro-title{margin-top:24rpx;color:#d8b17e;font-size:23rpx;letter-spacing:2rpx}.micro-title:first-child{margin-top:0}.suitable-list{display:flex;flex-wrap:wrap;gap:12rpx;margin-top:14rpx}.suitable-list text{padding:10rpx 16rpx;color:#e5d9ca;background:rgba(234,213,184,.1);border-radius:30rpx;font-family:sans-serif;font-size:21rpx}.body-copy{margin-top:12rpx;color:#ded4c8;font-family:sans-serif;font-size:25rpx;line-height:1.85}.notice{display:flex;gap:14rpx;margin-top:22rpx;padding:18rpx;background:rgba(10,10,10,.16);border-radius:14rpx}.notice text{flex:none;color:#cb9c68;font-size:21rpx}.notice view{color:#bcb2a7;font-family:sans-serif;font-size:22rpx;line-height:1.7}
+.product-row{display:flex;align-items:center;margin-top:22rpx}.product-row image{width:72rpx;height:72rpx}.product-row>view{min-width:0;flex:1;margin-left:16rpx}.product-row>view text{color:#a99e91;font-family:sans-serif;font-size:18rpx}.product-row>view view{margin-top:5rpx;font-size:24rpx}.product-row button{padding:0 18rpx;color:#e8c28f;background:#4d443b;border-radius:28rpx;font-size:21rpx;line-height:56rpx}
+.source-note{padding:34rpx 12rpx;color:#867f77;font-family:sans-serif;font-size:19rpx;line-height:1.8;text-align:center}
+.life-section { padding-bottom: 48rpx; }
+.life-entries { display:grid;grid-template-columns:repeat(3,1fr);gap:14rpx;margin-top:26rpx}.life-entries button{display:flex;min-height:210rpx;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:22rpx 18rpx;color:#eee3d4;background:#3c3b39;border-radius:20rpx;text-align:left;box-shadow:0 12rpx 34rpx rgba(0,0,0,.12)}.life-mark{color:#d1a16b;font-size:38rpx}.life-entries button>view{font-size:25rpx;line-height:1.45}.life-entries button>view>text{display:block;margin-top:8rpx;color:#a9a097;font-family:sans-serif;font-size:18rpx;line-height:1.5}.life-entries button>text:last-child{align-self:flex-end;color:#cb9b64;font-size:30rpx}
+.gift{position:relative;height:410rpx;margin:10rpx 24rpx 0;overflow:hidden;background:linear-gradient(115deg,rgba(67,61,54,.98),rgba(39,38,37,.9) 67%);border-radius:26rpx;box-shadow:0 20rpx 50rpx rgba(0,0,0,.2)}.gift-copy{position:relative;z-index:2;width:60%;padding:42rpx 0 0 32rpx}.gift-kicker{color:#d3a66c;font-size:19rpx;letter-spacing:2rpx}.gift-title{margin-top:14rpx;color:#f0dfc7;font-size:39rpx;line-height:1.35}.gift-desc{margin-top:10rpx;color:#bdb2a5;font-family:sans-serif;font-size:20rpx}.gift-price{margin:18rpx 0;color:#e6bc82;font-family:Georgia,serif;font-size:44rpx}.gift-price text{color:#aaa295;font-family:sans-serif;font-size:18rpx}.gift-button{display:inline-block;padding:0 24rpx;color:#fff7ec;background:#9a6b3f;border-radius:30rpx;font-size:24rpx;line-height:62rpx}.gift-image{position:absolute;right:-110rpx;bottom:-6rpx;width:520rpx;height:390rpx;opacity:.82}
+.home-links{display:grid;grid-template-columns:1fr 1fr;gap:16rpx;padding:26rpx 24rpx}.home-links button{min-height:210rpx;padding:28rpx;color:#eadbc7;background:#3b3a38;border-radius:22rpx;text-align:left}.home-links text{font-size:30rpx}.home-links view{margin-top:14rpx;color:#a9a097;font-family:sans-serif;font-size:21rpx;line-height:1.6}.home-links small{display:block;margin-top:23rpx;color:#d0a16a;font-family:sans-serif;font-size:20rpx}.page-foot{padding:32rpx 20rpx 46rpx;color:#77716a;font-size:20rpx;letter-spacing:2rpx;text-align:center}

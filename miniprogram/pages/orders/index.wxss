@@ -1,11 +1,11 @@
-.orders-page { min-height: 100vh; padding: 28rpx 34rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.orders-page { min-height: 100vh; padding: 28rpx 34rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
 .orders-page .screen-title { margin-top: 8rpx; font-size: 49rpx; }
 .order-logo { width: 88rpx; height: 78rpx; }
 .order-tabs { display: flex; margin-top: 20rpx; border-bottom: 1rpx solid var(--line); white-space: nowrap; }
 .order-tabs button { display: inline-block; flex: none; padding: 18rpx 24rpx; color: #aaa99f; background: transparent; border-bottom: 3rpx solid transparent; border-radius: 0; font-size: 25rpx; line-height: 1.6; }
 .order-tabs button.active { color: #e1b97f; border-bottom-color: #c59153; }
 .orders-page .empty-state { padding-top: 110rpx; }
-.order-card { margin-top: 24rpx; padding: 25rpx; color: var(--text); background: #313732; border: 1rpx solid #59645b; border-radius: 6rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); line-height: 1.7; text-align: left; }
+.order-card { margin-top: 24rpx; padding: 25rpx; color: var(--text); background: #343331; border-radius: 20rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); line-height: 1.7; text-align: left; }
 .order-top { display: flex; justify-content: space-between; padding-bottom: 18rpx; color: var(--muted); border-bottom: 1rpx solid var(--line); font-size: 22rpx; }
 .order-top>text:last-child, .detail-status { color: var(--copper); }
 .order-product { display: flex; align-items: center; padding: 22rpx 0; }

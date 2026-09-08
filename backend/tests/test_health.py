@@ -15,8 +15,9 @@ def test_openapi_routes_are_grouped_and_ai_status_is_explicit():
     tag_names = {tag["name"] for tag in schema["tags"]}
     assert {
         "账号与微信登录", "生辰档案与历法", "今日五色·用户端",
-        "今日五色·运营后台", "AI国学·用户问答", "AI国学·知识库后台",
+        "每日缓存·运维", "AI国学·用户问答", "AI国学·知识库后台",
     }.issubset(tag_names)
+    assert "今日五色·运营后台" not in tag_names
 
     operations = [
         operation

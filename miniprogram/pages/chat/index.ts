@@ -250,7 +250,7 @@ Page({
   async sendQuestion(question: string) {
     if (!question || this.data.sending) return;
     if (isPublicRankingQuestion(question)) {
-      wx.showModal({ title: "今日色序说明", content: "首页的五色内容来自每日整理的资料，只用于传统文化学习与日常观察。想看当天的色序和说明，可以回到首页。", confirmText: "查看五色", success: result => { if (result.confirm) wx.switchTab({ url: "/pages/home/index" }); } });
+      wx.showModal({ title: "今日色序说明", content: "首页五色由确定性历法规则每日自动更新，不由 AI 临时编排。内容用于传统文化学习与日常观察，完整排行和行动建议请回到首页查看。", confirmText: "查看五色", success: result => { if (result.confirm) wx.switchTab({ url: "/pages/home/index" }); } });
       return;
     }
     if (!getToken()) { this.toLogin(); return; }

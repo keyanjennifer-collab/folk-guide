@@ -65,35 +65,27 @@ async function main() {
   assert.equal(cart.readCart().length,0);
   storage.set('wuse-shopping-bag-v1',[{id:'green',quantity:'bad'},{id:'red',quantity:-3}]);
   assert.equal(cart.readCart().length,0);
-  const {confirmedForDate,isPublicRankingQuestion}=load('data/confirmed-colors.ts');
-  assert.equal(confirmedForDate('2026-09-06').isToday,true);
-  assert.equal(confirmedForDate('2026-09-07').isToday,false,'must not relabel yesterday as today');
-  assert.equal(confirmedForDate('2026-09-05').record,null);
+  const {isPublicRankingQuestion}=load('data/confirmed-colors.ts');
   assert.equal(isPublicRankingQuestion('今日五色排行'),true);
   assert.equal(isPublicRankingQuestion('明天穿什么颜色'),true);
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
   publicResult={guide_date:'2026-09-07',weekday:'星期一',lunar_date:'七月廿五',solar_term:'白露前',day_ganzhi:'甲子',
     items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:'比较合适',suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
-    share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'manual-v1'};
+    share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
   const homeRequests=requests;
   const home=instance('pages/home/index.ts');
   await home.loadToday();
   assert.equal(home.data.guides.length,5);
   assert.equal(home.data.scent.name,'白桂');
   assert.equal(home.data.guides.map(g=>g.product.id).join(','),'white,gold,green,red,black');
+  assert(home.data.guides.every(g=>g.suitable.length && g.resistance && g.advice && g.palette));
   assert.equal(requests,homeRequests+1,'home reads the server-published daily guide');
   home.selectGuide({currentTarget:{dataset:{rank:4}}});
   assert.equal(home.data.scent.name,'朱蜜');
-  home.selectScent({currentTarget:{dataset:{id:'black'}}});
-  assert.equal(home.data.scent.name,'墨沉');
   publicResult=new Error('network');
   await home.loadToday();
-  assert.equal(home.data.contentSource,'archive','network failures may only use an explicitly dated confirmed record');
-  assert.equal(home.data.guides.length,5);
-  assert.equal(home.data.dateLabel,'09 · 06');
-  publicResult=Object.assign(new Error('pending'),{__api:true,code:'daily_guide_pending',status:'pending_confirmation'});
-  await home.loadToday();
-  assert.equal(home.data.contentSource,'archive','pending today keeps the confirmed record explicitly marked as non-today');
+  assert.equal(home.data.contentSource,'error','network failures never relabel stale data as today');
+  assert.equal(home.data.guides.length,0);
   const {SCENT_QUIZ,matchScent,QUIZ}=load('data/discovery.ts');
   for (const moment of SCENT_QUIZ[0].options) for (const note of SCENT_QUIZ[1].options) {
     assert(PRODUCTS.some(p=>p.id===matchScent(moment.id,note.id)), 'every taste combination yields an existing SKU');
@@ -104,6 +96,6 @@ async function main() {
   await orders.loadOrders();
   assert.equal(requests,before,'guest must not fetch personal orders');
   assert.equal(orders.data.loggedIn,false);
-  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; server daily guide; pending/no-stale fallback; public AI guard; scent matching; quiz sources; guest orders');
+  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; no stale fallback; public AI guard; scent matching; quiz sources; guest orders');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

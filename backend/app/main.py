@@ -75,8 +75,7 @@ async def lifespan(_: FastAPI):
 settings = get_settings()
 validate_runtime_settings(settings)
 
-# Swagger /docs 按真实业务域分组。说明中明确用户端与运营端的认证方式，
-# 避免联调人员把管理员接口接入小程序，或误把原型接口当成正式能力。
+# Swagger /docs 按真实业务域分组。
 OPENAPI_TAGS = [
     {
         "name": "系统状态",
@@ -92,11 +91,7 @@ OPENAPI_TAGS = [
     },
     {
         "name": "今日五色·用户端",
-        "description": "小程序首页使用的公开内容，只返回已经发布的每日五色，不要求登录。",
-    },
-    {
-        "name": "今日五色·运营后台",
-        "description": "每日内容草稿、审核、排期、发布、撤回、Excel导入和审计。需要 X-Admin-Key。",
+        "description": "小程序首页使用的公开内容，按北京时间和确定性历法规则每日自动生成并缓存，不要求登录。",
     },
     {
         "name": "AI国学·用户问答",
@@ -125,7 +120,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "五色知时小程序 Python API。用户端受保护接口使用 `Authorization: Bearer <JWT>`；"
-        "运营后台接口使用 `X-Admin-Key`。接口文档中的“原型”或“旧版”分组不能作为正式业务能力。"
+        "知识库与运维接口使用 `X-Admin-Key`。接口文档中的“原型”或“旧版”分组不能作为正式业务能力。"
     ),
     openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,

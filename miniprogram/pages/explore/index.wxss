@@ -1,4 +1,4 @@
-.explore-page { min-height: 100vh; padding: 38rpx 34rpx calc(60rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.explore-page { min-height: 100vh; padding: 38rpx 34rpx calc(60rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
 .explore-heading .screen-title { margin-top: 10rpx; font-size: 56rpx; }
 .explore-heading>text { display: block; margin-top: 14rpx; color: var(--muted); font-size: 27rpx; }
 .explore-tabs { display: flex; margin: 36rpx 0; border-bottom: 1rpx solid var(--line); }
@@ -6,7 +6,7 @@
 .explore-tabs button.active { color: #e4bd83; border-color: #c38f52; }
 .section-title { margin: 30rpx 0 14rpx; color: var(--cream); font-size: 39rpx; }
 .section-copy { color: #bbb4a8; font-size: 28rpx; line-height: 1.85; }
-.idea-card, .answer-card { display: block; width: 100%; margin-top: 24rpx; padding: 30rpx; color: var(--text); background: linear-gradient(145deg, #3a423b, #313732); border: 1rpx solid #606b61; border-radius: 8rpx; box-shadow: 0 11rpx 24rpx rgba(11, 14, 12, .2); line-height: 1.8; text-align: left; }
+.idea-card, .answer-card { display: block; width: 100%; margin-top: 24rpx; padding: 30rpx; color: var(--text); background: linear-gradient(145deg, #3d3b38, #31302f); border-radius: 20rpx; box-shadow: 0 11rpx 24rpx rgba(11, 14, 12, .2); line-height: 1.8; text-align: left; }
 .idea-tag, .question-label { color: #d6a66c; font-size: 25rpx; letter-spacing: 2rpx; }
 .idea-title { display: flex; justify-content: space-between; margin-top: 8rpx; color: var(--cream); font-family: "Songti SC", serif; font-size: 33rpx; }
 .idea-copy { margin-top: 20rpx; color: #c4bdb1; font-size: 28rpx; }
@@ -14,7 +14,7 @@
 .taste-step { margin: 36rpx 0; }
 .question-title { margin: 14rpx 0 26rpx; color: var(--cream); font-family: "Songti SC", serif; font-size: 37rpx; line-height: 1.7; }
 .taste-options, .quiz-options { display: flex; flex-direction: column; gap: 16rpx; }
-.taste-options button, .quiz-options button { padding: 24rpx; color: #e9e0d2; background: #343b35; border: 1rpx solid #626e64; border-radius: 7rpx; font-size: 29rpx; line-height: 1.7; text-align: left; }
+.taste-options button, .quiz-options button { padding: 24rpx; color: #e9e0d2; background: #373634; border-radius: 16rpx; font-size: 29rpx; line-height: 1.7; text-align: left; }
 .taste-options button.selected, .quiz-options button.correct { color: #fffaf2; background: #a97a46; border-color: #dda96c; }
 .taste-result { display: flex; gap: 26rpx; padding: 28rpx 0; border-top: 1rpx solid var(--line); }
 .taste-result image { width: 230rpx; height: 340rpx; flex: none; border-radius: 6rpx; }

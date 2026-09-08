@@ -1,221 +1,59 @@
-import io
-from datetime import date, datetime, timedelta, timezone
+"""公开每日五色自动更新接口。"""
+
+from datetime import date
 
 from fastapi.testclient import TestClient
-from openpyxl import load_workbook
-
-from app.main import app
-from app.database import SessionLocal
-from app.models import PublicGuide, PublicGuideAudit
 from sqlalchemy import select
 
+from app.database import SessionLocal
+from app.main import app
+from app.models import PublicColorCache
 
-ADMIN_HEADERS = {"X-Admin-Key": "dev-admin-key", "X-Admin-Name": "pytest-admin"}
+
+FORMAL_COLORS = {"白色系", "绿色系", "黑色系", "红色系", "黄色系"}
 
 
-def cleanup_guide(day: date) -> None:
+def clear_cache(day: date) -> None:
     with SessionLocal() as db:
-        guide = db.scalar(select(PublicGuide).where(PublicGuide.guide_date == day))
-        if guide:
-            db.query(PublicGuideAudit).filter(PublicGuideAudit.guide_id == guide.id).delete()
-            db.delete(guide)
+        row = db.scalar(select(PublicColorCache).where(PublicColorCache.guide_date == day))
+        if row:
+            db.delete(row)
             db.commit()
 
 
-def guide_payload(day: date) -> dict:
-    fixed = [
-        (1, "绿色系", "木", "今天很顺", "GREEN", "青木"),
-        (2, "黑色系", "水", "比较合适", "BLACK", "墨沉"),
-        (3, "黄色系", "土", "平稳一般", "GOLD", "黄檀"),
-        (4, "白色系", "金", "会比较累", "WHITE", "白桂"),
-        (5, "红色系", "火", "成效偏弱", "RED", "朱蜜"),
-    ]
-    return {
-        "guide_date": day.isoformat(),
-        "weekday": "星期一",
-        "lunar_date": "农历测试日期",
-        "solar_term": "节气测试",
-        "day_ganzhi": "甲子",
-        "items": [
-            {
-                "rank": rank,
-                "color": color,
-                "element": element,
-                "smoothness": smoothness,
-                "suitable": ["合作", "沟通"],
-                "resistance": "可能需要更多耐心",
-                "advice": "先确认重点再行动",
-                "product_code": product,
-                "incense_name": incense_name,
-                "scent": "香气描述",
-            }
-            for rank, color, element, smoothness, product, incense_name in fixed
-        ],
-        "share_title": "今日五色排名",
-        "share_summary": "今日完整建议已更新",
-        "push_summary": "今日五色已更新",
-        "rule_version": "manual-test-v1",
-    }
-
-
-def test_public_guide_workflow_and_audit():
-    day = date.today() + timedelta(days=20)
-    cleanup_guide(day)
-    with TestClient(app) as client:
-        unauthorized = client.post("/api/admin/public-guides", json=guide_payload(day))
-        assert unauthorized.status_code == 403
-
-        created = client.post("/api/admin/public-guides", headers=ADMIN_HEADERS, json=guide_payload(day))
-        assert created.status_code == 200
-        assert created.json()["status"] == "draft"
-
-        reviewed = client.post(f"/api/admin/public-guides/{day}/review", headers=ADMIN_HEADERS)
-        assert reviewed.status_code == 200
-        assert reviewed.json()["status"] == "reviewing"
-
-        published = client.post(f"/api/admin/public-guides/{day}/publish", headers=ADMIN_HEADERS)
-        assert published.status_code == 200
-        assert published.json()["status"] == "published"
-
-        public = client.get(f"/api/public-guides/{day}")
-        assert public.status_code == 200
-        assert [item["rank"] for item in public.json()["items"]] == [1, 2, 3, 4, 5]
-
-        audits = client.get(f"/api/admin/public-guides/{day}/audits", headers=ADMIN_HEADERS)
-        assert audits.status_code == 200
-        assert [item["action"] for item in audits.json()] == ["create", "submit_review", "publish"]
-
-        withdrawn = client.post(f"/api/admin/public-guides/{day}/withdraw", headers=ADMIN_HEADERS)
-        assert withdrawn.status_code == 200
-        assert client.get(f"/api/public-guides/{day}").status_code == 404
-    cleanup_guide(day)
-
-
-def test_excel_template_and_import():
-    day = date.today() + timedelta(days=21)
-    cleanup_guide(day)
-    with TestClient(app) as client:
-        template = client.get("/api/admin/public-guides/template.xlsx", headers=ADMIN_HEADERS)
-        assert template.status_code == 200
-        workbook = load_workbook(io.BytesIO(template.content))
-        sheet = workbook.active
-        assert [sheet.cell(row=row, column=14).value for row in range(2, 7)] == ["青木", "墨沉", "黄檀", "白桂", "朱蜜"]
-        for row in range(2, 7):
-            sheet.cell(row=row, column=1, value=day.isoformat())
-        output = io.BytesIO()
-        workbook.save(output)
-
-        imported = client.post(
-            "/api/admin/public-guides/import",
-            headers=ADMIN_HEADERS,
-            files={"file": ("guides.xlsx", output.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
-        )
-        assert imported.status_code == 200
-        assert imported.json()["created"] == 1
-        detail = client.get(f"/api/admin/public-guides/{day}", headers=ADMIN_HEADERS)
-        assert detail.status_code == 200
-        assert detail.json()["status"] == "draft"
-    cleanup_guide(day)
-
-
-def test_scheduled_content_auto_publishes():
-    day = date.today() + timedelta(days=22)
-    cleanup_guide(day)
-    with TestClient(app) as client:
-        client.post("/api/admin/public-guides", headers=ADMIN_HEADERS, json=guide_payload(day))
-        client.post(f"/api/admin/public-guides/{day}/review", headers=ADMIN_HEADERS)
-        schedule = client.post(
-            f"/api/admin/public-guides/{day}/schedule",
-            headers=ADMIN_HEADERS,
-            json={"scheduled_at": (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()},
-        )
-        assert schedule.status_code == 200
-        listed = client.get("/api/admin/public-guides", headers=ADMIN_HEADERS)
-        target = next(item for item in listed.json() if item["guide_date"] == day.isoformat())
-        assert target["status"] == "published"
-    cleanup_guide(day)
-
-
-def test_rejects_incomplete_or_wrong_color_mapping():
-    day = date.today() + timedelta(days=23)
-    cleanup_guide(day)
-    payload = guide_payload(day)
-    payload["items"][0]["element"] = "火"
-    with TestClient(app) as client:
-        response = client.post("/api/admin/public-guides", headers=ADMIN_HEADERS, json=payload)
-        assert response.status_code == 422
-    cleanup_guide(day)
-
-
-def test_admin_page_is_available():
-    with TestClient(app) as client:
-        response = client.get("/admin/public-guides")
-        assert response.status_code == 200
-        assert "今日五色运营后台" in response.text
-
-
-def test_today_returns_pending_when_no_manual_content(monkeypatch):
-    """没有人工发布内容时，首页必须明确待人工确认，不能回退到自动或历史内容。"""
-    fixed_day = date(2036, 8, 19)
-    cleanup_guide(fixed_day)
-    monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
-
-    with TestClient(app) as client:
-        response = client.get("/api/public-guides/today")
-
-    assert response.status_code == 409
-    detail = response.json()["detail"]
-    assert detail["code"] == "daily_guide_pending"
-    assert detail["status"] == "pending_confirmation"
-    assert detail["guide_date"] == fixed_day.isoformat()
-
-
-def test_future_unconfirmed_date_returns_pending_instead_of_rule_cache(monkeypatch):
-    """未来可预热日期也不能把自动缓存伪装成已确认内容。"""
-    fixed_day = date(2036, 8, 21)
-    cleanup_guide(fixed_day)
-    monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
-
-    with TestClient(app) as client:
-        response = client.get(f"/api/public-guides/{fixed_day + timedelta(days=2)}")
-
-    assert response.status_code == 409
-    detail = response.json()["detail"]
-    assert detail["code"] == "daily_guide_pending"
-    assert detail["status"] == "pending_confirmation"
-
-
-def test_today_returns_unavailable_when_cache_generation_fails(monkeypatch):
-    """规则缓存异常时返回可识别503，而不是泄露异常或沿用旧内容。"""
-    fixed_day = date(2036, 8, 22)
-    cleanup_guide(fixed_day)
-    monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
-    monkeypatch.setattr(
-        "app.public_guide_routes.warm_public_color_cache",
-        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("cache down")),
-    )
-
-    with TestClient(app) as client:
-        response = client.get("/api/public-guides/today")
-
-    assert response.status_code == 503
-    detail = response.json()["detail"]
-    assert detail["code"] == "daily_guide_unavailable"
-    assert detail["status"] == "unavailable"
-
-
-def test_today_returns_published_content_for_beijing_date(monkeypatch):
-    """今日接口应按统一的北京时间读取当天已经发布的记录。"""
+def test_today_is_generated_automatically_for_beijing_date(monkeypatch):
     fixed_day = date(2036, 8, 20)
-    cleanup_guide(fixed_day)
     monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
 
     with TestClient(app) as client:
-        client.post("/api/admin/public-guides", headers=ADMIN_HEADERS, json=guide_payload(fixed_day))
-        client.post(f"/api/admin/public-guides/{fixed_day}/review", headers=ADMIN_HEADERS)
-        client.post(f"/api/admin/public-guides/{fixed_day}/publish", headers=ADMIN_HEADERS)
+        clear_cache(fixed_day)
         response = client.get("/api/public-guides/today")
 
     assert response.status_code == 200
-    assert response.json()["guide_date"] == fixed_day.isoformat()
-    cleanup_guide(fixed_day)
+    payload = response.json()
+    assert payload["guide_date"] == fixed_day.isoformat()
+    assert [item["rank"] for item in payload["items"]] == [1, 2, 3, 4, 5]
+    assert {item["color"] for item in payload["items"]} == FORMAL_COLORS
+    assert all(item["suitable"] and item["resistance"] and item["advice"] for item in payload["items"])
+    clear_cache(fixed_day)
+
+
+def test_date_endpoint_reuses_the_deterministic_cache():
+    fixed_day = date(2037, 1, 12)
+    with TestClient(app) as client:
+        clear_cache(fixed_day)
+        first = client.get(f"/api/public-guides/{fixed_day}")
+        second = client.get(f"/api/public-guides/{fixed_day}")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json() == second.json()
+    with SessionLocal() as db:
+        assert db.scalar(select(PublicColorCache).where(PublicColorCache.guide_date == fixed_day)) is not None
+    clear_cache(fixed_day)
+
+
+def test_manual_public_guide_backend_is_removed():
+    with TestClient(app) as client:
+        assert client.get("/admin/public-guides").status_code == 404
+        assert client.get("/api/admin/public-guides", headers={"X-Admin-Key": "dev-admin-key"}).status_code == 404

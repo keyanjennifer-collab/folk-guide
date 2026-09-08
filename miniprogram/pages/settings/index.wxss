@@ -1,18 +1,18 @@
-.mine-page { min-height: 100vh; padding: 20rpx 34rpx calc(110rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('/assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.mine-page { min-height: 100vh; padding: 20rpx 34rpx calc(110rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
 .mine-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26rpx; }
 .mine-heading .brand-logo { width: 96rpx; height: 82rpx; }
 .mine-heading .screen-title { font-size: 52rpx; }
-.identity-card { padding: 34rpx; color: var(--text); background: linear-gradient(145deg, #39413a, #303631); border: 1rpx solid #626e64; border-radius: 8rpx; box-shadow: 0 14rpx 30rpx rgba(11, 14, 12, .24); }
+.identity-card { padding: 34rpx; color: var(--text); background: linear-gradient(145deg, #403e3a, #32312f); border-radius: 22rpx; box-shadow: 0 14rpx 30rpx rgba(11, 14, 12, .24); }
 .identity-top { display: flex; align-items: center; }
 .identity-seal { display: flex; width: 98rpx; height: 98rpx; flex: none; align-items: center; justify-content: center; color: #dfb77d; border: 1rpx solid #bc8b53; border-radius: 50%; font-family: "Songti SC", serif; font-size: 46rpx; }
 .identity-copy { min-width: 0; padding-left: 24rpx; }
 .identity-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 3rpx; }
 .identity-copy>view:last-child { margin-top: 8rpx; color: var(--muted); font-size: 23rpx; }
 .login-button { width: 100%; margin-top: 30rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 5rpx; font-size: 28rpx; line-height: 76rpx; letter-spacing: 4rpx; }
-.identity-footer { display: flex; justify-content: space-between; margin-top: 28rpx; padding-top: 22rpx; color: var(--muted); border-top: 1rpx solid var(--line); font-size: 21rpx; }
+.identity-footer { display: flex; justify-content: space-between; margin-top: 28rpx; padding-top: 22rpx; color: var(--muted); font-size: 21rpx; }
 .identity-footer button, .account-error button { padding: 0; color: var(--copper); background: transparent; font-size: 22rpx; }
 .account-error { margin-top: 20rpx; color: #e1b58b; font-size: 23rpx; }
-.orders-panel, .service-panel { padding: 28rpx 0; border-bottom: 1rpx solid var(--line); }
+.orders-panel, .service-panel { margin-top: 20rpx; padding: 28rpx; background: #343331; border-radius: 20rpx; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
 .panel-heading>view { color: var(--cream); font-family: "Songti SC", serif; font-size: 33rpx; letter-spacing: 3rpx; }
 .panel-heading .text-button { font-size: 23rpx; }
@@ -26,7 +26,7 @@
 .order-symbol.service { width: 44rpx; height: 44rpx; border-radius: 50%; }
 .order-symbol.service::before { top: 13rpx; left: 12rpx; width: 16rpx; height: 10rpx; border: 1rpx solid #c0955b; border-radius: 50%; }
 .order-symbol>text { position: absolute; top: -14rpx; right: -20rpx; min-width: 28rpx; color: #ddb071; background: var(--canvas); font-size: 20rpx; line-height: 28rpx; text-align: center; }
-.profile-link { display: flex; align-items: center; width: 100%; padding: 28rpx 0; color: #dec298; background: transparent; border-bottom: 1rpx solid var(--line); border-radius: 0; line-height: 1.6; text-align: left; }
+.profile-link { display: flex; align-items: center; width: 100%; margin-top: 18rpx; padding: 28rpx; color: #dec298; background: #373634; border-radius: 20rpx; line-height: 1.6; text-align: left; }
 .profile-seal { width: 68rpx; height: 68rpx; flex: none; margin-right: 22rpx; color: #d4aa70; border: 1rpx solid #b99660; border-radius: 50%; font-family: serif; font-size: 32rpx; line-height: 68rpx; text-align: center; }
 .profile-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 31rpx; letter-spacing: 3rpx; }
 .profile-link .muted { margin-top: 4rpx; font-size: 22rpx; }
@@ -38,6 +38,6 @@
 .service-link>view>text { display: block; max-width: 520rpx; overflow: hidden; color: var(--muted); font-size: 22rpx; text-overflow: ellipsis; white-space: nowrap; }
 .history-link { margin-top: 6rpx; }
 .menu-panel { margin-top: 14rpx; }
-.menu-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 23rpx 0; color: #dec298; background: transparent; border-bottom: 1rpx solid var(--line); border-radius: 0; font-size: 27rpx; line-height: 1.8; text-align: left; }
+.menu-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 10rpx; padding: 23rpx 24rpx; color: #dec298; background: #333230; border-radius: 15rpx; font-size: 27rpx; line-height: 1.8; text-align: left; }
 .menu-row>view { color: var(--muted); font-size: 23rpx; }
 .logout-button { margin: 32rpx auto 0; color: #d2a367; background: transparent; border: 1rpx solid #826344; border-radius: 5rpx; font-size: 25rpx; line-height: 72rpx; letter-spacing: 3rpx; }

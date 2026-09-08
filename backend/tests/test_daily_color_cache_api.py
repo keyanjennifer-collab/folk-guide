@@ -19,7 +19,7 @@ def login(client: TestClient, code: str) -> tuple[dict[str, str], int]:
     return headers, user_id
 
 
-def test_public_today_warms_seven_days_and_returns_pending_without_manual_guide(monkeypatch):
+def test_public_today_warms_seven_days_and_returns_automatic_result(monkeypatch):
     fixed_day = date(2042, 3, 5)
     end_day = fixed_day + timedelta(days=7)
     monkeypatch.setattr("app.public_guide_routes.beijing_today", lambda: fixed_day)
@@ -33,10 +33,8 @@ def test_public_today_warms_seven_days_and_returns_pending_without_manual_guide(
             db.commit()
         response = client.get("/api/public-guides/today")
 
-    assert response.status_code == 409
-    detail = response.json()["detail"]
-    assert detail["code"] == "daily_guide_pending"
-    assert detail["status"] == "pending_confirmation"
+    assert response.status_code == 200
+    assert response.json()["guide_date"] == fixed_day.isoformat()
     with SessionLocal() as db:
         rows = db.scalars(select(PublicColorCache).where(
             PublicColorCache.guide_date >= fixed_day,

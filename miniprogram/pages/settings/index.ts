@@ -71,8 +71,9 @@ Page({
   toAi() { wx.switchTab({ url: "/pages/chat/index" }); },
   toShop() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },
   async bindPhone(event: WechatMiniprogram.ButtonGetPhoneNumber) {
-    if (!event.detail.code) return;
-    try { await bindWechatPhone(event.detail.code); await this.loadAccount(); }
+    const code = (event.detail as { code?: string }).code;
+    if (!code) return;
+    try { await bindWechatPhone(code); await this.loadAccount(); }
     catch (error) { wx.showToast({ title: getApiErrorMessage(error, "绑定失败，请重试"), icon: "none" }); }
   },
   logout() { loadVersion++; logoutLocalAccount(); this.resetAccount(); this.setData({ dashboardLoading: false }); },

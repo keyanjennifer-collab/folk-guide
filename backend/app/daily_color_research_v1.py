@@ -28,7 +28,7 @@ from .daily_color_rule_config import (
 )
 
 
-PUBLIC_RESEARCH_VERSION = "wuse-public-day-branch-v2.0"
+PUBLIC_RESEARCH_VERSION = "wuse-public-day-branch-v2.1"
 PERSONAL_RESEARCH_VERSION = "wuse-personal-research-v1.0"
 # 公共与个人引擎均使用同一确定性同分顺序，避免两份列表日后漂移。
 COLOR_TIE_BREAK_ORDER = ["绿金", "红金", "黄金", "白金", "黑金"]

@@ -28,11 +28,11 @@ DISCLAIMER = "内容用于传统文化了解和生活搭配参考，不构成医
 PUBLIC_COLOR_LABELS = {"白金": "白色系", "绿金": "绿色系", "黑金": "黑色系", "红金": "红色系", "黄金": "黄色系"}
 
 TENDENCY_TO_LABEL = {
-    "strong_support": "今天很顺",
-    "support": "比较合适",
-    "balanced": "平稳一般",
-    "caution": "会比较累",
-    "restrained": "成效偏弱",
+    "strong_support": "得生助旺",
+    "support": "同气相和",
+    "balanced": "克制求进",
+    "caution": "生泄耗气",
+    "restrained": "受制势弱",
 }
 
 # 角色只用于向本人解释“为什么个人排序与公共排序不同”。这里使用中性的文化说明，

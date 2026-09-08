@@ -35,13 +35,16 @@ def test_public_today_warms_seven_days_and_returns_automatic_result(monkeypatch)
 
     assert response.status_code == 200
     assert response.json()["guide_date"] == fixed_day.isoformat()
+    assert [item["smoothness"] for item in response.json()["items"]] == [
+        "得生助旺", "同气相和", "克制求进", "生泄耗气", "受制势弱",
+    ]
     with SessionLocal() as db:
         rows = db.scalars(select(PublicColorCache).where(
             PublicColorCache.guide_date >= fixed_day,
             PublicColorCache.guide_date < end_day,
         ).order_by(PublicColorCache.guide_date)).all()
         assert len(rows) == 7
-        assert all(row.rule_version == "wuse-public-day-branch-v2.0" for row in rows)
+        assert all(row.rule_version == "wuse-public-day-branch-v2.1" for row in rows)
 
 
 def test_active_ai_trial_warms_three_personal_days_from_birth_profile():

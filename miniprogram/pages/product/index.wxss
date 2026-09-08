@@ -7,19 +7,19 @@ page { background: var(--canvas); color: var(--text); }
 .detail-heading .eyebrow { color: var(--copper); }
 .product-title { margin: 7rpx 0; color: var(--cream); font-family: "Songti SC", serif; font-size: 46rpx; line-height: 1.5; letter-spacing: 4rpx; }
 .product-mood { color: var(--muted); font-size: 26rpx; letter-spacing: 3rpx; }
-.product-emblem { width: 86rpx; height: 94rpx; flex: none; margin-left: 20rpx; }
+.product-emblem { width: 146rpx; height: 146rpx; flex: none; margin-left: 20rpx; filter: drop-shadow(0 8rpx 14rpx rgba(0,0,0,.28)); }
 .price-row { display: flex; align-items: center; gap: 20rpx; padding: 28rpx 0; }
 .price { color: #e3bc84; font-family: Georgia, serif; font-size: 46rpx; }
-.price-row>text:last-child { color: var(--muted); font-size: 22rpx; }
-.quantity-row { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 0; font-size: 27rpx; }
+.price-row>text:last-child { color: var(--muted); font-size: 25rpx; }
+.quantity-row { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 0; font-size: 29rpx; }
 .quantity-row>view { display: flex; align-items: center; gap: 30rpx; }
 .quantity-row button { width: 56rpx; height: 56rpx; padding: 0; color: #e0bd88; background: #44413d; border-radius: 50%; line-height: 56rpx; }
 .detail-section { margin-top: 18rpx; padding: 30rpx; background: #363533; border-radius: 20rpx; }
-.detail-label { margin-bottom: 18rpx; color: var(--cream); font-family: "Songti SC", serif; font-size: 31rpx; letter-spacing: 3rpx; }
-.story { color: #c7bfb3; font-size: 28rpx; line-height: 1.95; }
-.notes { margin-top: 18rpx; color: #d0a773; font-size: 24rpx; }
-.care-row { margin-bottom: 12rpx; color: #b8b2a7; font-size: 25rpx; line-height: 1.85; }
-.purchase-note { margin-top: 18rpx; padding: 22rpx; color: #aaa99f; background: #323230; border-radius: 16rpx; font-size: 22rpx; }
+.detail-label { margin-bottom: 18rpx; color: var(--cream); font-family: "Songti SC", serif; font-size: 34rpx; letter-spacing: 3rpx; }
+.story { color: #d2cabf; font-size: 30rpx; line-height: 1.95; }
+.notes { margin-top: 18rpx; color: #d9ae79; font-size: 27rpx; }
+.care-row { margin-bottom: 12rpx; color: #c7c0b5; font-size: 28rpx; line-height: 1.85; }
+.purchase-note { margin-top: 18rpx; padding: 22rpx; color: #bbb9af; background: #323230; border-radius: 16rpx; font-size: 25rpx; }
 .product-actions { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: flex; gap: 20rpx; padding: 22rpx 30rpx calc(22rpx + env(safe-area-inset-bottom)); background: rgba(38,38,38,.98); }
 .product-actions button { border-radius: 4rpx; font-size: 27rpx; line-height: 78rpx; }
 .back-shop { padding: 0 20rpx; color: #dfb67c; background: #3b3936; }

@@ -1,5 +1,5 @@
 .tabbar { position: fixed; z-index: 50; right: 0; bottom: 0; left: 0; display: flex; height: calc(110rpx + env(safe-area-inset-bottom)); padding: 12rpx 0 calc(10rpx + env(safe-area-inset-bottom)); background: rgba(38, 38, 38, .98); border-top: 1rpx solid #5d5953; box-shadow: 0 -8rpx 26rpx rgba(8, 8, 8, .3); }
-.tab { display: flex; flex: 1; flex-direction: column; gap: 5rpx; align-items: center; justify-content: center; padding: 0; color: #a9aaa0; background: transparent; border-radius: 0; font-size: 22rpx; line-height: 1.5; }
-.tab image { width: 42rpx; height: 42rpx; }
+.tab { display: flex; flex: 1; flex-direction: column; gap: 4rpx; align-items: center; justify-content: center; padding: 0; color: #b9b8ae; background: transparent; border-radius: 0; font-size: 24rpx; line-height: 1.4; }
+.tab image { width: 44rpx; height: 44rpx; }
 .tab.active { color: #e0b779; }
 .tab text { letter-spacing: 1rpx; }

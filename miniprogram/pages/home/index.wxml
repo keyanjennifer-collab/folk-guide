@@ -3,15 +3,12 @@
 
   <view class="brandbar">
     <image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/>
-    <view class="brand-caption">五色应时 · 知时而行</view>
   </view>
 
   <view class="today-hero">
     <view class="hero-glow"/>
     <view class="eyebrow">{{dateLabel}} · {{term}}</view>
     <view class="today-title">今日五色</view>
-    <view class="today-subtitle">{{summary}}</view>
-    <view wx:if="{{calendarLabel}}" class="calendar-pill">{{calendarLabel}}</view>
   </view>
 
   <view wx:if="{{contentSource === 'loading'}}" class="loading-card">
@@ -55,6 +52,7 @@
       <view wx:for="{{guides}}" wx:key="rank" class="guide-card tone-card-{{item.product.id}}">
         <view class="guide-head">
           <view class="guide-rank">0{{item.rank}}</view>
+          <image class="guide-emblem" src="{{item.product.emblem}}" mode="aspectFit"/>
           <view class="guide-identity"><view>{{item.name}}</view><text>{{item.element}} · {{item.tier}}</text></view>
           <view class="guide-actions"><view class="status-chip">{{item.status}}</view><button bindtap="toggleGuide" data-rank="{{item.rank}}" aria-label="{{item.expanded ? '收起详情' : '展开详情'}}">{{item.expanded ? '收起 −' : '展开 ＋'}}</button></view>
         </view>
@@ -67,7 +65,6 @@
           <view class="notice"><text>留意</text><view>{{item.resistance}}</view></view>
         </view>
         <view wx:if="{{item.expanded}}" class="product-row">
-          <image src="{{item.product.emblem}}" mode="aspectFit"/>
           <view><text>对应香品</text><view>{{item.product.name}} · {{item.product.mood}}</view></view>
           <button bindtap="toGuideProduct" data-id="{{item.product.id}}">了解 ›</button>
         </view>

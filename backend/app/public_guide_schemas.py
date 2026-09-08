@@ -23,7 +23,7 @@ PUBLIC_COLOR_ELEMENT_MAP = {
     "黄色系": "土",
 }
 
-SMOOTHNESS_VALUES = {"今天很顺", "比较合适", "平稳一般", "会比较累", "成效偏弱"}
+SMOOTHNESS_VALUES = {"得生助旺", "同气相和", "克制求进", "生泄耗气", "受制势弱"}
 
 
 class PublicGuideItemInput(BaseModel):

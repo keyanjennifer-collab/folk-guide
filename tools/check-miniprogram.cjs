@@ -41,6 +41,11 @@ async function main() {
   assert.equal(app.window.navigationBarBackgroundColor.toLowerCase(), '#262626');
   assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262626');
   assert.equal(app.lazyCodeLoading, undefined, 'native tab pages must render without component lazy-loading');
+  const homeWxml=fs.readFileSync(path.join(root,'pages/home/index.wxml'),'utf8');
+  const homeWxss=fs.readFileSync(path.join(root,'pages/home/index.wxss'),'utf8');
+  assert(!homeWxml.includes('today-subtitle') && !homeWxml.includes('calendar-pill'),'home hero stays compact');
+  assert(homeWxml.includes('class="guide-emblem"'),'every guide card exposes its divine-beast emblem');
+  assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
     assert(app.pages.includes(item.pagePath));
@@ -73,7 +78,7 @@ async function main() {
   const chat=instance('pages/chat/index.ts');
   assert(chat.data.messages.every(message=>Array.isArray(message.references)),'AI page initial messages must be render-safe');
   publicResult={guide_date:'2026-09-07',weekday:'星期一',lunar_date:'七月廿五',solar_term:'白露前',day_ganzhi:'甲子',
-    items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:'比较合适',suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
+    items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:['得生助旺','同气相和','克制求进','生泄耗气','受制势弱'][i],suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
   const homeRequests=requests;
   const home=instance('pages/home/index.ts');

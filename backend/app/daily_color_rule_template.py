@@ -116,10 +116,10 @@ def build_rule_workbook() -> Workbook:
     thresholds = workbook.create_sheet("趋势阈值")
     _header(thresholds, ["趋势编号", "用户层含义", "分数下限", "说明"])
     for row in [
-        ("strong_support_min", "今天很顺", "", "最高档下限"),
-        ("support_min", "比较合适", "", "第二档下限"),
-        ("balanced_min", "平稳一般", "", "第三档下限"),
-        ("caution_min", "会比较累", "", "第四档下限；低于此值为成效偏弱"),
+        ("strong_support_min", "得生助旺", "", "最高档下限"),
+        ("support_min", "同气相和", "", "第二档下限"),
+        ("balanced_min", "克制求进", "", "第三档下限"),
+        ("caution_min", "生泄耗气", "", "第四档下限；低于此值为受制势弱"),
     ]:
         thresholds.append(row)
     _fit(thresholds, [28, 24, 16, 68])

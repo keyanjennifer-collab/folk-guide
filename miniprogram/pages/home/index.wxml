@@ -56,17 +56,17 @@
         <view class="guide-head">
           <view class="guide-rank">0{{item.rank}}</view>
           <view class="guide-identity"><view>{{item.name}}</view><text>{{item.element}} · {{item.tier}}</text></view>
-          <view class="status-chip">{{item.status}}</view>
+          <view class="guide-actions"><view class="status-chip">{{item.status}}</view><button bindtap="toggleGuide" data-rank="{{item.rank}}" aria-label="{{item.expanded ? '收起详情' : '展开详情'}}">{{item.expanded ? '收起 −' : '展开 ＋'}}</button></view>
         </view>
         <view class="swatch-row"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" style="background:{{swatch}}"/><text>{{item.palette}}</text></view>
-        <view class="advice-panel">
+        <view wx:if="{{item.expanded}}" class="advice-panel">
           <view class="micro-title">今日适宜</view>
           <view class="suitable-list"><text wx:for="{{item.suitable}}" wx:key="*this">{{item}}</text></view>
           <view class="micro-title">行动建议</view>
           <view class="body-copy">{{item.advice}}</view>
           <view class="notice"><text>留意</text><view>{{item.resistance}}</view></view>
         </view>
-        <view class="product-row">
+        <view wx:if="{{item.expanded}}" class="product-row">
           <image src="{{item.product.emblem}}" mode="aspectFit"/>
           <view><text>对应香品</text><view>{{item.product.name}} · {{item.product.mood}}</view></view>
           <button bindtap="toGuideProduct" data-id="{{item.product.id}}">了解 ›</button>

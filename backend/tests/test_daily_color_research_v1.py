@@ -1,4 +1,4 @@
-"""资料综合版 V1.0 公共与个人五色规则测试。"""
+"""公共日支规则 V2.0 与个人五色规则 V1.0 测试。"""
 
 from datetime import date
 
@@ -30,12 +30,16 @@ def make_profile(*, time_known: bool, birth_time: str | None, version: int = 1) 
 def test_research_public_configuration_is_complete_and_transparent():
     assert PUBLIC_RESEARCH_CONFIG.status == "source_reviewed"
     assert sum(PUBLIC_RESEARCH_CONFIG.factor_weights.model_dump().values()) == 100
-    assert PUBLIC_RESEARCH_CONFIG.factor_weights.month_stem + PUBLIC_RESEARCH_CONFIG.factor_weights.month_branch == 40
-    assert PUBLIC_RESEARCH_CONFIG.factor_weights.day_stem + PUBLIC_RESEARCH_CONFIG.factor_weights.day_branch == 45
+    assert PUBLIC_RESEARCH_CONFIG.factor_weights.day_branch == 100
+    assert all(
+        value == 0
+        for key, value in PUBLIC_RESEARCH_CONFIG.factor_weights.model_dump().items()
+        if key != "day_branch"
+    )
     assert PUBLIC_RESEARCH_CONFIG.solar_term_elements["立春"] == "木"
     assert PUBLIC_RESEARCH_CONFIG.solar_term_elements["清明"] == "土"
     assert PUBLIC_RESEARCH_CONFIG.solar_term_elements["立秋"] == "金"
-    assert any("工程参数" in item for item in PUBLIC_RESEARCH_CONFIG.professional_references)
+    assert any("只使用日支主五行" in item for item in PUBLIC_RESEARCH_CONFIG.professional_references)
 
 
 def test_public_research_snapshot_for_fixed_beijing_date():
@@ -44,7 +48,7 @@ def test_public_research_snapshot_for_fixed_beijing_date():
 
     assert calculation.result.rule_status == "source_reviewed"
     assert [(item.color, item.rule_score) for item in calculation.result.ranking.items] == [
-        ("红金", 12), ("白金", 7), ("黑金", 3), ("黄金", 2), ("绿金", -4),
+        ("白金", 50), ("黄金", 40), ("绿金", 30), ("红金", 20), ("黑金", 10),
     ]
     assert all(trace.contributions for trace in calculation.traces)
 
@@ -65,7 +69,7 @@ def test_personal_four_pillar_result_has_distribution_strength_and_audit_trace()
     assert calculation.strength.resource_element == "土"
     assert calculation.strength.regime == "weak"
     assert [(item.color, item.rule_score) for item in calculation.result.ranking.items] == [
-        ("白金", 26), ("黄金", 23), ("黑金", -5), ("绿金", -10), ("红金", -19),
+        ("白金", 39), ("黄金", 34), ("绿金", 1), ("黑金", -3), ("红金", -17),
     ]
     assert any(item.source_code == "PERSON_TIME_STEM" for item in calculation.structure_contributions)
     assert all(len(item.basis_codes) == 4 for item in calculation.result.ranking.items)
@@ -103,4 +107,3 @@ def test_personal_rule_rejects_wrong_version():
     )
     with pytest.raises(ValueError, match="个人规则输入版本"):
         calculate_personal_rule(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG)
-

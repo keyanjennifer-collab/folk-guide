@@ -4,7 +4,7 @@ import { getPublicDailyGuide, PublicDailyGuide } from "../../services/daily";
 type Guide = {
   rank: number; name: string; element: string; status: string; tier: string;
   suitable: string[]; resistance: string; advice: string; palette: string;
-  product: Product; scent: string; [key: string]: any;
+  product: Product; scent: string; expanded: boolean; [key: string]: any;
 };
 
 const COLOR_TO_PRODUCT: Record<string, string> = { 白色系: "white", 绿色系: "green", 黑色系: "black", 红色系: "red", 黄色系: "gold" };
@@ -16,7 +16,7 @@ const COLOR_PALETTES: Record<string, string> = {
   red: "红色、粉色、紫色、橙色",
   black: "黑色、蓝色、藏蓝色",
 };
-const RANK_ROLES = ["首选色", "助力色", "平衡色", "调节色", "慎用色"];
+const RANK_ROLES = ["贵人色", "合作色", "奋斗色", "消耗色", "不利色"];
 let midnightTimer: ReturnType<typeof setTimeout> | undefined;
 
 Page({
@@ -52,7 +52,7 @@ Page({
         if (!product) throw new Error("unknown-product");
         return {
           ...item, name: item.color, product, status: item.smoothness,
-          tier: RANK_ROLES[item.rank - 1], palette: COLOR_PALETTES[product.id],
+          tier: RANK_ROLES[item.rank - 1], palette: COLOR_PALETTES[product.id], expanded: item.rank === 1,
         };
       }).sort((a, b) => a.rank - b.rank);
       if (new Set(guides.map(item => item.element)).size !== 5) throw new Error("invalid-ranking");
@@ -75,6 +75,12 @@ Page({
   selectGuide(event: WechatMiniprogram.TouchEvent) {
     const guide = this.data.guides.find(item => item.rank === Number(event.currentTarget.dataset.rank));
     if (guide) this.setData({ selected: guide, scent: guide.product });
+  },
+  toggleGuide(event: WechatMiniprogram.TouchEvent) {
+    const rank = Number(event.currentTarget.dataset.rank);
+    this.setData({ guides: this.data.guides.map(item => (
+      item.rank === rank ? { ...item, expanded: !item.expanded } : item
+    )) });
   },
   toGuideProduct(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: "/pages/product/index?id=" + event.currentTarget.dataset.id });

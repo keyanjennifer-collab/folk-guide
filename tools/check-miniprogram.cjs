@@ -40,6 +40,7 @@ async function main() {
   assert.equal(app.window.navigationBarTextStyle, 'white');
   assert.equal(app.window.navigationBarBackgroundColor.toLowerCase(), '#262626');
   assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262626');
+  assert.equal(app.lazyCodeLoading, undefined, 'native tab pages must render without component lazy-loading');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
     assert(app.pages.includes(item.pagePath));
@@ -69,6 +70,8 @@ async function main() {
   assert.equal(isPublicRankingQuestion('今日五色排行'),true);
   assert.equal(isPublicRankingQuestion('明天穿什么颜色'),true);
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
+  const chat=instance('pages/chat/index.ts');
+  assert(chat.data.messages.every(message=>Array.isArray(message.references)),'AI page initial messages must be render-safe');
   publicResult={guide_date:'2026-09-07',weekday:'星期一',lunar_date:'七月廿五',solar_term:'白露前',day_ganzhi:'甲子',
     items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:'比较合适',suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
@@ -79,9 +82,12 @@ async function main() {
   assert.equal(home.data.scent.name,'白桂');
   assert.equal(home.data.guides.map(g=>g.product.id).join(','),'white,gold,green,red,black');
   assert(home.data.guides.every(g=>g.suitable.length && g.resistance && g.advice && g.palette));
+  assert.equal(home.data.guides.filter(g=>g.expanded).length,1,'only the first detail card starts expanded');
   assert.equal(requests,homeRequests+1,'home reads the server-published daily guide');
   home.selectGuide({currentTarget:{dataset:{rank:4}}});
   assert.equal(home.data.scent.name,'朱蜜');
+  home.toggleGuide({currentTarget:{dataset:{rank:2}}});
+  assert.equal(home.data.guides.find(g=>g.rank===2).expanded,true);
   publicResult=new Error('network');
   await home.loadToday();
   assert.equal(home.data.contentSource,'error','network failures never relabel stale data as today');

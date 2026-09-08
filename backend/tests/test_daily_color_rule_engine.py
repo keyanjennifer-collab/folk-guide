@@ -17,6 +17,7 @@ from app.daily_color_rule_config import (
 )
 from app.daily_color_rule_engine import calculate_public_rule
 from app.daily_color_rule_template import build_rule_template, parse_rule_template
+from app.daily_color_research_v1 import PUBLIC_RESEARCH_CONFIG
 from app.main import app
 
 
@@ -91,6 +92,21 @@ def test_rule_input_and_configuration_versions_must_match():
     wrong_input = build_public_rule_input(date(2026, 8, 19), rule_version="another-version")
     with pytest.raises(ValueError, match="版本不一致"):
         calculate_public_rule(wrong_input, config)
+
+
+def test_formal_public_rule_uses_only_beijing_day_branch_fixed_relations():
+    """乙酉日只取酉金：我生、同我、克我、生我、我克依次排名。"""
+    rule_input = build_public_rule_input(
+        date(2026, 9, 8), rule_version=PUBLIC_RESEARCH_CONFIG.version
+    )
+    result = calculate_public_rule(rule_input, PUBLIC_RESEARCH_CONFIG)
+
+    assert rule_input.calendar.pillars.day.text == "乙酉"
+    assert rule_input.calendar.pillars.day.branch_primary_element == "金"
+    assert [item.color for item in result.result.ranking.items] == [
+        "黑金", "白金", "红金", "黄金", "绿金",
+    ]
+    assert all(item.basis_codes == ["PUBLIC_DAY_BRANCH"] for item in result.result.ranking.items)
 
 
 def test_excel_template_contains_public_and_personal_review_sheets():

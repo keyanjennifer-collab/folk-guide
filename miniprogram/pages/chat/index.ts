@@ -15,7 +15,7 @@ import { getPersonalDailyGuidance, PersonalDailyColor } from "../../services/dai
 type ChatItem = {
   role: "user" | "assistant";
   text: string;
-  references?: string[];
+  references: string[];
   feedback?: "helpful" | "unhelpful";
   messageId?: number;
   blocked?: boolean;
@@ -34,6 +34,7 @@ const PERSONAL_COLOR_LABEL: Record<string, string> = {
 const WELCOME: ChatItem = {
   role: "assistant",
   text: "你好。你可以问我传统典籍、五行五色、历法时序以及相关文化问题。",
+  references: [],
 };
 let chatLoadVersion = 0;
 
@@ -50,7 +51,7 @@ function historyMessages(records: AIHistoryRecord[]): ChatItem[] {
   const messages: ChatItem[] = [];
   // 后端按最新优先返回；页面聊天顺序需要从旧到新。
   [...records].reverse().forEach((record) => {
-    messages.push({ role: "user", text: record.question });
+    messages.push({ role: "user", text: record.question, references: [] });
     messages.push({
       role: "assistant",
       text: record.answer,
@@ -268,7 +269,7 @@ Page({
       return;
     }
 
-    const pendingMessages: ChatItem[] = [...this.data.messages, { role: "user", text: question }];
+    const pendingMessages: ChatItem[] = [...this.data.messages, { role: "user", text: question, references: [] }];
     this.setData({ sending: true, question: "", messages: pendingMessages });
     wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 250 }));
     const tokenAtSend = getToken();

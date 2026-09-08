@@ -41,7 +41,7 @@ def test_public_today_warms_seven_days_and_returns_automatic_result(monkeypatch)
             PublicColorCache.guide_date < end_day,
         ).order_by(PublicColorCache.guide_date)).all()
         assert len(rows) == 7
-        assert all(row.rule_version == "wuse-public-research-v1.0" for row in rows)
+        assert all(row.rule_version == "wuse-public-day-branch-v2.0" for row in rows)
 
 
 def test_active_ai_trial_warms_three_personal_days_from_birth_profile():

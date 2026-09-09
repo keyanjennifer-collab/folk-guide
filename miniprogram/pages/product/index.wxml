@@ -5,7 +5,7 @@
     </swiper>
     <view class="product-body">
       <view class="detail-heading"><view><view class="eyebrow">{{product.element}} · {{product.beast}}</view><view class="product-title">{{product.name}}</view><view class="product-mood">{{product.mood}}</view></view><image class="product-emblem" src="{{product.emblem}}" mode="aspectFit"/></view>
-      <view class="price-row"><text class="price">¥{{product.price}}</text><text>参考价 · 尚未开售</text></view>
+      <view class="price-row"><text class="price price-figure">¥{{product.price}}</text><text>参考价 · 尚未开售</text></view>
       <view class="quantity-row"><text>数量</text><view><button bindtap="changeQuantity" data-delta="-1" disabled="{{quantity <= 1}}" aria-label="减少数量">−</button><text>{{quantity}}</text><button bindtap="changeQuantity" data-delta="1" disabled="{{quantity >= 99}}" aria-label="增加数量">＋</button></view></view>
       <view class="detail-section"><view class="detail-label">香气札记</view><view class="story">{{product.story}}</view><view class="notes">{{product.scent}}</view></view>
       <view class="detail-section"><view class="detail-label">{{product.category === 'set' ? '一盒五色' : '五色之中，循心选择'}}</view><view class="story">{{product.category === 'set' ? setContents : '香盒沿用五行图腾与色彩。可依今日五色选择，也可循自己的气息偏好。'}}</view></view>

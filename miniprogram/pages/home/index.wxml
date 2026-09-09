@@ -5,12 +5,6 @@
     <image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/>
   </view>
 
-  <view class="today-hero">
-    <view class="hero-glow"/>
-    <view class="eyebrow">{{dateLabel}} · {{term}}</view>
-    <view class="today-title">今日五色</view>
-  </view>
-
   <view wx:if="{{contentSource === 'loading'}}" class="loading-card">
     <view class="skeleton wide"/><view class="skeleton"/><view class="skeleton short"/>
   </view>
@@ -22,8 +16,11 @@
 
   <block wx:else>
     <view class="overview-card">
-      <view class="section-kicker">TODAY'S ORDER</view>
-      <view class="section-title">今日色序</view>
+      <view class="today-heading">
+        <view class="today-date">{{solarDateLabel}}</view>
+        <view class="today-title">今日五色</view>
+        <view class="today-lunar">{{lunarDateLabel}}</view>
+      </view>
       <view class="rank-pills">
         <button wx:for="{{guides}}" wx:key="rank" class="rank-pill tone-{{item.product.id}} {{selected.rank === item.rank ? 'active' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}">
           <text>0{{item.rank}}</text><view>{{item.name}}</view><small>{{item.tier}}</small>
@@ -48,6 +45,16 @@
       <view class="section-title">五色详解</view>
       <view class="section-intro">从适宜之事到行动节奏，把颜色建议落进真实的一天。</view>
 
+      <view class="rule-basis-card">
+        <view class="rule-seal"><text>{{dayBranch}}</text><view>{{dayElement}}</view></view>
+        <view class="rule-basis-copy">
+          <view class="rule-basis-title">日支取象 · {{dayPillar}}日</view>
+          <view class="rule-basis-text">{{dayBasis}}</view>
+          <view class="rule-order-label">固定色序关系</view>
+          <view class="rule-order">我生＝贵人　同我＝合作　克我＝奋斗<br/>生我＝消耗　我克＝不利</view>
+        </view>
+      </view>
+
       <view wx:for="{{guides}}" wx:key="rank" class="guide-card tone-card-{{item.product.id}}">
         <view class="guide-head">
           <view class="guide-rank">0{{item.rank}}</view>
@@ -56,6 +63,7 @@
         </view>
         <view class="swatch-row"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" style="background:{{swatch}}"/><text>{{item.palette}}</text></view>
         <view wx:if="{{item.expanded}}" class="advice-panel">
+          <view class="relation-explanation"><text>色序依据</text><view>{{item.relationReason}}</view></view>
           <view class="micro-title">今日适宜</view>
           <view class="suitable-list"><text wx:for="{{item.suitable}}" wx:key="*this">{{item}}</text></view>
           <view class="micro-title">行动建议</view>
@@ -83,7 +91,7 @@
   </view>
 
   <view class="gift">
-    <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
+    <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
     <image class="gift-image" src="/assets/brand/gift.jpg" mode="aspectFit"/>
   </view>
 

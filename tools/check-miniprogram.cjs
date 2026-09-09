@@ -50,6 +50,10 @@ async function main() {
   const homeWxml=fs.readFileSync(path.join(root,'pages/home/index.wxml'),'utf8');
   const homeWxss=fs.readFileSync(path.join(root,'pages/home/index.wxss'),'utf8');
   assert(!homeWxml.includes('today-subtitle') && !homeWxml.includes('calendar-pill'),'home hero stays compact');
+  assert(!homeWxml.includes('今日色序') && !homeWxml.includes('today-hero'),'home combines the date and ranking into one 今日五色 card');
+  assert.equal((homeWxml.match(/今日五色/g) || []).length,1,'home displays 今日五色 only once');
+  assert(homeWxml.includes('{{solarDateLabel}}') && homeWxml.includes('{{lunarDateLabel}}'),'home displays both Gregorian and lunar dates');
+  assert(homeWxml.includes('{{item.relationReason}}') && homeWxml.includes('日支取象'),'home explains the day-branch derivation and each color relation');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
   assert(directoryBytes(root) < 1.9 * 1024 * 1024, 'miniprogram source must retain margin below WeChat\'s 2 MB upload limit');
@@ -69,6 +73,9 @@ async function main() {
   for (const p of PRODUCTS) for (const image of [p.image,p.emblem]) assert(fs.existsSync(path.join(root,image)));
   const productPage = instance('pages/product/index.ts');
   assert.equal(productPage.data.setContents,'青木、朱蜜、黄檀、白桂、墨沉。五款线香与对应矿石香插，承载一份应时心意。');
+  const shopWxml=fs.readFileSync(path.join(root,'pages/caikuxiang/index.wxml'),'utf8');
+  assert(!shopWxml.includes('↗'),'shop removes emoji-style diagonal arrows from product cards');
+  assert(shopWxml.includes('bag-total price-figure') && shopWxml.includes('product-price price-figure'),'shop applies the dedicated price numeral style');
   const cart = load('services/cart.ts');
   assert.equal(cart.readCart().length,0);
   cart.changeCart('green',2);
@@ -87,7 +94,7 @@ async function main() {
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
   const chat=instance('pages/chat/index.ts');
   assert(chat.data.messages.every(message=>Array.isArray(message.references)),'AI page initial messages must be render-safe');
-  publicResult={guide_date:'2026-09-07',weekday:'星期一',lunar_date:'七月廿五',solar_term:'白露前',day_ganzhi:'甲子',
+  publicResult={guide_date:'2026-09-09',weekday:'星期三',lunar_date:'七月廿八',solar_term:'白露',day_ganzhi:'丙戌',
     items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:['得生助旺','同气相和','克制求进','生泄耗气','受制势弱'][i],suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
   const homeRequests=requests;
@@ -95,6 +102,16 @@ async function main() {
   await home.loadToday();
   assert.equal(home.data.guides.length,5);
   assert.equal(home.data.scent.name,'白桂');
+  assert.equal(home.data.solarDateLabel,'公历 2026年9月9日 · 星期三');
+  assert.equal(home.data.lunarDateLabel,'农历七月廿八 · 丙戌日 · 白露');
+  assert.equal(home.data.dayElement,'土');
+  assert.equal(home.data.dayPillar,'丙戌');
+  assert.equal(home.data.dayBranch,'戌');
+  assert.equal(home.data.dayBasis,'今日为丙戌日，仅取日支“戌”。戌对应生肖狗，五行属土，因此今日以土为“我”。');
+  assert.deepEqual(Array.from(home.data.guides, item=>item.relationReason),[
+    '土生金，依“我生”取为贵人色', '土与土同气，依“同我”取为合作色', '木克土，依“克我”取为奋斗色',
+    '火生土，依“生我”取为消耗色', '土克水，依“我克”取为不利色',
+  ]);
   assert.equal(home.data.guides.map(g=>g.product.id).join(','),'white,gold,green,red,black');
   assert(home.data.guides.every(g=>g.suitable.length && g.resistance && g.advice && g.palette));
   assert.equal(home.data.guides.filter(g=>g.expanded).length,1,'only the first detail card starts expanded');

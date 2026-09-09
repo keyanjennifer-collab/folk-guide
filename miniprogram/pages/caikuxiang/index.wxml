@@ -2,18 +2,18 @@
   <view class="shop-heading"><view><view class="eyebrow">五色应时 · 知时而行</view><view class="screen-title">一色一香，一时一境</view></view><image class="shop-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <button class="shop-hero" bindtap="toGift">
     <image src="/assets/brand/gift.jpg" mode="aspectFill"/>
-    <view class="hero-copy"><view class="hero-title">{{gift.name}}</view><view>随时序择色，也随心择香</view><text>赏阅礼盒　↗</text></view>
+    <view class="hero-copy"><view class="hero-title">{{gift.name}}</view><view>随时序择色，也随心择香</view><text>赏阅礼盒</text></view>
   </button>
   <view class="catalog-header"><view class="filters"><button wx:for="{{filters}}" wx:key="id" data-id="{{item.id}}" bindtap="filterProducts" class="{{category === item.id ? 'active' : ''}}">{{item.name}}</button></view><text>{{visibleProducts.length}} 款</text></view>
   <view class="product-grid">
     <button wx:for="{{visibleProducts}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
       <view class="product-picture"><image src="{{item.image}}" mode="aspectFill"/><text class="product-tag">{{item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
-      <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price">¥{{item.price}}<text>参考价</text><text class="product-arrow">↗</text></view></view>
+      <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price price-figure">¥{{item.price}}<text>参考价</text></view></view>
     </button>
   </view>
   <view class="shop-note">目前为商品展示，价格与规格以正式开售信息为准。</view>
   <view class="shop-story"><view class="eyebrow">五方图腾 · 五色香气</view><view>从一缕香开始，<text>把时间还给自己。</text></view></view>
-  <view class="bag-bar"><button class="bag-open" bindtap="openCart">购物袋 <text>{{cartCount}}</text></button><text class="bag-total">{{cartCount ? '参考合计 ¥' + cartTotal : '循心选香'}}</text><button class="bag-view" bindtap="openCart">查看清单 ›</button></view>
+  <view class="bag-bar"><button class="bag-open" bindtap="openCart">购物袋 <text>{{cartCount}}</text></button><text class="bag-total price-figure">{{cartCount ? '参考合计 ¥' + cartTotal : '循心选香'}}</text><button class="bag-view" bindtap="openCart">查看清单 ›</button></view>
   <view wx:if="{{showCart}}" class="scrim" bindtap="closeCart" catchtouchmove="noop"/>
   <view wx:if="{{showCart}}" class="sheet">
     <view class="sheet-head"><view class="sheet-title">我的购物袋</view><button class="sheet-close" bindtap="closeCart" aria-label="关闭">×</button></view>
@@ -21,10 +21,10 @@
     <block wx:else>
       <view wx:for="{{cartItems}}" wx:key="id" class="cart-row">
         <image src="{{item.image}}" mode="aspectFill"/>
-        <view class="cart-copy"><view>{{item.name}}</view><text>¥{{item.price}} · 参考价</text></view>
+        <view class="cart-copy"><view>{{item.name}}</view><text class="price-figure">¥{{item.price}} · 参考价</text></view>
         <view class="quantity"><button data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity" aria-label="减少数量">−</button><text>{{item.quantity}}</text><button data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity" disabled="{{item.quantity >= 99}}" aria-label="增加数量">＋</button></view>
       </view>
-      <view class="cart-summary"><text>共 {{cartCount}} 件</text><text>参考合计 ¥{{cartTotal}}</text></view>
+      <view class="cart-summary"><text>共 {{cartCount}} 件</text><text class="price-figure">参考合计 ¥{{cartTotal}}</text></view>
       <button class="solid-button" bindtap="checkout">开售说明</button>
       <view class="cart-note">本机选香清单 · 暂未开放下单</view>
     </block>

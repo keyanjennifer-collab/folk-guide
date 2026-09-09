@@ -1,22 +1,22 @@
 .orders-page { min-height: 100vh; padding: 28rpx 34rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
-.orders-page .screen-title { margin-top: 8rpx; font-size: 49rpx; }
+.orders-page .screen-title { margin-top: 8rpx; font-size:53rpx; }
 .order-logo { width: 88rpx; height: 78rpx; }
 .order-tabs { display: flex; margin-top: 20rpx; border-bottom: 1rpx solid var(--line); white-space: nowrap; }
-.order-tabs button { display: inline-block; flex: none; padding: 18rpx 24rpx; color: #aaa99f; background: transparent; border-bottom: 3rpx solid transparent; border-radius: 0; font-size: 25rpx; line-height: 1.6; }
+.order-tabs button { display: inline-block; flex: none; padding: 18rpx 24rpx; color: #aaa99f; background: transparent; border-bottom: 3rpx solid transparent; border-radius: 0; font-size:29rpx; line-height: 1.6; }
 .order-tabs button.active { color: #e1b97f; border-bottom-color: #c59153; }
 .orders-page .empty-state { padding-top: 110rpx; }
 .order-card { margin-top: 24rpx; padding: 25rpx; color: var(--text); background: #343331; border-radius: 20rpx; box-shadow: 0 10rpx 22rpx rgba(10, 13, 11, .2); line-height: 1.7; text-align: left; }
-.order-top { display: flex; justify-content: space-between; padding-bottom: 18rpx; color: var(--muted); border-bottom: 1rpx solid var(--line); font-size: 25rpx; }
+.order-top { display: flex; justify-content: space-between; padding-bottom: 18rpx; color: var(--muted); border-bottom: 1rpx solid var(--line); font-size:29rpx; }
 .order-top>text:last-child, .detail-status { color: var(--copper); }
 .order-product { display: flex; align-items: center; padding: 22rpx 0; }
 .order-product image { width: 100rpx; height: 128rpx; flex: none; margin-right: 24rpx; border-radius: 4rpx; }
-.order-product>view>view { color: var(--cream); font-family: "Songti SC", serif; font-size: 29rpx; }
-.order-product>view>text { color: var(--muted); font-size: 26rpx; }
-.order-total { display: flex; justify-content: space-between; padding-top: 18rpx; border-top: 1rpx solid var(--line); font-size: 28rpx; }
-.order-total>text:last-child { color: #d2a367; font-size: 25rpx; }
-.detail-status { margin-bottom: 16rpx; font-family: "Songti SC", serif; font-size: 36rpx; }
-.order-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); font-size: 27rpx; }
+.order-product>view>view { color: var(--cream); font-family: "Songti SC", serif; font-size:33rpx; }
+.order-product>view>text { color: var(--muted); font-size:30rpx; }
+.order-total { display: flex; justify-content: space-between; padding-top: 18rpx; border-top: 1rpx solid var(--line); font-size:32rpx; }
+.order-total>text:last-child { color: #d2a367; font-size:29rpx; }
+.detail-status { margin-bottom: 16rpx; font-family: "Songti SC", serif; font-size:40rpx; }
+.order-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); font-size:31rpx; }
 .order-detail-row>text:first-child { color: var(--muted); }
-.order-detail-row button { overflow-wrap: anywhere; font-size: 23rpx; }
-.order-tip { margin-top: 24rpx; font-size: 25rpx; }
+.order-detail-row button { overflow-wrap: anywhere; font-size:28rpx; }
+.order-tip { margin-top: 24rpx; font-size:29rpx; }
 .sheet .outline-button { margin-top: 24rpx; }

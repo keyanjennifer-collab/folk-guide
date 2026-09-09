@@ -9,7 +9,7 @@
     <button wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="showDetail">
       <view class="order-top"><text>{{item.dateLabel}}</text><text>{{item.statusLabel}}</text></view>
       <view class="order-product"><image src="{{item.thumbnail}}" mode="aspectFill"/><view><view>{{item.itemLabel}}</view><text>共 {{item.quantity}} 件</text></view></view>
-      <view class="order-total"><text>合计 ¥{{item.amount}}</text><text>订单详情 ›</text></view>
+      <view class="order-total"><text class="price-figure">合计 ¥{{item.amount}}</text><text>订单详情 ›</text></view>
     </button>
     <view class="page-foot">{{loading ? '正在读取…' : hasMore ? '上拉查看更多' : '已显示全部订单'}}</view>
   </view>
@@ -18,7 +18,7 @@
     <view class="sheet-head"><view class="sheet-title">订单详情</view><button class="sheet-close" bindtap="closeDetail" aria-label="关闭">×</button></view>
     <view class="detail-status">{{selected.statusLabel}}</view>
     <view class="order-detail-row" wx:for="{{selected.items}}" wx:key="product_id"><text>{{item.name}}</text><text>× {{item.quantity}}</text></view>
-    <view class="order-detail-row"><text>订单金额</text><text>¥{{selected.amount}}</text></view>
+    <view class="order-detail-row"><text>订单金额</text><text class="price-figure">¥{{selected.amount}}</text></view>
     <view class="order-detail-row"><text>订单编号</text><button class="text-button" bindtap="copyNumber">{{selected.number}} · 复制</button></view>
     <view class="order-detail-row"><text>下单日期</text><text>{{selected.dateLabel}}</text></view>
     <block wx:if="{{selected.tracking_number}}"><view class="order-detail-row"><text>物流公司</text><text>{{selected.carrier || '承运中'}}</text></view><button class="outline-button" bindtap="copyTracking">复制物流单号</button></block>

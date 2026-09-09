@@ -1,28 +1,28 @@
 <view class="mine-page">
   <view class="mine-heading"><view class="screen-title">我的</view><image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <view class="identity-card">
-    <view class="identity-top"><view class="identity-seal">时</view><view class="identity-copy"><view class="identity-title">{{dashboardLoading ? '正在读取账号' : isLoggedIn ? '知时，亦知己' : '与五色，朝夕相伴'}}</view><view>{{isLoggedIn ? '微信用户 · ' + phoneDisplay : '登录后查看订单与专属五色'}}</view></view></view>
+    <view class="identity-top"><view class="identity-seal">时</view><view class="identity-copy"><view class="identity-title">{{dashboardLoading ? '正在读取账号' : isLoggedIn ? '知时，亦知己' : '与五色，朝夕相伴'}}</view><view class="identity-subtitle">{{isLoggedIn ? '微信用户 · ' + phoneDisplay : '登录后查看订单与专属五色'}}</view></view></view>
     <button wx:if="{{!isLoggedIn}}" class="login-button" bindtap="realLogin" disabled="{{loginBusy || dashboardLoading}}" loading="{{loginBusy}}">微信登录</button>
-    <view wx:else class="identity-footer"><text>五色应时 · 知时而行</text><button bindtap="showPrivacy">账号与隐私 ›</button></view>
-    <view wx:if="{{accountError}}" class="account-error">{{accountError}}<button bindtap="loadAccount">重新读取</button></view>
+    <view wx:else class="identity-footer"><text>五色应时 · 知时而行</text><button class="identity-action" bindtap="showPrivacy">账号与隐私 ›</button></view>
+    <view wx:if="{{accountError}}" class="account-error">{{accountError}}<button class="identity-action" bindtap="loadAccount">重新读取</button></view>
   </view>
   <view class="orders-panel">
-    <view class="panel-heading"><view>我的订单</view><button class="text-button" bindtap="toOrders" data-status="all">全部订单 ›</button></view>
-    <view class="order-entries"><button wx:for="{{orderEntries}}" wx:key="id" bindtap="toOrders" data-status="{{item.id}}"><view class="order-symbol {{item.icon}}"><text>{{orderCounts[item.id]}}</text></view><text>{{item.label}}</text></button></view>
+    <view class="panel-heading"><view class="panel-title">我的订单</view><button class="text-button" bindtap="toOrders" data-status="all">全部订单 ›</button></view>
+    <view class="order-entries"><button class="order-entry" wx:for="{{orderEntries}}" wx:key="id" bindtap="toOrders" data-status="{{item.id}}"><view class="order-symbol {{item.icon}}"><text class="order-count">{{orderCounts[item.id]}}</text></view><text>{{item.label}}</text></button></view>
     <button wx:if="{{orderError}}" class="order-error text-button" bindtap="loadAccount">{{orderError}}</button>
   </view>
   <button class="profile-link" bindtap="toProfile"><view class="profile-seal">五</view><view><view class="profile-title">我的今日五色</view><view class="muted">{{profileSummary}}</view></view><text class="arrow">›</text></button>
   <view class="service-panel">
-    <view class="panel-heading"><view>我的国学时光</view><text class="service-label">随问随学</text></view>
-    <button class="service-link" bindtap="toAi"><view><view>{{serviceTitle}}</view><text>{{serviceCopy}}</text></view><text class="arrow">›</text></button>
-    <button class="service-link history-link" bindtap="toAi"><view><view>问答记录</view><text>{{historySummary}}</text></view><text class="arrow">›</text></button>
+    <view class="panel-heading"><view class="panel-title">我的国学时光</view><text class="service-label">随问随学</text></view>
+    <button class="service-link" bindtap="toAi"><view class="service-copy"><view class="service-title">{{serviceTitle}}</view><text class="service-description">{{serviceCopy}}</text></view><text class="arrow">›</text></button>
+    <button class="service-link history-link" bindtap="toAi"><view class="service-copy"><view class="service-title">问答记录</view><text class="service-description">{{historySummary}}</text></view><text class="arrow">›</text></button>
   </view>
   <view class="menu-panel">
-    <button class="menu-row" bindtap="toProfile"><text>本人档案</text><view>{{hasProfile ? '查看与修改' : '去完善'}} <text>›</text></view></button>
+    <button class="menu-row" bindtap="toProfile"><text>本人档案</text><view class="menu-value">{{hasProfile ? '查看与修改' : '去完善'}} <text>›</text></view></button>
     <view wx:if="{{isLoggedIn && !phoneBound && wechatPhoneAvailable}}" class="menu-row"><text>绑定手机号</text><button class="text-button" open-type="getPhoneNumber" bindgetphonenumber="bindPhone">去绑定 ›</button></view>
-    <button class="menu-row" bindtap="showHelp"><text>使用帮助</text><view>›</view></button>
-    <button class="menu-row" bindtap="showPrivacy"><text>账号与隐私</text><view>›</view></button>
-    <button class="menu-row" bindtap="showAbout"><text>关于五色知时</text><view>›</view></button>
+    <button class="menu-row" bindtap="showHelp"><text>使用帮助</text><view class="menu-value">›</view></button>
+    <button class="menu-row" bindtap="showPrivacy"><text>账号与隐私</text><view class="menu-value">›</view></button>
+    <button class="menu-row" bindtap="showAbout"><text>关于五色知时</text><view class="menu-value">›</view></button>
   </view>
   <button wx:if="{{isLoggedIn}}" class="logout-button" bindtap="logout">退出登录</button>
   <view class="page-foot">五色应时 · 知时而行</view>

@@ -1,4 +1,4 @@
-.mine-page { min-height: 100vh; padding: 20rpx 34rpx calc(110rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.mine-page { min-height: 100vh; padding: 20rpx 34rpx calc(110rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .mine-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26rpx; }
 .mine-heading .brand-logo { width: 96rpx; height: 82rpx; }
 .mine-heading .screen-title { font-size: 52rpx; }
@@ -7,17 +7,17 @@
 .identity-seal { display: flex; width: 98rpx; height: 98rpx; flex: none; align-items: center; justify-content: center; color: #dfb77d; border: 1rpx solid #bc8b53; border-radius: 50%; font-family: "Songti SC", serif; font-size: 46rpx; }
 .identity-copy { min-width: 0; padding-left: 24rpx; }
 .identity-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 36rpx; letter-spacing: 3rpx; }
-.identity-copy>view:last-child { margin-top: 8rpx; color: var(--muted); font-size: 26rpx; }
+.identity-subtitle { margin-top: 8rpx; color: var(--muted); font-size: 26rpx; }
 .login-button { width: 100%; margin-top: 30rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 5rpx; font-size: 30rpx; line-height: 80rpx; letter-spacing: 4rpx; }
 .identity-footer { display: flex; justify-content: space-between; margin-top: 28rpx; padding-top: 22rpx; color: var(--muted); font-size: 21rpx; }
-.identity-footer button, .account-error button { padding: 0; color: var(--copper); background: transparent; font-size: 22rpx; }
+.identity-action { padding: 0; color: var(--copper); background: transparent; font-size: 22rpx; }
 .account-error { margin-top: 20rpx; color: #e1b58b; font-size: 23rpx; }
 .orders-panel, .service-panel { margin-top: 20rpx; padding: 28rpx; background: #343331; border-radius: 20rpx; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
-.panel-heading>view { color: var(--cream); font-family: "Songti SC", serif; font-size: 33rpx; letter-spacing: 3rpx; }
+.panel-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 33rpx; letter-spacing: 3rpx; }
 .panel-heading .text-button { font-size: 23rpx; }
 .order-entries { display: flex; justify-content: space-between; padding: 6rpx 0; }
-.order-entries>button { width: 25%; padding: 0 4rpx; color: #d0c8bd; background: transparent; border-radius: 0; font-size: 26rpx; line-height: 1.6; }
+.order-entry { width: 25%; padding: 0 4rpx; color: #d0c8bd; background: transparent; border-radius: 0; font-size: 26rpx; line-height: 1.6; }
 .order-symbol { position: relative; width: 52rpx; height: 44rpx; margin: 8rpx auto 18rpx; border: 1.5rpx solid #c0955b; border-radius: 4rpx; }
 .order-symbol::before { position: absolute; top: 11rpx; right: 8rpx; left: 8rpx; border-top: 1rpx solid #c0955b; content: ""; }
 .order-symbol.box::before { top: 0; bottom: 0; left: 50%; border-top: 0; border-left: 1rpx solid #c0955b; }
@@ -25,7 +25,7 @@
 .order-symbol.delivery::after { position: absolute; bottom: -7rpx; left: 7rpx; width: 9rpx; height: 9rpx; background: var(--canvas); border: 1rpx solid #c0955b; border-radius: 50%; box-shadow: 26rpx 0 var(--canvas); content: ""; }
 .order-symbol.service { width: 44rpx; height: 44rpx; border-radius: 50%; }
 .order-symbol.service::before { top: 13rpx; left: 12rpx; width: 16rpx; height: 10rpx; border: 1rpx solid #c0955b; border-radius: 50%; }
-.order-symbol>text { position: absolute; top: -14rpx; right: -20rpx; min-width: 28rpx; color: #ddb071; background: var(--canvas); font-size: 20rpx; line-height: 28rpx; text-align: center; }
+.order-count { position: absolute; top: -14rpx; right: -20rpx; min-width: 28rpx; color: #ddb071; background: var(--canvas); font-size: 20rpx; line-height: 28rpx; text-align: center; }
 .profile-link { display: flex; align-items: center; width: 100%; margin-top: 18rpx; padding: 28rpx; color: #dec298; background: #373634; border-radius: 20rpx; line-height: 1.6; text-align: left; }
 .profile-seal { width: 68rpx; height: 68rpx; flex: none; margin-right: 22rpx; color: #d4aa70; border: 1rpx solid #b99660; border-radius: 50%; font-family: serif; font-size: 32rpx; line-height: 68rpx; text-align: center; }
 .profile-title { color: var(--cream); font-family: "Songti SC", serif; font-size: 31rpx; letter-spacing: 3rpx; }
@@ -33,11 +33,11 @@
 .arrow { margin-left: auto; padding-left: 16rpx; color: #d6ab71; font-size: 32rpx; }
 .service-label { color: #aaa99f; font-size: 21rpx; letter-spacing: 2rpx; }
 .service-link { display: flex; align-items: center; width: 100%; padding: 13rpx 0; color: #dec298; background: transparent; border-radius: 0; line-height: 1.7; text-align: left; }
-.service-link>view { min-width: 0; flex: 1; }
-.service-link>view>view { font-size: 27rpx; }
-.service-link>view>text { display: block; max-width: 500rpx; overflow: hidden; color: var(--muted); font-size: 25rpx; text-overflow: ellipsis; white-space: nowrap; }
+.service-copy { min-width: 0; flex: 1; }
+.service-title { font-size: 27rpx; }
+.service-description { display: block; max-width: 500rpx; overflow: hidden; color: var(--muted); font-size: 25rpx; text-overflow: ellipsis; white-space: nowrap; }
 .history-link { margin-top: 6rpx; }
 .menu-panel { margin-top: 14rpx; }
 .menu-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 10rpx; padding: 24rpx; color: #e7cba0; background: #333230; border-radius: 15rpx; font-size: 30rpx; line-height: 1.8; text-align: left; }
-.menu-row>view { color: var(--muted); font-size: 26rpx; }
+.menu-value { color: var(--muted); font-size: 26rpx; }
 .logout-button { margin: 32rpx auto 0; color: #d2a367; background: transparent; border: 1rpx solid #826344; border-radius: 5rpx; font-size: 25rpx; line-height: 72rpx; letter-spacing: 3rpx; }

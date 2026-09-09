@@ -1,5 +1,5 @@
 page { background: var(--canvas); color: var(--text); }
-.ai-page { min-height: 100vh; padding: 0 32rpx calc(340rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.ai-page { min-height: 100vh; padding: 0 32rpx calc(340rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .ai-heading { display: flex; min-height: 128rpx; align-items: center; justify-content: space-between; }
 .ai-heading image { width: 164rpx; height: 116rpx; }
 .ai-heading button { padding: 0 22rpx; color: #dfb378; background: #3b3936; border-radius: 30rpx; font-size: 26rpx; line-height: 62rpx; }

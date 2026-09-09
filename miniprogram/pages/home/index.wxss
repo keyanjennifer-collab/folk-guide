@@ -1,4 +1,4 @@
-.home-page { min-height: 100vh; padding-bottom: calc(118rpx + env(safe-area-inset-bottom)); color: #eee4d5; background-color: #262626; background-image: linear-gradient(180deg, rgba(38,38,38,.88), rgba(31,31,31,.96)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 760rpx; font-family: "Songti SC", "STSong", serif; }
+.home-page { min-height: 100vh; padding-bottom: calc(118rpx + env(safe-area-inset-bottom)); color: #eee4d5; background-color: #262626; background-image: linear-gradient(180deg, rgba(38,38,38,.88), rgba(31,31,31,.96)), var(--stone-texture); background-size: auto, 760rpx; font-family: "Songti SC", "STSong", serif; }
 button { font-family: inherit; }
 .brandbar { display: flex; height: 142rpx; align-items: center; justify-content: center; padding: 0 30rpx; }
 .brand-logo { width: 220rpx; height: 132rpx; }

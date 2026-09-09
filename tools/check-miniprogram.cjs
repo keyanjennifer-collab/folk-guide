@@ -33,6 +33,12 @@ function instance(file) {
   const target = {...page, data:structuredClone(page.data), setData(values) {Object.assign(this.data, values);}};
   return target;
 }
+function directoryBytes(directory) {
+  return fs.readdirSync(directory, {withFileTypes:true}).reduce((total, entry) => {
+    const file = path.join(directory, entry.name);
+    return total + (entry.isDirectory() ? directoryBytes(file) : fs.statSync(file).size);
+  }, 0);
+}
 async function main() {
   const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
   assert.equal(app.tabBar.list.length, 4);
@@ -46,6 +52,9 @@ async function main() {
   assert(!homeWxml.includes('today-subtitle') && !homeWxml.includes('calendar-pill'),'home hero stays compact');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
+  assert(directoryBytes(root) < 1.9 * 1024 * 1024, 'miniprogram source must retain margin below WeChat\'s 2 MB upload limit');
+  const settingsWxss=fs.readFileSync(path.join(root,'pages/settings/index.wxss'),'utf8');
+  assert(!/(^|[,>+~\s])(view|text|button|image|input|textarea|picker)(?=[.#:[>+~\s,{]|$)/m.test(settingsWxss),'settings component styles must use class selectors');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
     assert(app.pages.includes(item.pagePath));

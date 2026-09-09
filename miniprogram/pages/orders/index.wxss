@@ -1,4 +1,4 @@
-.orders-page { min-height: 100vh; padding: 28rpx 34rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.orders-page { min-height: 100vh; padding: 28rpx 34rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .orders-page .screen-title { margin-top: 8rpx; font-size: 49rpx; }
 .order-logo { width: 88rpx; height: 78rpx; }
 .order-tabs { display: flex; margin-top: 20rpx; border-bottom: 1rpx solid var(--line); white-space: nowrap; }

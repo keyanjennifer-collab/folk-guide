@@ -1,4 +1,4 @@
-.explore-page { min-height: 100vh; padding: 38rpx 34rpx calc(60rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.explore-page { min-height: 100vh; padding: 38rpx 34rpx calc(60rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .explore-heading .screen-title { margin-top: 10rpx; font-size: 56rpx; }
 .explore-heading>text { display: block; margin-top: 14rpx; color: var(--muted); font-size: 27rpx; }
 .explore-tabs { display: flex; margin: 36rpx 0; border-bottom: 1rpx solid var(--line); }

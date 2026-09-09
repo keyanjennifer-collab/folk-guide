@@ -1,4 +1,4 @@
-.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), url('../../assets/brand/stone-texture.jpg'); background-size: auto, 720rpx; }
+.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .shop-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28rpx; }
 .shop-heading .screen-title { margin-top: 8rpx; font-size: 44rpx; letter-spacing: 3rpx; }
 .shop-heading .eyebrow { font-size: 24rpx; }

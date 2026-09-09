@@ -29,4 +29,14 @@
       <view class="cart-note">本机选香清单 · 暂未开放下单</view>
     </block>
   </view>
+  <view wx:if="{{showSaleNotice}}" class="sale-overlay" bindtap="closeSaleNotice" catchtouchmove="noop">
+    <view class="sale-dialog" catchtap="noop">
+      <view class="sale-seal">香</view>
+      <view class="sale-eyebrow">OPENING NOTICE</view>
+      <view class="sale-title">开售说明</view>
+      <view class="sale-copy">选香清单已经保存在本机。当前商品与价格用于展示，在线下单和微信支付尚未开放。</view>
+      <view class="sale-points"><view>不会生成正式订单</view><view>不会发起支付或扣款</view><view>正式开售后将补充规格与配送信息</view></view>
+      <button bindtap="closeSaleNotice">继续选香</button>
+    </view>
+  </view>
 </view>

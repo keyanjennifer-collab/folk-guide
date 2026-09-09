@@ -5,10 +5,10 @@ const vm = require('node:vm');
 const ts = require('../node_modules/typescript');
 const root = path.join(__dirname, '../miniprogram');
 const cache = new Map(), storage = new Map();
-let page, token = '', publicResult, requests = 0;
+let page, token = '', publicResult, requests = 0, lastSwitchTab = '';
 const wx = {
   getStorageSync: key => storage.get(key), setStorageSync: (key, value) => storage.set(key, value),
-  showToast() {}, showModal() {}, nextTick: fn => fn(), pageScrollTo() {},
+  showToast() {}, showModal() {}, switchTab: ({url}) => { lastSwitchTab=url; }, nextTick: fn => fn(), pageScrollTo() {},
 };
 function load(relative) {
   const file = path.resolve(root, relative);
@@ -59,6 +59,8 @@ async function main() {
   assert(directoryBytes(root) < 1.9 * 1024 * 1024, 'miniprogram source must retain margin below WeChat\'s 2 MB upload limit');
   const settingsWxss=fs.readFileSync(path.join(root,'pages/settings/index.wxss'),'utf8');
   assert(!/(^|[,>+~\s])(view|text|button|image|input|textarea|picker)(?=[.#:[>+~\s,{]|$)/m.test(settingsWxss),'settings component styles must use class selectors');
+  const tabWxss=fs.readFileSync(path.join(root,'custom-tab-bar/index.wxss'),'utf8');
+  assert(!/(^|[,>+~\s])(view|text|button|image|input|textarea|picker)(?=[.#:[>+~\s,{]|$)/m.test(tabWxss),'custom tab bar styles must use class selectors');
   for (const ext of ['ts','json','wxml','wxss']) assert(fs.existsSync(path.join(root,'custom-tab-bar/index.'+ext)));
   for (const item of app.tabBar.list) {
     assert(app.pages.includes(item.pagePath));
@@ -70,12 +72,26 @@ async function main() {
   assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,6);
   assert.equal(PRODUCTS.filter(p=>p.category==='single').map(p=>p.name).join('|'),'青木|朱蜜|黄檀|白桂|墨沉');
   assert(PRODUCTS.filter(p=>p.category==='single').every(p=>p.emblem.endsWith('-emblem-v2.png')),'all five beasts use the unified relief set');
-  for (const p of PRODUCTS) for (const image of [p.image,p.emblem]) assert(fs.existsSync(path.join(root,image)));
+  for (const p of PRODUCTS) for (const image of [p.image,p.emblem,...p.gallery]) assert(fs.existsSync(path.join(root,image)));
+  assert.equal(PRODUCTS.find(p=>p.id==='gift').gallery.includes('/assets/brand/gift-gallery.jpg'),true,'gift detail includes the supplied five-color render');
+  assert.equal(PRODUCTS.find(p=>p.id==='black').gallery.filter(image=>image.includes('black-detail')).length,2,'both supplied 墨沉 renders are retained');
   const productPage = instance('pages/product/index.ts');
   assert.equal(productPage.data.setContents,'青木、朱蜜、黄檀、白桂、墨沉。五款线香与对应矿石香插，承载一份应时心意。');
+  productPage.toBag();
+  assert.equal(storage.get('wuse-open-cart-on-show'),true,'product detail requests the shopping bag directly');
+  assert.equal(lastSwitchTab,'/pages/caikuxiang/index');
+  const shopPage=instance('pages/caikuxiang/index.ts');
+  shopPage.onShow();
+  assert.equal(shopPage.data.showCart,true,'shop opens its bag sheet when requested by product detail');
+  assert.equal(storage.get('wuse-open-cart-on-show'),false);
   const shopWxml=fs.readFileSync(path.join(root,'pages/caikuxiang/index.wxml'),'utf8');
   assert(!shopWxml.includes('↗'),'shop removes emoji-style diagonal arrows from product cards');
   assert(shopWxml.includes('bag-total price-figure') && shopWxml.includes('product-price price-figure'),'shop applies the dedicated price numeral style');
+  assert(shopWxml.includes('sale-dialog'),'shop uses the branded opening notice instead of a native modal');
+  shopPage.checkout();
+  assert.equal(shopPage.data.showSaleNotice,true);
+  shopPage.closeSaleNotice();
+  assert.equal(shopPage.data.showSaleNotice,false);
   const cart = load('services/cart.ts');
   assert.equal(cart.readCart().length,0);
   cart.changeCart('green',2);
@@ -134,6 +150,14 @@ async function main() {
   await orders.loadOrders();
   assert.equal(requests,before,'guest must not fetch personal orders');
   assert.equal(orders.data.loggedIn,false);
+  const settings=instance('pages/settings/index.ts');
+  settings.showHelp();
+  assert.equal(settings.data.infoDialog.title,'使用帮助');
+  assert(settings.data.infoDialog.sections.length>=5,'help explains all major areas in detail');
+  settings.showAbout();
+  assert.equal(settings.data.infoDialog.title,'关于我们');
+  settings.closeInfo();
+  assert.equal(settings.data.infoDialog,null);
   console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; no stale fallback; public AI guard; scent matching; quiz sources; guest orders');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

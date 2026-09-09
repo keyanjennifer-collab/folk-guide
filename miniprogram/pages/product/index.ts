@@ -12,7 +12,7 @@ Page({
   onLoad(options: Record<string, string>) {
     const product = PRODUCTS.find(item => item.id === options.id);
     if (product) {
-      this.setData({ product, images: product.id === "gift" ? [product.image, "/assets/brand/gift-open.jpg", "/assets/brand/five-set.jpg"] : [product.image] });
+      this.setData({ product, images: product.gallery });
       wx.setNavigationBarTitle({ title: product.name });
     }
   },
@@ -27,6 +27,9 @@ Page({
       wx.showToast({ title: "已加入购物袋", icon: "success" });
     } catch (_) { wx.showToast({ title: "保存失败，请重试", icon: "none" }); }
   },
-  toShop() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },
+  toBag() {
+    wx.setStorageSync("wuse-open-cart-on-show", true);
+    wx.switchTab({ url: "/pages/caikuxiang/index" });
+  },
   onShareAppMessage() { return { title: this.data.product?.name || "五色知时", path: "/pages/product/index?id=" + (this.data.product?.id || "gift") }; },
 });

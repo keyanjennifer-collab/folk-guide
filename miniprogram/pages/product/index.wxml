@@ -12,7 +12,7 @@
       <view class="detail-section"><view class="detail-label">使用与养护</view><view class="care-row">置于稳固、耐热的香插上，在通风处点燃。</view><view class="care-row">远离易燃物、儿童与宠物；离开时请将余火熄灭。</view><view class="care-row">密封存放于阴凉干燥处，避免日晒与受潮。</view></view>
       <view class="purchase-note">当前为商品展示。最终规格、库存、价格及配送信息将在开售时公布。</view>
     </view>
-    <view class="product-actions"><button class="back-shop" bindtap="toShop">商城 / 购物袋</button><button class="add-bag" bindtap="addToBag">{{added ? '已加入 · 再添一份' : '加入购物袋'}}</button></view>
+    <view class="product-actions"><button class="open-bag" bindtap="toBag">打开购物袋</button><button class="add-bag" bindtap="addToBag">{{added ? '已加入 · 再添一份' : '加入购物袋'}}</button></view>
   </block>
-  <view wx:else class="empty-state"><view class="empty-title">没有找到这款香品</view><button class="outline-button" bindtap="toShop">返回商城</button></view>
+  <view wx:else class="empty-state"><view class="empty-title">没有找到这款香品</view></view>
 </view>

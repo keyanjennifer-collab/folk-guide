@@ -22,8 +22,27 @@
     <view wx:if="{{isLoggedIn && !phoneBound && wechatPhoneAvailable}}" class="menu-row"><text>绑定手机号</text><button class="text-button" open-type="getPhoneNumber" bindgetphonenumber="bindPhone">去绑定 ›</button></view>
     <button class="menu-row" bindtap="showHelp"><text>使用帮助</text><view class="menu-value">›</view></button>
     <button class="menu-row" bindtap="showPrivacy"><text>账号与隐私</text><view class="menu-value">›</view></button>
-    <button class="menu-row" bindtap="showAbout"><text>关于五色知时</text><view class="menu-value">›</view></button>
+    <button class="menu-row" bindtap="showAbout"><text>关于我们</text><view class="menu-value">›</view></button>
   </view>
   <button wx:if="{{isLoggedIn}}" class="logout-button" bindtap="logout">退出登录</button>
   <view class="page-foot">五色应时 · 知时而行</view>
+
+  <view wx:if="{{infoDialog}}" class="info-overlay" bindtap="closeInfo" catchtouchmove="noop">
+    <view class="info-dialog" catchtap="noop">
+      <view class="info-halo"/>
+      <view class="info-heading">
+        <view class="info-seal">时</view>
+        <view class="info-heading-copy"><view class="info-eyebrow">{{infoDialog.eyebrow}}</view><view class="info-title">{{infoDialog.title}}</view></view>
+        <button class="info-close" bindtap="closeInfo" aria-label="关闭">×</button>
+      </view>
+      <view class="info-intro">{{infoDialog.intro}}</view>
+      <scroll-view class="info-scroll" scroll-y="true" enhanced="true" show-scrollbar="false">
+        <view wx:for="{{infoDialog.sections}}" wx:key="title" class="info-section">
+          <view class="info-section-title">{{item.title}}</view>
+          <view class="info-section-body">{{item.body}}</view>
+        </view>
+      </scroll-view>
+      <button class="info-confirm" bindtap="closeInfo">我知道了</button>
+    </view>
+  </view>
 </view>

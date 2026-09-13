@@ -21,6 +21,11 @@
         <view class="today-title">今日五色</view>
         <view class="today-lunar">{{lunarDateLabel}}</view>
       </view>
+      <scroll-view class="date-strip" scroll-x="true" enable-flex="true">
+        <button wx:for="{{dayOptions}}" wx:key="date" class="date-option {{item.active ? 'active' : ''}}" bindtap="selectDate" data-date="{{item.date}}">
+          <text>{{item.label}}</text><small>{{item.weekday}}</small>
+        </button>
+      </scroll-view>
       <view class="rank-pills">
         <button wx:for="{{guides}}" wx:key="rank" class="rank-pill tone-{{item.product.id}} {{selected.rank === item.rank ? 'active' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}">
           <text>0{{item.rank}}</text><view>{{item.name}}</view><small>{{item.tier}}</small>

@@ -9,6 +9,7 @@ type Guide = {
 
 type ElementName = "木" | "火" | "土" | "金" | "水";
 type BranchMeta = { zodiac: string; element: ElementName };
+type DayOption = { date: string; label: string; weekday: string; active: boolean };
 
 const COLOR_TO_PRODUCT: Record<string, string> = { 白色系: "white", 绿色系: "green", 黑色系: "black", 红色系: "red", 黄色系: "gold" };
 const ELEMENT_TO_PRODUCT: Record<string, string> = { 金: "white", 木: "green", 水: "black", 火: "red", 土: "gold" };
@@ -34,6 +35,18 @@ function formatSolarDate(value: string, weekday: string): string {
   return `公历 ${year}年${month}月${day}日 · ${weekday}`;
 }
 
+function addDays(value: string, offset: number): string {
+  // 使用纯 UTC 日期运算；若带 +08:00 后再 setUTCDate，会在当天 16:00 UTC 上加一天，导致日期标签不变。
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function dayOption(payload: PublicDailyGuide, active: boolean, requestedDate = payload.guide_date): DayOption {
+  const [, month, day] = requestedDate.split("-");
+  return { date: requestedDate, label: `${Number(month)}月${Number(day)}日`, weekday: payload.weekday.replace("星期", "周"), active };
+}
+
 function relationReason(rank: number, dayElement: ElementName, colorElement: string): string {
   return [
     `${dayElement}生${colorElement}，依“我生”取为贵人色`,
@@ -47,7 +60,7 @@ let midnightTimer: ReturnType<typeof setTimeout> | undefined;
 
 Page({
   data: {
-    guides: [] as Guide[], selected: null as Guide | null,
+    guides: [] as Guide[], selected: null as Guide | null, dayOptions: [] as DayOption[],
     details: SCENT_DETAILS, statusBarHeight: 44, primaryElement: "",
     scent: SINGLE_PRODUCTS[0], gift: PRODUCTS[0], source: "确定性历法规则",
     contentSource: "loading", dateLabel: "今日", calendarLabel: "",
@@ -66,10 +79,12 @@ Page({
     const next = Date.UTC(beijing.getUTCFullYear(), beijing.getUTCMonth(), beijing.getUTCDate() + 1) - 8 * 3600000;
     midnightTimer = setTimeout(() => { void this.loadToday(); this.scheduleRefresh(); }, Math.max(1000, next - now + 1000));
   },
-  async loadToday() {
+  async loadToday(targetDate?: string) {
     this.setData({ contentSource: "loading", selected: null, guides: [] });
     try {
-      const payload: PublicDailyGuide = await getPublicDailyGuide();
+      const payload: PublicDailyGuide = await getPublicDailyGuide(targetDate);
+      const futureDates = targetDate ? [] : Array.from({ length: 6 }, (_, index) => addDays(payload.guide_date, index + 1));
+      const futurePayloads = await Promise.all(futureDates.map(date => getPublicDailyGuide(date)));
       if (!payload.guide_date || !Array.isArray(payload.items) || payload.items.length !== 5) throw new Error("invalid-guide");
       const dayBranch = payload.day_ganzhi.slice(1, 2);
       const branchMeta = BRANCH_META[dayBranch];
@@ -98,6 +113,9 @@ Page({
         summary: payload.share_summary, source: payload.rule_version || "确定性历法规则",
         calendarLabel: `${payload.lunar_date} · ${payload.day_ganzhi}日 · ${payload.weekday}`,
         shareTitle: payload.share_title || `五色知时 · ${payload.guide_date} 今日五色`,
+        dayOptions: targetDate
+          ? this.data.dayOptions.map(item => ({ ...item, active: item.date === payload.guide_date }))
+          : [payload, ...futurePayloads].map((item, index) => dayOption(item, index === 0, [payload.guide_date, ...futureDates][index])),
       });
     } catch (_) {
       this.setData({
@@ -107,6 +125,11 @@ Page({
         summary: "今日内容暂时没有取到，轻触下方即可重新读取。",
       });
     }
+  },
+  async selectDate(event: WechatMiniprogram.TouchEvent) {
+    const targetDate = String(event.currentTarget.dataset.date || "");
+    if (!targetDate || targetDate === this.data.dayOptions.find(item => item.active)?.date) return;
+    await this.loadToday(targetDate);
   },
   selectGuide(event: WechatMiniprogram.TouchEvent) {
     const guide = this.data.guides.find(item => item.rank === Number(event.currentTarget.dataset.rank));

@@ -9,6 +9,13 @@ button { font-family: inherit; }
 .today-date { color: #d8aa72; font-family: -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-size:26rpx; letter-spacing: 1rpx; }
 .today-title { margin-top: 10rpx; color: #f5eadb; font-size:59rpx; line-height: 1.25; letter-spacing: 7rpx; }
 .today-lunar { margin-top: 10rpx; color: #c9bfb2; font-family: -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-size:26rpx; line-height: 1.65; }
+.date-strip { width: 100%; margin-top: 24rpx; white-space: nowrap; }
+.date-option { display: inline-flex; width: 112rpx; height: 86rpx; margin-right: 10rpx; padding: 10rpx 6rpx; flex-direction: column; align-items: center; justify-content: center; color: #cfc3b4; background: rgba(30,29,28,.42); border: 1rpx solid rgba(224,190,145,.16); border-radius: 16rpx; line-height: 1.25; }
+.date-option:last-child { margin-right: 0; }
+.date-option text { font-family: sans-serif; font-size: 25rpx; }
+.date-option small { margin-top: 7rpx; color: #9f968b; font-family: sans-serif; font-size: 21rpx; }
+.date-option.active { color: #f5dfbe; background: rgba(157,108,61,.48); border-color: rgba(226,181,123,.75); box-shadow: inset 0 0 0 2rpx rgba(236,198,149,.18); }
+.date-option.active small { color: #e6bf8e; }
 .skeleton { width: 68%; height: 28rpx; margin-top: 22rpx; background: linear-gradient(90deg,#454545,#53504c,#454545); border-radius: 20rpx; animation: breathe 1.5s ease-in-out infinite; }.skeleton.wide{width:92%;height:48rpx;margin-top:0}.skeleton.short{width:44%}@keyframes breathe{50%{opacity:.45}}
 .reload-card { display: flex; align-items: center; gap: 20rpx; }
 .reload-mark { display: flex; width: 82rpx; height: 82rpx; flex: none; align-items: center; justify-content: center; color: #e2bc89; background: #45413c; border-radius: 50%; font-size:39rpx; }

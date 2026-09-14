@@ -7,13 +7,14 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from .ai_schemas import AIFeedbackInput, AIChatInput, AIChatOutput, AIHistoryItem, AIQuotaOutput
+from .ai_conversations import router as conversation_router, owned_conversation, message_output
 from .ai_rate_limit import AIRateLimitExceeded, enforce_ai_rate_limit
 from .ai_service import DISCLAIMER, answer_ai_question, quota_for_user
 from .auth import current_user
 from .config import get_settings
 from .database import get_db
 from .llm_provider import ModelServiceError, get_answer_provider
-from .models import AIConversationMessage, KnowledgeChunk, KnowledgeDocument, User
+from .models import AIConversation, AIConversationMessage, KnowledgeChunk, KnowledgeDocument, User
 from .vector_store import get_vector_store
 from .web_search_service import get_web_search_provider
 
@@ -76,6 +77,11 @@ def chat_ai(data: AIChatInput, user: User = Depends(current_user), db: Session =
     是否启用知识库检索由后端环境配置控制，不暴露给用户页面。
     """
     settings = get_settings()
+    conversation_id = data.conversation_id
+    if conversation_id is not None:
+        conversation = owned_conversation(db, user.id, conversation_id)
+        if conversation.archived:
+            raise HTTPException(409, "请先恢复已归档会话，再继续提问")
     try:
         enforce_ai_rate_limit(
             user.id,
@@ -99,6 +105,7 @@ def chat_ai(data: AIChatInput, user: User = Depends(current_user), db: Session =
             get_web_search_provider(),
             settings.ai_web_search_enabled,
             settings.ai_web_search_always,
+            conversation_id,
         )
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
@@ -111,12 +118,12 @@ def chat_ai(data: AIChatInput, user: User = Depends(current_user), db: Session =
     consumed = 0 if blocked or message.category == "profile_required" else 1
     return {
         "message_id": message.id, "answer": message.answer, "category": message.category,
+        "conversation_id": message.conversation_id,
         "blocked": blocked, "citations": json.loads(message.references_json),
         "remaining_today": max(before_quota.remaining(message.category) - consumed, 0),
         "model_name": message.model_name, "safety_status": message.safety_status,
         "disclaimer": DISCLAIMER,
     }
-
 
 @router.get(
     "/history",
@@ -133,12 +140,7 @@ def history(
     rows = db.scalars(select(AIConversationMessage).where(
         AIConversationMessage.user_id == user.id
     ).order_by(desc(AIConversationMessage.id)).limit(limit)).all()
-    return [{
-        "id": row.id, "question": row.question, "answer": row.answer,
-        "category": row.category, "citations": json.loads(row.references_json),
-        "feedback": row.feedback, "safety_status": row.safety_status,
-        "created_at": row.created_at,
-    } for row in rows]
+    return [message_output(row) for row in rows]
 
 
 @router.put(
@@ -163,9 +165,7 @@ def feedback(
     message.feedback_note = data.note.strip() if data.note else None
     db.commit()
     db.refresh(message)
-    return {
-        "id": message.id, "question": message.question, "answer": message.answer,
-        "category": message.category, "citations": json.loads(message.references_json),
-        "feedback": message.feedback, "safety_status": message.safety_status,
-        "created_at": message.created_at,
-    }
+    return message_output(message)
+
+
+router.include_router(conversation_router)

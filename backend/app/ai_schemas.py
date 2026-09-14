@@ -3,13 +3,21 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class AIChatInput(BaseModel):
     """用户问题。question_type 可让前端明确标记“七日比较”功能。"""
     question: str = Field(min_length=1, max_length=500)
     question_type: str | None = Field(default=None, pattern="^(normal|seven_day_comparison)$")
+    conversation_id: int | None = Field(default=None, ge=1)
+
+    @field_validator("question")
+    @classmethod
+    def nonblank_question(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("请输入问题")
+        return value.strip()
 
 
 class AICitation(BaseModel):
@@ -27,6 +35,7 @@ class AICitation(BaseModel):
 class AIChatOutput(BaseModel):
     """正式问答返回值；blocked=True 表示安全规则拦截。"""
     message_id: int
+    conversation_id: int | None = None
     answer: str
     category: str
     blocked: bool
@@ -36,6 +45,31 @@ class AIChatOutput(BaseModel):
     # safe / blocked / output_filtered / output_truncated；便于前端在必要时说明答案被安全处理。
     safety_status: str = "safe"
     disclaimer: str
+
+class AIConversationItem(BaseModel):
+    id: int
+    title: str
+    message_count: int = 0
+    created_at: datetime
+    updated_at: datetime
+    archived: bool = False
+
+
+class AIConversationPage(BaseModel):
+    items: list[AIConversationItem]
+    next_cursor: str | None = None
+
+
+class AIConversationUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    archived: bool | None = None
+
+    @field_validator("title")
+    @classmethod
+    def nonblank_title(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("标题不能为空")
+        return value.strip() if value else value
 
 
 class AIQuotaOutput(BaseModel):
@@ -55,6 +89,7 @@ class AIQuotaOutput(BaseModel):
 class AIHistoryItem(BaseModel):
     """只返回当前用户自己的问答历史。"""
     id: int
+    conversation_id: int | None = None
     question: str
     answer: str
     category: str
@@ -62,6 +97,16 @@ class AIHistoryItem(BaseModel):
     feedback: str | None
     safety_status: str = "safe"
     created_at: datetime
+    favorite: bool = False
+
+
+class AIConversationDetail(AIConversationItem):
+    messages: list[AIHistoryItem] = Field(default_factory=list)
+    next_before_id: int | None = None
+
+
+class AIFavoriteInput(BaseModel):
+    favorite: bool
 
 
 class AIFeedbackInput(BaseModel):

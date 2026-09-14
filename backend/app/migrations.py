@@ -1,6 +1,6 @@
 """SQLite 原型库兼容迁移；正式部署应使用 Alembic。"""
 
-from sqlalchemy import inspect, text
+from sqlalchemy import MetaData, Table, func, inspect, select, text
 from sqlalchemy.engine import Engine
 
 
@@ -47,6 +47,28 @@ def migrate_development_schema(engine: Engine) -> None:
     inspector = inspect(engine)
     tables = inspector.get_table_names()
     with engine.begin() as connection:
+        if "ai_conversations" in tables:
+            existing = {column["name"] for column in inspector.get_columns("ai_conversations")}
+            if "archived" not in existing:
+                connection.execute(text("ALTER TABLE ai_conversations ADD COLUMN archived BOOLEAN NOT NULL DEFAULT 0"))
+        if "ai_conversation_messages" in tables:
+            existing = {column["name"] for column in inspector.get_columns("ai_conversation_messages")}
+            if "conversation_id" not in existing:
+                connection.execute(text("ALTER TABLE ai_conversation_messages ADD COLUMN conversation_id INTEGER REFERENCES ai_conversations(id)"))
+            if "favorite" not in existing:
+                connection.execute(text("ALTER TABLE ai_conversation_messages ADD COLUMN favorite BOOLEAN NOT NULL DEFAULT 0"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_ai_conversation_messages_conversation_id ON ai_conversation_messages (conversation_id)"))
+            metadata = MetaData()
+            messages = Table("ai_conversation_messages", metadata, autoload_with=connection)
+            conversations = Table("ai_conversations", metadata, autoload_with=connection)
+            groups = connection.execute(select(messages.c.user_id, func.min(messages.c.created_at),
+                                               func.max(messages.c.created_at)).where(
+                messages.c.conversation_id.is_(None)).group_by(messages.c.user_id)).all()
+            for user_id, first, last in groups:
+                inserted = connection.execute(conversations.insert().values(
+                    user_id=user_id, title="历史问答", created_at=first, updated_at=last, archived=False))
+                connection.execute(messages.update().where(messages.c.user_id == user_id,
+                    messages.c.conversation_id.is_(None)).values(conversation_id=inserted.inserted_primary_key[0]))
         if "birth_profiles" in tables:
             existing = {column["name"] for column in inspector.get_columns("birth_profiles")}
             for name, definition in SQLITE_PROFILE_COLUMNS.items():

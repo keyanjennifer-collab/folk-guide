@@ -22,7 +22,7 @@ from .daily_color_rule_routes import router as daily_color_rule_router
 from .daily_update_routes import router as daily_update_router
 from .daily_update_service import daily_cache_scheduler_loop
 from .migrations import migrate_development_schema
-from .models import AIConversationMessage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User
+from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User
 from .profile_service import profile_output
 from .public_guide_routes import router as public_guide_router
 from .knowledge_routes import router as knowledge_router
@@ -359,6 +359,8 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     """
     # 必须先删没有配置数据库级联的子表，否则PostgreSQL启用外键后会拒绝删除用户。
     db.query(AIConversationMessage).filter(AIConversationMessage.user_id == user.id).delete()
+    db.query(AIConversation).filter(AIConversation.user_id == user.id).delete()
+    db.query(AIDeletedUsage).filter(AIDeletedUsage.user_id == user.id).delete()
     db.query(AIServiceGrant).filter(AIServiceGrant.user_id == user.id).delete()
     db.query(ChatMessage).filter(ChatMessage.user_id == user.id).delete()
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()

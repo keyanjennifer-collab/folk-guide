@@ -105,6 +105,17 @@ class AIServiceGrant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class AIConversation(Base):
+    """用户可管理的一段 AI 国学对话。"""
+    __tablename__ = "ai_conversations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200), default="新对话")
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
 class AIConversationMessage(Base):
     """正式 AI 国学问答记录。
 
@@ -115,6 +126,8 @@ class AIConversationMessage(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    conversation_id: Mapped[int | None] = mapped_column(ForeignKey("ai_conversations.id"), nullable=True, index=True)
+    favorite: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     question: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(64), index=True)
@@ -125,6 +138,16 @@ class AIConversationMessage(Base):
     feedback: Mapped[str | None] = mapped_column(String(16), nullable=True)
     feedback_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class AIDeletedUsage(Base):
+    """删除问答后仅保留已用次数，不保留问题、答案、会话或引用。"""
+    __tablename__ = "ai_deleted_usage"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    category: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime, index=True)
 
 
 class DailyCacheRun(Base):

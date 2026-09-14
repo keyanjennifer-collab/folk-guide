@@ -26,7 +26,7 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
         "carrier", "tracking_number", "created_at",
     }
     with engine.connect() as conn:
-        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0002_account_orders"
+        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0003_ai_conversations"
     engine.dispose()
     migrate("downgrade", "0001_initial_schema")
     engine = create_engine(database_url)
@@ -34,3 +34,4 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
     assert "users" in inspect(engine).get_table_names()
     engine.dispose()
     migrate("upgrade", "head")
+

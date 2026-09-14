@@ -12,7 +12,7 @@ from .ai_safety import review_model_output
 from .config import get_settings
 from .daily_color_cache_service import ensure_personal_color_cache
 from .llm_provider import AnswerProvider
-from .models import AIConversationMessage, AIServiceGrant, BirthProfile, User
+from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, User
 from .retrieval_service import hybrid_search
 from .time_service import beijing_day_bounds_utc_naive, beijing_today, utc_now_naive
 from .vector_store import VectorStore
@@ -132,6 +132,11 @@ def quota_for_user(db: Session, user: User, now: datetime | None = None) -> Quot
         )
         .group_by(AIConversationMessage.category)
     ).all())
+    deleted_counts = db.execute(select(AIDeletedUsage.category, func.count(AIDeletedUsage.id)).where(
+        AIDeletedUsage.user_id == user.id, AIDeletedUsage.created_at >= day_start,
+        AIDeletedUsage.created_at < next_day_start).group_by(AIDeletedUsage.category)).all()
+    for category, count in deleted_counts:
+        counts[category] = counts.get(category, 0) + count
     comparison_used = counts.get("seven_day_comparison", 0)
     # 安全拦截不消耗次数；其他可回答类别都计入普通问答。
     normal_used = sum(
@@ -226,11 +231,17 @@ def answer_ai_question(
     web_search_provider: WebSearchProvider | None = None,
     web_search_enabled: bool = False,
     web_search_always: bool = False,
+    conversation_id: int | None = None,
 ) -> tuple[AIConversationMessage, QuotaState, bool]:
     """执行一次问答，并在同一事务内保存答案和引用。
 
     返回消息、提问前的权益状态和是否拦截。调用方可用权益状态减一计算剩余次数。
     """
+    if conversation_id is not None:
+        conversation = db.scalar(select(AIConversation).where(
+            AIConversation.id == conversation_id, AIConversation.user_id == user.id))
+        if conversation is None or conversation.archived:
+            raise PermissionError("会话不存在或已归档")
     category, blocked = classify_question(question, requested_type)
     quota = quota_for_user(db, user)
     settings = get_settings()
@@ -288,12 +299,31 @@ def answer_ai_question(
                 except WebSearchServiceError:
                     logger.warning("web_search_failed category=%s", category, exc_info=True)
                     web_results = []
+            # 仅带入当前账号、当前会话的最近六轮安全通用问答，限制模型上下文体积。
+            # 不重用个人五色或生辰回答，避免把过期个人信息作为当天结果。
+            history = []
+            if conversation_id is not None:
+                recent = db.scalars(select(AIConversationMessage).where(
+                    AIConversationMessage.user_id == user.id,
+                    AIConversationMessage.conversation_id == conversation_id,
+                    AIConversationMessage.safety_status == "safe",
+                    AIConversationMessage.category.notin_(["high_risk", "profile_required"]),
+                ).order_by(AIConversationMessage.id.desc()).limit(6)).all()
+                for prior in reversed(recent):
+                    citations = json.loads(prior.references_json)
+                    if question_requests_personal_context(prior.question) or any(
+                        c.get("kind") == "personal_daily" for c in citations):
+                        continue
+                    history.extend([{"role": "user", "content": prior.question[:500]},
+                                    {"role": "assistant", "content": prior.answer[:1000]}])
+            history_options = {"conversation_history": history} if history else {}
             answer = provider.generate(
                 question,
                 contexts,
                 use_knowledge_base=use_knowledge_base,
                 personal_context=personal_context,
                 web_results=web_results,
+                **history_options,
             )
             # 模型提示词是第一道约束；这里在持久化和返回前再做确定性复核，
             # 被拦截的原文不会进入数据库，也不会写入日志。
@@ -316,12 +346,24 @@ def answer_ai_question(
     if personal_context is not None:
         citations.append(personal_context_citation(personal_context))
 
+    # 持久化会话与回答共用事务；模型失败不会留下空会话。
+    if conversation_id is None:
+        conversation = AIConversation(user_id=user.id, title=question[:200])
+        db.add(conversation)
+        db.flush()
+        conversation_id = conversation.id
     message = AIConversationMessage(
-        user_id=user.id, question=question, answer=answer, category=category,
+        user_id=user.id, conversation_id=conversation_id, question=question, answer=answer, category=category,
         references_json=json.dumps(citations, ensure_ascii=False),
         model_name=model_name, safety_status=safety_status,
     )
     db.add(message)
+    if conversation_id is not None:
+        conversation = db.get(AIConversation, conversation_id)
+        if conversation:
+            conversation.updated_at = utc_now_naive()
+            if conversation.title == "新对话":
+                conversation.title = question[:200]
     db.commit()
     db.refresh(message)
     return message, quota, blocked

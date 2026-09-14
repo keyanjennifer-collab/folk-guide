@@ -30,7 +30,7 @@ class ReadyDirectProvider:
 
     def generate(
         self, question, contexts, *, use_knowledge_base=True, personal_context=None,
-        web_results=None
+        web_results=None, conversation_history=None
     ):
         self.calls.append({
             "question": question,
@@ -38,6 +38,7 @@ class ReadyDirectProvider:
             "use_knowledge_base": use_knowledge_base,
             "personal_context": personal_context,
             "web_results": web_results,
+            "conversation_history": conversation_history,
         })
         return self.answer_text
 

@@ -28,6 +28,7 @@ export interface AIQuota {
 
 export interface AIChatResponse {
   message_id: number;
+  conversation_id?: number;
   answer: string;
   category: string;
   blocked: boolean;
@@ -40,6 +41,7 @@ export interface AIChatResponse {
 
 export interface AIHistoryRecord {
   id: number;
+  conversation_id?: number | null;
   question: string;
   answer: string;
   category: string;
@@ -48,16 +50,19 @@ export interface AIHistoryRecord {
   safety_status: "safe" | "blocked" | "output_filtered" | "output_truncated";
   created_at: string;
 }
+export interface AIConversation { id: number; title: string; message_count: number; created_at: string; updated_at: string; }
+export interface AIConversationPage { items: AIConversation[]; next_cursor: string | null; }
+export interface AIConversationDetail extends AIConversation { messages: AIHistoryRecord[]; }
 
 export function getAIQuota(): Promise<AIQuota> {
   return request<AIQuota>({ path: "/api/ai/quota", showError: false });
 }
 
-export function askAI(question: string, questionType: "normal" | "seven_day_comparison" = "normal"): Promise<AIChatResponse> {
+export function askAI(question: string, questionType: "normal" | "seven_day_comparison" = "normal", conversationId?: number): Promise<AIChatResponse> {
   return request<AIChatResponse>({
     path: "/api/ai/chat",
     method: "POST",
-    data: { question, question_type: questionType },
+    data: { question, question_type: questionType, ...(conversationId ? { conversation_id: conversationId } : {}) },
     showError: false,
   });
 }
@@ -65,6 +70,10 @@ export function askAI(question: string, questionType: "normal" | "seven_day_comp
 export function getAIHistory(limit = 20): Promise<AIHistoryRecord[]> {
   return request<AIHistoryRecord[]>({ path: `/api/ai/history?limit=${limit}`, showError: false });
 }
+export function createAIConversation(): Promise<AIConversation> { return request<AIConversation>({ path: "/api/ai/conversations", method: "POST", data: {}, showError: false }); }
+export function getAIConversations(): Promise<AIConversationPage> { return request<AIConversationPage>({ path: "/api/ai/conversations", showError: false }); }
+export function getAIConversation(id: number): Promise<AIConversationDetail> { return request<AIConversationDetail>({ path: `/api/ai/conversations/${id}`, showError: false }); }
+export function deleteAIConversation(id: number): Promise<void> { return request<void>({ path: `/api/ai/conversations/${id}`, method: "DELETE", showError: false }); }
 
 export function submitAIFeedback(messageId: number, rating: "helpful" | "unhelpful"): Promise<AIHistoryRecord> {
   return request<AIHistoryRecord>({

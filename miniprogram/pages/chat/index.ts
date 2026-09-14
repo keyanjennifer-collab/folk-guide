@@ -7,6 +7,10 @@ import {
   askAI,
   citationLabel,
   getAIHistory,
+  AIConversation,
+  getAIConversations,
+  getAIConversation,
+  deleteAIConversation,
   getAIQuota,
   submitAIFeedback,
 } from "../../services/ai";
@@ -37,6 +41,7 @@ const WELCOME: ChatItem = {
   references: [],
 };
 let chatLoadVersion = 0;
+function historyDate(value: string): string { const date = new Date(/Z$|[+-]\d{2}:?\d{2}$/.test(value) ? value : `${value}Z`); return `${date.getMonth() + 1}月${date.getDate()}日`; }
 
 function daysLeft(expiresAt: string | null): number {
   if (!expiresAt) return 0;
@@ -104,6 +109,14 @@ Page({
       { group: "典籍阅读", items: ["《滴天髓》和《子平真诠》有什么区别？", "如何阅读《黄帝内经》的五行内容？", "不同传统术数流派为什么会有差异？"] },
     ],
     messages: [WELCOME] as ChatItem[],
+    historyOpen: false,
+    history: [] as Array<AIHistoryRecord & { dateLabel: string }>,
+    conversations: [] as AIConversation[],
+    historyDetailId: 0,
+    historyDetailMessages: [] as ChatItem[],
+    currentConversationId: 0,
+    draftMessages: [WELCOME] as ChatItem[],
+    draftConversationId: 0,
   },
 
   async onShow() {
@@ -119,10 +132,12 @@ Page({
     this.setData({ isLoggedIn: true });
     this.setData({ loading: true });
     try {
-      const [quota, history] = await Promise.all([getAIQuota(), getAIHistory(20)]);
+      const [quota, history, conversationPage] = await Promise.all([getAIQuota(), getAIHistory(20), getAIConversations()]);
+      const conversations = conversationPage.items;
       if (loadVersion !== chatLoadVersion || !getToken()) return;
       this.applyQuota(quota);
-      this.setData({ messages: historyMessages(history) });
+      // 每次进入页面都从新对话开始；历史会话只在用户点击“历史记录”后打开。
+      this.setData({ messages: [WELCOME], history: history.map(item => ({ ...item, dateLabel: historyDate(item.created_at) })), conversations, currentConversationId: 0, historyOpen: false });
       // 先确认权益，再决定是否请求个人接口；无权益时不加载生辰计算结果。
       if (quota.active) await this.loadPersonalDaily();
       else this.setData({
@@ -238,6 +253,58 @@ Page({
   toLogin() { wx.switchTab({ url: "/pages/settings/index" }); },
   chooseGroup(event: WechatMiniprogram.TouchEvent) { this.setData({ activeGroup: Number(event.currentTarget.dataset.index) }); },
   togglePersonal() { this.setData({ personalOpen: !this.data.personalOpen }); },
+  toggleHistory() { this.setData({ historyOpen: !this.data.historyOpen }); },
+  newConversation() {
+    // 空白新对话不写入数据库；保留当前会话，用户可通过“当前对话”返回。
+    const hasCurrent = this.data.currentConversationId || this.data.messages.length > 1;
+    this.setData({
+      messages: [WELCOME], question: "", historyOpen: false, historyDetailId: 0, historyDetailMessages: [],
+      currentConversationId: 0,
+      ...(hasCurrent ? { draftMessages: this.data.messages, draftConversationId: this.data.currentConversationId } : {}),
+    });
+    wx.pageScrollTo({ scrollTop: 0, duration: 200 });
+  },
+  openHistory(event: WechatMiniprogram.TouchEvent) {
+    const id = Number(event.currentTarget.dataset.id);
+    const record = this.data.history.find(item => item.id === id);
+    if (!record) return;
+    this.setData({ messages: historyMessages([record]), historyOpen: false });
+    wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 200 }));
+  },
+  async openConversation(event: WechatMiniprogram.TouchEvent) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!id) return;
+    if (this.data.historyDetailId === id) {
+      this.setData({ historyDetailId: 0, historyDetailMessages: [] });
+      return;
+    }
+    try {
+      const detail = await getAIConversation(id);
+      this.setData({ historyDetailId: id, historyDetailMessages: historyMessages(detail.messages) });
+    } catch (_) { wx.showToast({ title: "历史对话读取失败", icon: "none" }); }
+  },
+  continueConversation() {
+    const id = Number(this.data.historyDetailId);
+    if (!id) return;
+    this.setData({ draftMessages: this.data.messages, draftConversationId: this.data.currentConversationId, currentConversationId: id, messages: this.data.historyDetailMessages, historyOpen: false, historyDetailId: 0, historyDetailMessages: [] });
+    wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 200 }));
+  },
+  returnCurrentConversation() {
+    this.setData({ messages: this.data.draftMessages, currentConversationId: this.data.draftConversationId, historyOpen: false, historyDetailId: 0, historyDetailMessages: [] });
+    wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 200 }));
+  },
+  async deleteConversation(event: WechatMiniprogram.TouchEvent) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!id) return;
+    wx.showModal({ title: "删除这段对话？", content: "删除后问题、回答和引用都会移除，已用次数不会恢复。", confirmText: "删除", success: async result => {
+      if (!result.confirm) return;
+      try {
+        await deleteAIConversation(id);
+        const conversations = this.data.conversations.filter(item => item.id !== id);
+        this.setData({ conversations, historyOpen: true, ...(this.data.currentConversationId === id ? { currentConversationId: 0, messages: [WELCOME] } : {}) });
+      } catch (_) { wx.showToast({ title: "删除失败，请稍后重试", icon: "none" }); }
+    } });
+  },
 
   chooseQuestion(event: WechatMiniprogram.TouchEvent) {
     const question = String(event.currentTarget.dataset.question || "");
@@ -274,7 +341,7 @@ Page({
     wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 250 }));
     const tokenAtSend = getToken();
     try {
-      const result = await askAI(question, comparison ? "seven_day_comparison" : "normal");
+      const result = await askAI(question, comparison ? "seven_day_comparison" : "normal", this.data.currentConversationId || undefined);
       if (getToken() !== tokenAtSend) { this.setData({ sending: false, messages: [WELCOME] }); return; }
       const assistant: ChatItem = {
         role: "assistant",
@@ -285,10 +352,17 @@ Page({
         safetyStatus: result.safety_status,
       };
       const quotaField = comparison ? "remainingComparisons" : "remainingQuestions";
+      const conversationId = result.conversation_id || this.data.currentConversationId;
+      const existing = this.data.conversations.find(item => item.id === conversationId);
+      const conversations = existing
+        ? this.data.conversations.map(item => item.id === conversationId ? { ...item, message_count: item.message_count + 1, updated_at: new Date().toISOString(), title: item.title === "新对话" ? question.slice(0, 200) : item.title } : item)
+        : conversationId ? [{ id: conversationId, title: question.slice(0, 200), message_count: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), archived: false }, ...this.data.conversations] : this.data.conversations;
       this.setData({
         sending: false,
         messages: [...pendingMessages, assistant],
         [quotaField]: result.remaining_today,
+        currentConversationId: conversationId,
+        conversations,
       });
       wx.nextTick(() => wx.pageScrollTo({ selector: "#conversationEnd", duration: 250 }));
     } catch (error: unknown) {

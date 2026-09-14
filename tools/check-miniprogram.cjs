@@ -131,7 +131,9 @@ async function main() {
   assert.equal(home.data.guides.map(g=>g.product.id).join(','),'white,gold,green,red,black');
   assert(home.data.guides.every(g=>g.suitable.length && g.resistance && g.advice && g.palette));
   assert.equal(home.data.guides.filter(g=>g.expanded).length,1,'only the first detail card starts expanded');
-  assert.equal(requests,homeRequests+1,'home reads the server-published daily guide');
+  assert.equal(requests,homeRequests+7,'home reads today and the next six server-published daily guides');
+  assert.equal(home.data.dayOptions.length,7,'home exposes seven selectable daily guides');
+  assert.equal(home.data.dayOptions.filter(item=>item.active).length,1,'only one daily guide is active');
   home.selectGuide({currentTarget:{dataset:{rank:4}}});
   assert.equal(home.data.scent.name,'朱蜜');
   home.toggleGuide({currentTarget:{dataset:{rank:2}}});

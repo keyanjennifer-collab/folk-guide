@@ -13,7 +13,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
       { title: "查看今日五色", body: "首页内容以北京时间公历自然日为边界自动更新。系统取得当日日柱后，仅取日支所属五行作为“当日五行”，再按固定生克关系排列贵人色、合作色、奋斗色、消耗色与不利色。" },
       { title: "阅读色序建议", body: "点击首页五种色系可切换对应香品；进入“五色详解”后，点击“展开”可查看色序依据、今日适宜、行动建议与需要留意的事项。" },
       { title: "选香与购物袋", body: "商城包含五色知时线香套装及青木、朱蜜、黄檀、白桂、墨沉五款单香。商品详情可调整数量并加入购物袋；购物袋保存在本机。目前为展示阶段，不会生成订单或发起扣款。" },
-      { title: "使用 AI 国学", body: "可从典籍、节气与日常处境出发提问。今日五色排行以首页发布结果为准，不由 AI 临时生成；回答中的参考资料可继续查阅，发现问题也可提交纠错。" },
+      { title: "使用时序文化", body: "可从典籍、节气与日常处境出发提问。今日五色排行以首页发布结果为准，不由 AI 临时生成；回答中的参考资料可继续查阅，发现问题也可提交纠错。" },
       { title: "管理个人内容", body: "微信登录后可完善本人档案、查看个人五色、问答记录及订单状态。手机号仅在你主动授权后绑定。若页面内容未及时更新，可下拉刷新或重新进入小程序。" },
     ],
   },
@@ -40,7 +40,7 @@ Page({
     isLoggedIn: false, dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
-    serviceTitle: "AI国学", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
+    serviceTitle: "时序文化", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
     historySummary: "登录后查看自己的问答", orderCounts: EMPTY_COUNTS, orderError: "",
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
@@ -51,7 +51,7 @@ Page({
   resetAccount() {
     this.setData({ isLoggedIn: false, phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
       profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
-      serviceTitle: "AI国学", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
+      serviceTitle: "时序文化", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
       historySummary: "登录后查看自己的问答", orderCounts: EMPTY_COUNTS, orderError: "", accountError: "" });
   },
   async loadAccount() {
@@ -70,7 +70,7 @@ Page({
         profileSummary: "本人档案 · 完整度 " + profile.value.completeness + "%" });
       else this.setData({ profileSummary: isProfileMissing(profile.reason) ? "还未创建档案，去填写" : "档案暂时无法读取，请刷新" });
       if (quota.status === "fulfilled") this.setData({
-        serviceTitle: quota.value.active ? "AI国学 · 个人服务" : "AI国学 · 暂无有效权益",
+        serviceTitle: quota.value.active ? "时序文化 · 个人服务" : "时序文化 · 暂无有效权益",
         serviceCopy: quota.value.active ? "今日普通问答 " + quota.value.normal_remaining + " / " + quota.value.normal_limit + " 次" : "历史问答仍可查看",
         remainingQuestions: String(quota.value.normal_remaining),
       });

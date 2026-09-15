@@ -23,12 +23,12 @@
       </view>
       <scroll-view class="date-strip" scroll-x="true" enable-flex="true">
         <button wx:for="{{dayOptions}}" wx:key="date" class="date-option {{item.active ? 'active' : ''}}" bindtap="selectDate" data-date="{{item.date}}">
-          <text>{{item.label}}</text><small>{{item.weekday}}</small>
+          <text>{{item.label}}</text><text class="date-weekday">{{item.weekday}}</text>
         </button>
       </scroll-view>
       <view class="rank-pills">
         <button wx:for="{{guides}}" wx:key="rank" class="rank-pill tone-{{item.product.id}} {{selected.rank === item.rank ? 'active' : ''}}" bindtap="selectGuide" data-rank="{{item.rank}}">
-          <text>0{{item.rank}}</text><view>{{item.name}}</view><small>{{item.tier}}</small>
+          <text>0{{item.rank}}</text><view>{{item.name}}</view><text class="rank-tier">{{item.tier}}</text>
         </button>
       </view>
       <view class="featured" wx:if="{{selected}}">
@@ -56,7 +56,7 @@
           <view class="rule-basis-title">日支取象 · {{dayPillar}}日</view>
           <view class="rule-basis-text">{{dayBasis}}</view>
           <view class="rule-order-label">固定色序关系</view>
-          <view class="rule-order">我生＝贵人　同我＝合作　克我＝奋斗<br/>生我＝消耗　我克＝不利</view>
+          <view class="rule-order"><text>我生＝贵人　同我＝合作　克我＝奋斗</text><text>生我＝消耗　我克＝不利</text></view>
         </view>
       </view>
 
@@ -80,7 +80,7 @@
           <button bindtap="toGuideProduct" data-id="{{item.product.id}}">了解 ›</button>
         </view>
       </view>
-      <view class="source-note">依据每日确定性历法规则自动更新 · {{source}}<br/>传统文化与日常生活参考，请结合实际情境判断。</view>
+      <view class="source-note"><text>依据每日确定性历法规则自动更新 · {{source}}</text><text>传统文化与日常生活参考，请结合实际情境判断。</text></view>
     </view>
   </block>
 
@@ -97,12 +97,12 @@
 
   <view class="gift">
     <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
-    <image class="gift-image" src="/assets/brand/gift.jpg" mode="aspectFit"/>
+    <image class="gift-image" src="{{gift.image}}" mode="aspectFit"/>
   </view>
 
   <view class="home-links">
-    <button bindtap="toAi"><text>AI 国学</text><view>从典籍出发，聊聊此刻的困惑</view><small>进入问答 ›</small></button>
-    <button bindtap="toMine"><text>我的</text><view>登录、个人五色与订单记录</view><small>查看账户 ›</small></button>
+    <button bindtap="toAi"><text>时序文化</text><view>从典籍出发，聊聊此刻的困惑</view><text class="home-link-action">进入问答 ›</text></button>
+    <button bindtap="toMine"><text>我的</text><view>登录、个人五色与订单记录</view><text class="home-link-action">查看账户 ›</text></button>
   </view>
   <view class="page-foot">五色知时 · 让传统文化自然进入日常</view>
 </view>

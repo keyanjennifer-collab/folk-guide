@@ -5,9 +5,11 @@ from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from contextlib import suppress
 from datetime import date, datetime
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -124,6 +126,11 @@ app = FastAPI(
     ),
     openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
+)
+app.mount(
+    "/product-assets",
+    StaticFiles(directory=Path(__file__).with_name("static") / "products"),
+    name="product-assets",
 )
 app.add_middleware(
     CORSMiddleware,

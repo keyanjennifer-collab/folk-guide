@@ -39,6 +39,12 @@ function directoryBytes(directory) {
     return total + (entry.isDirectory() ? directoryBytes(file) : fs.statSync(file).size);
   }, 0);
 }
+function filesIn(directory) {
+  return fs.readdirSync(directory, {withFileTypes:true}).flatMap(entry => {
+    const file = path.join(directory, entry.name);
+    return entry.isDirectory() ? filesIn(file) : [file];
+  });
+}
 async function main() {
   const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
   assert.equal(app.tabBar.list.length, 4);
@@ -46,7 +52,7 @@ async function main() {
   assert.equal(app.window.navigationBarTextStyle, 'white');
   assert.equal(app.window.navigationBarBackgroundColor.toLowerCase(), '#262626');
   assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262626');
-  assert.equal(app.lazyCodeLoading, undefined, 'native tab pages must render without component lazy-loading');
+  assert.equal(app.lazyCodeLoading, undefined, 'native tab pages must render reliably in the current WeChat runtime');
   const homeWxml=fs.readFileSync(path.join(root,'pages/home/index.wxml'),'utf8');
   const homeWxss=fs.readFileSync(path.join(root,'pages/home/index.wxss'),'utf8');
   assert(!homeWxml.includes('today-subtitle') && !homeWxml.includes('calendar-pill'),'home hero stays compact');
@@ -56,7 +62,19 @@ async function main() {
   assert(homeWxml.includes('{{item.relationReason}}') && homeWxml.includes('日支取象'),'home explains the day-branch derivation and each color relation');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
-  assert(directoryBytes(root) < 1.9 * 1024 * 1024, 'miniprogram source must retain margin below WeChat\'s 2 MB upload limit');
+  const subpackageBytes = app.subPackages.reduce((total, item) => total + directoryBytes(path.join(root, item.root)), 0);
+  assert(directoryBytes(root) - subpackageBytes < 1.5 * 1024 * 1024, 'main package stays below the 1.5 MB quality threshold');
+  const mediaFiles = filesIn(root).filter(file => /\.(png|jpe?g|gif|webp|svg|mp3|wav|m4a)$/i.test(file));
+  assert(mediaFiles.reduce((total, file) => total + fs.statSync(file).size, 0) <= 200 * 1024, 'local image and audio resources stay below 200 KB in aggregate');
+  for (const file of mediaFiles) {
+    assert(fs.statSync(file).size <= 200 * 1024, `${path.relative(root, file)} stays below 200 KB`);
+  }
+  const wxmlFiles = filesIn(root).filter(file => file.endsWith('.wxml'));
+  for (const file of wxmlFiles) {
+    const source = fs.readFileSync(file, 'utf8');
+    assert(!/<\/?(?:small|strong|br)(?:\s|>|\/)/.test(source), `${path.relative(root, file)} only uses native mini-program elements`);
+    assert(!source.includes('/assets/brand/gift.jpg'), `${path.relative(root, file)} does not reference the removed local gift image`);
+  }
   const settingsWxss=fs.readFileSync(path.join(root,'pages/settings/index.wxss'),'utf8');
   assert(!/(^|[,>+~\s])(view|text|button|image|input|textarea|picker)(?=[.#:[>+~\s,{]|$)/m.test(settingsWxss),'settings component styles must use class selectors');
   const tabWxss=fs.readFileSync(path.join(root,'custom-tab-bar/index.wxss'),'utf8');
@@ -67,13 +85,17 @@ async function main() {
     for (const icon of [item.iconPath,item.selectedIconPath]) assert(fs.existsSync(path.join(root, icon)));
   }
   for (const route of app.pages) for (const ext of ['ts','wxml','wxss','json']) assert(fs.existsSync(path.join(root, route+'.'+ext)), route+'.'+ext);
+  for (const pack of app.subPackages) for (const route of pack.pages) for (const ext of ['ts','wxml','wxss','json']) {
+    const pageRoute = path.join(pack.root, route) + '.' + ext;
+    assert(fs.existsSync(path.join(root, pageRoute)), pageRoute);
+  }
   const {PRODUCTS} = load('data/products.ts');
   assert.equal(PRODUCTS.length,6);
   assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,6);
   assert.equal(PRODUCTS.filter(p=>p.category==='single').map(p=>p.name).join('|'),'青木|朱蜜|黄檀|白桂|墨沉');
   assert(PRODUCTS.filter(p=>p.category==='single').every(p=>p.emblem.endsWith('-emblem-v2.png')),'all five beasts use the unified relief set');
-  for (const p of PRODUCTS) for (const image of [p.image,p.emblem,...p.gallery]) assert(fs.existsSync(path.join(root,image)));
-  assert.equal(PRODUCTS.find(p=>p.id==='gift').gallery.includes('/assets/brand/gift-gallery.jpg'),true,'gift detail includes the supplied five-color render');
+  for (const p of PRODUCTS) for (const image of [p.image,p.emblem,...p.gallery]) assert(image.startsWith('http://127.0.0.1:8000/product-assets/'),'product media follows the configured backend base URL');
+  assert.equal(PRODUCTS.find(p=>p.id==='gift').gallery.some(image=>image.endsWith('/product-assets/gift-gallery.jpg')),true,'gift detail includes the supplied five-color render');
   assert.equal(PRODUCTS.find(p=>p.id==='black').gallery.filter(image=>image.includes('black-detail')).length,2,'both supplied 墨沉 renders are retained');
   const productPage = instance('pages/product/index.ts');
   assert.equal(productPage.data.setContents,'青木、朱蜜、黄檀、白桂、墨沉。五款线香与对应矿石香插，承载一份应时心意。');
@@ -142,7 +164,7 @@ async function main() {
   await home.loadToday();
   assert.equal(home.data.contentSource,'error','network failures never relabel stale data as today');
   assert.equal(home.data.guides.length,0);
-  const {SCENT_QUIZ,matchScent,QUIZ}=load('data/discovery.ts');
+  const {SCENT_QUIZ,matchScent,QUIZ}=load('pages/explore/discovery.ts');
   for (const moment of SCENT_QUIZ[0].options) for (const note of SCENT_QUIZ[1].options) {
     assert(PRODUCTS.some(p=>p.id===matchScent(moment.id,note.id)), 'every taste combination yields an existing SKU');
   }

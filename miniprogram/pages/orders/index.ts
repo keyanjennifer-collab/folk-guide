@@ -27,7 +27,7 @@ Page({
       if (version !== requestVersion) return;
       const orders = result.items.map(item => ({
         ...item, statusLabel: ORDER_LABELS[item.status], amount: (item.total_fen / 100).toFixed(2),
-        dateLabel: item.created_at.slice(0, 10), thumbnail: PRODUCTS.find(p => p.id === item.items[0]?.product_id)?.image || "/assets/brand/gift.jpg",
+        dateLabel: item.created_at.slice(0, 10), thumbnail: PRODUCTS.find(p => p.id === item.items[0]?.product_id)?.image || PRODUCTS[0].image,
         itemLabel: item.items.map(p => p.name).join("、"), quantity: item.items.reduce((n, p) => n + p.quantity, 0),
       }));
       this.setData({ orders: [...previous, ...orders], hasMore: result.has_more });

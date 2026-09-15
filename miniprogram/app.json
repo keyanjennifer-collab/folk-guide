@@ -3,11 +3,13 @@
     "pages/home/index",
     "pages/caikuxiang/index",
     "pages/chat/index",
-    "pages/settings/index",
-    "pages/explore/index",
-    "pages/profile/index",
-    "pages/product/index",
-    "pages/orders/index"
+    "pages/settings/index"
+  ],
+  "subPackages": [
+    { "root": "pages/product", "pages": ["index"] },
+    { "root": "pages/explore", "pages": ["index"] },
+    { "root": "pages/profile", "pages": ["index"] },
+    { "root": "pages/orders", "pages": ["index"] }
   ],
   "window": {
     "navigationBarTitleText": "今日五色",

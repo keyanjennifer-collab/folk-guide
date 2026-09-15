@@ -1,36 +1,36 @@
 <view class="profile-page">
   <view class="profile-hero">
     <view><view class="hero-kicker">PERSONAL PROFILE</view><view class="hero-title">本人档案</view><view class="hero-copy">用于传统历法计算与个人文化参考。除出生日期外，其余信息均可选择不填。</view></view>
-    <view class="completion"><strong>{{completeness}}</strong><text>%</text><small>{{completenessIsPreview ? '完整度预览' : '完整度'}}</small></view>
+    <view class="completion"><text class="emphasis">{{completeness}}</text><text>%</text><text class="caption">{{completenessIsPreview ? '完整度预览' : '完整度'}}</text></view>
   </view>
 
   <view wx:if="{{loading}}" class="loading-card">正在加载档案…</view>
-  <view wx:elif="{{loadFailed}}" class="load-error-card"><view class="load-error-mark">!</view><view><strong>暂时无法读取档案</strong><text>请确认Python后端已经启动，并检查网络连接后重新加载。</text></view><button bindtap="retryLoad">重新加载</button></view>
+  <view wx:elif="{{loadFailed}}" class="load-error-card"><view class="load-error-mark">!</view><view><text class="emphasis">暂时无法读取档案</text><text>请确认Python后端已经启动，并检查网络连接后重新加载。</text></view><button bindtap="retryLoad">重新加载</button></view>
   <block wx:else>
-    <view class="mode-card {{resultMode}}"><view class="mode-icon">{{resultMode === 'full' ? '全' : '简'}}</view><view><strong>{{resultMode === 'full' ? '完整个人结果模式' : '简化个人结果模式'}}</strong><text>{{resultMode === 'full' ? '已填写出生时辰，可使用完整结构计算。' : '不知道时辰也可以使用，部分结果完整度会受到影响。'}}</text></view></view>
+    <view class="mode-card {{resultMode}}"><view class="mode-icon">{{resultMode === 'full' ? '全' : '简'}}</view><view><text class="emphasis">{{resultMode === 'full' ? '完整个人结果模式' : '简化个人结果模式'}}</text><text>{{resultMode === 'full' ? '已填写出生时辰，可使用完整结构计算。' : '不知道时辰也可以使用，部分结果完整度会受到影响。'}}</text></view></view>
 
     <view wx:if="{{calendar}}" class="calendar-card">
       <view class="calendar-head"><view><view class="hero-kicker dark">CALENDAR RESULT</view><view class="calendar-title">历法转换结果</view></view><view class="version-tag">{{calendar.calculation_version}}</view></view>
-      <view class="date-results"><view><text>标准公历</text><strong>{{calendar.solar_date}}</strong></view><view><text>标准农历</text><strong>{{calendar.lunar_text}}</strong></view></view>
-      <view class="meta-grid"><view><text>生肖</text><strong>{{calendar.zodiac}}</strong></view><view><text>星座</text><strong>{{calendar.western_sign}}</strong></view><view><text>前一节气</text><strong>{{calendar.previous_solar_term.name}}</strong><small>{{calendar.previous_solar_term.datetime}}</small></view><view><text>后一节气</text><strong>{{calendar.next_solar_term.name}}</strong><small>{{calendar.next_solar_term.datetime}}</small></view></view>
-      <view class="pillars-title">四柱结构</view><view class="pillars"><view><text>年柱</text><strong>{{calendar.pillars.year.text}}</strong></view><view><text>月柱</text><strong>{{calendar.pillars.month.text}}</strong></view><view><text>日柱</text><strong>{{calendar.pillars.day.text}}</strong></view><view class="{{calendar.pillars.time ? '' : 'muted-pillar'}}"><text>时柱</text><strong>{{calendar.pillars.time ? calendar.pillars.time.text : '未知'}}</strong></view></view>
+      <view class="date-results"><view><text>标准公历</text><text class="emphasis">{{calendar.solar_date}}</text></view><view><text>标准农历</text><text class="emphasis">{{calendar.lunar_text}}</text></view></view>
+      <view class="meta-grid"><view><text>生肖</text><text class="emphasis">{{calendar.zodiac}}</text></view><view><text>星座</text><text class="emphasis">{{calendar.western_sign}}</text></view><view><text>前一节气</text><text class="emphasis">{{calendar.previous_solar_term.name}}</text><text class="caption">{{calendar.previous_solar_term.datetime}}</text></view><view><text>后一节气</text><text class="emphasis">{{calendar.next_solar_term.name}}</text><text class="caption">{{calendar.next_solar_term.datetime}}</text></view></view>
+      <view class="pillars-title">四柱结构</view><view class="pillars"><view><text>年柱</text><text class="emphasis">{{calendar.pillars.year.text}}</text></view><view><text>月柱</text><text class="emphasis">{{calendar.pillars.month.text}}</text></view><view><text>日柱</text><text class="emphasis">{{calendar.pillars.day.text}}</text></view><view class="{{calendar.pillars.time ? '' : 'muted-pillar'}}"><text>时柱</text><text class="emphasis">{{calendar.pillars.time ? calendar.pillars.time.text : '未知'}}</text></view></view>
       <view class="calendar-note">采用北京时间与零点换日规则计算；未知时辰时不生成时柱。计算结果用于后续规则引擎，不由AI临时推算。</view>
     </view>
 
     <view class="form-card">
-      <view class="field"><view class="field-head"><text>历法类型</text><small>必填</small></view><view class="segmented"><button class="{{calendarType === 'solar' ? 'active' : ''}}" data-type="solar" bindtap="setCalendar">公历</button><button class="{{calendarType === 'lunar' ? 'active' : ''}}" data-type="lunar" bindtap="setCalendar">农历</button></view></view>
-      <view wx:if="{{calendarType === 'lunar'}}" class="switch-row"><view><strong>闰月</strong><text>如果出生月份为农历闰月，请开启</text></view><switch checked="{{isLeapMonth}}" color="#385f4d" bindchange="setLeapMonth"/></view>
+      <view class="field"><view class="field-head"><text>历法类型</text><text class="caption">必填</text></view><view class="segmented"><button class="{{calendarType === 'solar' ? 'active' : ''}}" data-type="solar" bindtap="setCalendar">公历</button><button class="{{calendarType === 'lunar' ? 'active' : ''}}" data-type="lunar" bindtap="setCalendar">农历</button></view></view>
+      <view wx:if="{{calendarType === 'lunar'}}" class="switch-row"><view><text class="emphasis">闰月</text><text>如果出生月份为农历闰月，请开启</text></view><switch checked="{{isLeapMonth}}" color="#385f4d" bindchange="setLeapMonth"/></view>
 
-      <view class="field"><view class="field-head"><text>出生日期</text><small>必填</small></view><picker mode="date" value="{{birthDate}}" start="1900-01-01" bindchange="setDate"><view class="picker-value {{birthDate ? '' : 'placeholder'}}">{{birthDate || '请选择出生年月日'}}<text>›</text></view></picker><view wx:if="{{calendarType === 'lunar'}}" class="field-note">日期选择器显示数字年月日，系统将按农历{{isLeapMonth ? '闰月' : ''}}日期保存。</view></view>
+      <view class="field"><view class="field-head"><text>出生日期</text><text class="caption">必填</text></view><picker mode="date" value="{{birthDate}}" start="1900-01-01" bindchange="setDate"><view class="picker-value {{birthDate ? '' : 'placeholder'}}">{{birthDate || '请选择出生年月日'}}<text>›</text></view></picker><view wx:if="{{calendarType === 'lunar'}}" class="field-note">日期选择器显示数字年月日，系统将按农历{{isLeapMonth ? '闰月' : ''}}日期保存。</view></view>
 
-      <view class="switch-row"><view><strong>我知道出生时辰</strong><text>不知道时可关闭并继续使用简化结果</text></view><switch checked="{{timeKnown}}" color="#385f4d" bindchange="setTimeKnown"/></view>
-      <view wx:if="{{timeKnown}}" class="field time-field"><view class="field-head"><text>出生时间</text><small>建议填写</small></view><picker mode="time" value="{{birthTime}}" bindchange="setTime"><view class="picker-value">{{birthTime || '请选择时间'}}<text>›</text></view></picker></view>
+      <view class="switch-row"><view><text class="emphasis">我知道出生时辰</text><text>不知道时可关闭并继续使用简化结果</text></view><switch checked="{{timeKnown}}" color="#385f4d" bindchange="setTimeKnown"/></view>
+      <view wx:if="{{timeKnown}}" class="field time-field"><view class="field-head"><text>出生时间</text><text class="caption">建议填写</text></view><picker mode="time" value="{{birthTime}}" bindchange="setTime"><view class="picker-value">{{birthTime || '请选择时间'}}<text>›</text></view></picker></view>
 
-      <view class="field"><view class="field-head"><text>出生城市</text><small>可选</small></view><input value="{{birthCity}}" maxlength="64" bindinput="setCity" placeholder="例如：杭州（无需详细地址）"/><view class="field-note">当前版本统一按北京时间计算；城市为后续专业规则预留，不收集医院或具体地址。</view></view>
+      <view class="field"><view class="field-head"><text>出生城市</text><text class="caption">可选</text></view><input value="{{birthCity}}" maxlength="64" bindinput="setCity" placeholder="例如：杭州（无需详细地址）"/><view class="field-note">当前版本统一按北京时间计算；城市为后续专业规则预留，不收集医院或具体地址。</view></view>
 
-      <view class="field"><view class="field-head"><text>性别</text><small>可选</small></view><view class="gender-row"><button class="{{gender === 'male' ? 'active' : ''}}" data-gender="male" bindtap="setGender">男</button><button class="{{gender === 'female' ? 'active' : ''}}" data-gender="female" bindtap="setGender">女</button><button class="{{gender === 'unspecified' ? 'active' : ''}}" data-gender="unspecified" bindtap="setGender">不填写</button></view></view>
+      <view class="field"><view class="field-head"><text>性别</text><text class="caption">可选</text></view><view class="gender-row"><button class="{{gender === 'male' ? 'active' : ''}}" data-gender="male" bindtap="setGender">男</button><button class="{{gender === 'female' ? 'active' : ''}}" data-gender="female" bindtap="setGender">女</button><button class="{{gender === 'unspecified' ? 'active' : ''}}" data-gender="unspecified" bindtap="setGender">不填写</button></view></view>
 
-      <view class="timezone-row"><text>当前时区</text><strong>{{timezone}}</strong></view>
+      <view class="timezone-row"><text>当前时区</text><text class="emphasis">{{timezone}}</text></view>
     </view>
 
     <label class="privacy-row"><checkbox-group bindchange="togglePrivacy"><checkbox value="agreed" checked="{{privacyAgreed}}" color="#385f4d"/></checkbox-group><view>我已阅读并同意<text bindtap="showPrivacy">《生辰档案使用说明》</text></view></label>

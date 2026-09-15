@@ -87,7 +87,7 @@ Page({
     comparisonLimit: 0,
     remainingComparisons: 0,
     personalState: "locked" as "locked" | "loading" | "missing" | "ready" | "error",
-    personalStatusCopy: "有效AI国学体验或服务期内，可按生辰档案查看个人五色。",
+    personalStatusCopy: "有效时序文化体验或服务期内，可按生辰档案查看个人五色。",
     personalDate: "",
     personalPrecision: "",
     personalColors: [] as PersonalColorView[],
@@ -142,7 +142,7 @@ Page({
       if (quota.active) await this.loadPersonalDaily();
       else this.setData({
         personalState: "locked",
-        personalStatusCopy: "当前没有有效AI国学体验或服务权益，个人五色未加载。",
+        personalStatusCopy: "当前没有有效时序文化体验或服务权益，个人五色未加载。",
         personalColors: [],
       });
       this.setData({ loading: false });
@@ -164,9 +164,9 @@ Page({
 
   applyQuota(quota: AIQuota) {
     const remainingDays = daysLeft(quota.expires_at);
-    let serviceTitle = "AI国学服务尚未开通";
+    let serviceTitle = "时序文化服务尚未开通";
     if (quota.plan === "new_user_3_days") serviceTitle = "新客3天体验";
-    else if (quota.active) serviceTitle = "AI国学个人服务使用中";
+    else if (quota.active) serviceTitle = "时序文化个人服务使用中";
     const serviceCopy = quota.active
       ? `剩余${remainingDays}天；普通问答与七日比较分别计算次数`
       : "当前权益已结束，历史回答仍可查看";
@@ -214,13 +214,13 @@ Page({
       if (isApiError(error, 409)) {
         this.setData({
           personalState: "missing",
-          personalStatusCopy: "AI国学体验可用，完善生辰档案后即可生成个人五色。",
+          personalStatusCopy: "时序文化体验可用，完善生辰档案后即可生成个人五色。",
           personalColors: [],
         });
       } else if (isApiError(error, 403)) {
         this.setData({
           personalState: "locked",
-          personalStatusCopy: "当前没有有效AI国学体验或服务权益，个人五色未加载。",
+          personalStatusCopy: "当前没有有效时序文化体验或服务权益，个人五色未加载。",
           personalColors: [],
         });
       } else {
@@ -323,7 +323,7 @@ Page({
     }
     if (!getToken()) { this.toLogin(); return; }
     if (!this.data.serviceActive) {
-      wx.showModal({ title: "问答服务未开通", content: "当前没有可用的AI国学体验或服务权益。", showCancel: false });
+      wx.showModal({ title: "问答服务未开通", content: "当前没有可用的时序文化体验或服务权益。", showCancel: false });
       return;
     }
     if (!this.data.answerReady) {

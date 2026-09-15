@@ -13,7 +13,7 @@
   </view>
   <button class="profile-link" bindtap="toProfile"><view class="profile-seal">五</view><view><view class="profile-title">我的今日五色</view><view class="muted">{{profileSummary}}</view></view><text class="arrow">›</text></button>
   <view class="service-panel">
-    <view class="panel-heading"><view class="panel-title">我的国学时光</view><text class="service-label">随问随学</text></view>
+    <view class="panel-heading"><view class="panel-title">我的时序文化</view><text class="service-label">随问随学</text></view>
     <button class="service-link" bindtap="toAi"><view class="service-copy"><view class="service-title">{{serviceTitle}}</view><text class="service-description">{{serviceCopy}}</text></view><text class="arrow">›</text></button>
     <button class="service-link history-link" bindtap="toAi"><view class="service-copy"><view class="service-title">问答记录</view><text class="service-description">{{historySummary}}</text></view><text class="arrow">›</text></button>
   </view>

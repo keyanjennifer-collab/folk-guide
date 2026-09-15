@@ -1,13 +1,13 @@
 <view class="shop-page">
   <view class="shop-heading"><view><view class="eyebrow">五色应时 · 知时而行</view><view class="screen-title">一色一香，一时一境</view></view><image class="shop-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <button class="shop-hero" bindtap="toGift">
-    <image src="/assets/brand/gift.jpg" mode="aspectFill"/>
+    <image src="{{gift.image}}" mode="aspectFill"/>
     <view class="hero-copy"><view class="hero-title">{{gift.name}}</view><view>随时序择色，也随心择香</view><text>赏阅礼盒</text></view>
   </button>
   <view class="catalog-header"><view class="filters"><button wx:for="{{filters}}" wx:key="id" data-id="{{item.id}}" bindtap="filterProducts" class="{{category === item.id ? 'active' : ''}}">{{item.name}}</button></view><text>{{visibleProducts.length}} 款</text></view>
   <view class="product-grid">
     <button wx:for="{{visibleProducts}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
-      <view class="product-picture"><image src="{{item.image}}" mode="aspectFill"/><text class="product-tag">{{item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
+      <view class="product-picture"><image class="product-image" src="{{item.image}}" mode="{{item.category === 'set' ? 'aspectFill' : 'aspectFit'}}"/><text class="product-tag">{{item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
       <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price price-figure">¥{{item.price}}<text>参考价</text></view></view>
     </button>
   </view>

@@ -1,4 +1,4 @@
-import { DAILY_IDEAS, QUIZ, SCENT_QUIZ, matchScent } from "../../data/discovery";
+import { DAILY_IDEAS, QUIZ, SCENT_QUIZ, matchScent } from "./discovery";
 import { PRODUCTS, Product } from "../../data/products";
 Page({
   data: {

@@ -9,6 +9,14 @@ def test_health():
     assert response.json() == {"status": "ok"}
 
 
+def test_product_assets_are_public_without_exposing_admin_pages():
+    client = TestClient(app)
+    product = client.get("/product-assets/gift.jpg")
+    assert product.status_code == 200
+    assert product.headers["content-type"] == "image/jpeg"
+    assert client.get("/product-assets/admin_knowledge.html").status_code == 404
+
+
 def test_openapi_routes_are_grouped_and_ai_status_is_explicit():
     """防止新接口重新掉进Swagger的default分组或误称正式AI已经接入。"""
     schema = app.openapi()

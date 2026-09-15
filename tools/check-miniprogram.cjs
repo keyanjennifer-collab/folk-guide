@@ -90,11 +90,12 @@ async function main() {
     assert(fs.existsSync(path.join(root, pageRoute)), pageRoute);
   }
   const {PRODUCTS} = load('data/products.ts');
+  const {API_BASE_URL} = load('config.ts');
   assert.equal(PRODUCTS.length,6);
   assert.equal(new Set(PRODUCTS.map(p=>p.id)).size,6);
   assert.equal(PRODUCTS.filter(p=>p.category==='single').map(p=>p.name).join('|'),'青木|朱蜜|黄檀|白桂|墨沉');
   assert(PRODUCTS.filter(p=>p.category==='single').every(p=>p.emblem.endsWith('-emblem-v2.png')),'all five beasts use the unified relief set');
-  for (const p of PRODUCTS) for (const image of [p.image,p.emblem,...p.gallery]) assert(image.startsWith('http://127.0.0.1:8000/product-assets/'),'product media follows the configured backend base URL');
+  for (const p of PRODUCTS) for (const image of [p.image,p.emblem,...p.gallery]) assert(image.startsWith(`${API_BASE_URL}/product-assets/`),'product media follows the configured backend base URL');
   assert.equal(PRODUCTS.find(p=>p.id==='gift').gallery.some(image=>image.endsWith('/product-assets/gift-gallery.jpg')),true,'gift detail includes the supplied five-color render');
   assert.equal(PRODUCTS.find(p=>p.id==='black').gallery.filter(image=>image.includes('black-detail')).length,2,'both supplied 墨沉 renders are retained');
   const productPage = instance('pages/product/index.ts');

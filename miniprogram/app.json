@@ -37,7 +37,7 @@
       },
       {
         "pagePath": "pages/chat/index",
-        "text": "AI国学",
+        "text": "时序文化",
         "iconPath": "assets/nav/ai.png",
         "selectedIconPath": "assets/nav/ai-active.png"
       },

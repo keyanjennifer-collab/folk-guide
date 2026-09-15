@@ -29,7 +29,7 @@
   <view wx:if="{{historyOpen}}" class="history-panel"><view wx:if="{{!conversations.length && !history.length}}" class="history-empty">还没有保存的问答记录</view><view wx:for="{{conversations}}" wx:key="id" class="history-item"><button class="history-open" data-id="{{item.id}}" bindtap="openConversation"><view>{{item.title}}</view><text class="history-meta">{{item.message_count}} 条问答 · {{historyDetailId === item.id ? '点击收起' : '点击查看'}}</text></button><button class="history-delete" data-id="{{item.id}}" bindtap="deleteConversation">删除</button><view wx:if="{{historyDetailId === item.id}}" class="history-detail"><view wx:for="{{historyDetailMessages}}" wx:key="index" class="history-detail-message {{item.role}}"><text class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</text><text selectable>{{item.text}}</text></view><button class="history-continue" bindtap="continueConversation">继续对话</button></view></view><button wx:if="{{!conversations.length}}" wx:for="{{history}}" wx:key="id" class="history-item" data-id="{{item.id}}" bindtap="openHistory"><view>{{item.question}}</view><text class="history-meta">{{item.dateLabel}}</text></button></view>
   <view wx:if="{{!historyOpen}}" class="messages">
     <view wx:for="{{messages}}" wx:key="index" class="message {{item.role}}">
-      <view class="message-role">{{item.role === 'user' ? '你' : '时序文化 · AI生成'}}</view>
+      <view class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</view>
       <text class="message-text" selectable>{{item.text}}</text>
       <view wx:if="{{item.safetyStatus === 'output_filtered'}}" class="safety-note">回答已按服务规则处理。</view>
       <view wx:if="{{item.safetyStatus === 'output_truncated'}}" class="safety-note">回答较长，已截取至服务长度上限。</view>
@@ -39,5 +39,5 @@
     <view wx:if="{{sending}}" class="thinking">正在整理思路…</view>
   </view>
   <view wx:if="{{!historyOpen}}" id="conversationEnd"/>
-  <view class="composer-wrap"><view class="composer"><textarea value="{{question}}" bindinput="setQuestion" focus="{{inputFocus}}" auto-height maxlength="500" disabled="{{sending}}" placeholder="写下你的问题…" placeholder-style="color:#8e846f" cursor-spacing="20"/><button bindtap="send" loading="{{sending}}" disabled="{{sending || !question}}" aria-label="发送问题">发送</button></view><view class="ai-disclaimer">AI生成 · 仅供传统文化学习与生活参考</view></view>
+  <view class="composer-wrap"><view class="composer"><textarea value="{{question}}" bindinput="setQuestion" focus="{{inputFocus}}" auto-height maxlength="500" disabled="{{sending}}" placeholder="写下你的问题…" placeholder-style="color:#8e846f" cursor-spacing="20"/><button bindtap="send" loading="{{sending}}" disabled="{{sending || !question}}" aria-label="发送问题">发送</button></view><view class="ai-disclaimer">仅供传统文化学习与生活参考</view></view>
 </view>

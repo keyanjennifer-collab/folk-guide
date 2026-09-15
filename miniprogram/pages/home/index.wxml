@@ -80,7 +80,7 @@
           <button bindtap="toGuideProduct" data-id="{{item.product.id}}">了解 ›</button>
         </view>
       </view>
-      <view class="source-note"><text>依据每日确定性历法规则自动更新 · {{source}}</text><text>传统文化与日常生活参考，请结合实际情境判断。</text></view>
+      <view class="source-note">传统文化与日常生活参考，请结合实际情境判断。</view>
     </view>
   </block>
 

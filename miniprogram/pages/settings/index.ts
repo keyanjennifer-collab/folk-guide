@@ -1,5 +1,5 @@
 import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
-import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone } from "../../services/account";
+import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone, requestWechatProfile, saveLocalUserProfile, getLocalUserProfile } from "../../services/account";
 import { getAIHistory, getAIQuota } from "../../services/ai";
 import { getCurrentProfile, isProfileMissing } from "../../services/profile";
 import { getOrders } from "../../services/orders";
@@ -37,7 +37,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
 };
 Page({
   data: {
-    isLoggedIn: false, dashboardLoading: false, loginBusy: false, accountError: "",
+    isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
     serviceTitle: "时序文化", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
@@ -45,7 +45,7 @@ Page({
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
   },
-  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); void this.loadAccount(); },
+  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl }); void this.loadAccount(); },
   onHide() { loadVersion++; this.setData({ dashboardLoading: false }); },
   onPullDownRefresh() { void this.loadAccount().finally(() => wx.stopPullDownRefresh()); },
   resetAccount() {
@@ -90,7 +90,7 @@ Page({
   async realLogin() {
     if (this.data.loginBusy) return;
     this.setData({ loginBusy: true });
-    try { await loginWithWechat(); await this.loadAccount(); }
+    try { await loginWithWechat(); try { const profile = await requestWechatProfile(); saveLocalUserProfile({ nickname: profile.userInfo.nickName, avatarUrl: profile.userInfo.avatarUrl, source: "wechat" }); } catch (_) { wx.showToast({ title: "已登录，可稍后设置头像昵称", icon: "none" }); } await this.loadAccount(); }
     catch (error) { this.setData({ accountError: getApiErrorMessage(error, "登录失败，请重试") }); }
     finally { this.setData({ loginBusy: false }); }
   },

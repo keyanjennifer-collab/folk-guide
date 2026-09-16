@@ -18,6 +18,8 @@ SQLITE_PROFILE_COLUMNS = {
 SQLITE_USER_COLUMNS = {
     "phone_number": "VARCHAR(32)",
     "phone_bound_at": "DATETIME",
+    "nickname": "VARCHAR(64)",
+    "avatar_url": "VARCHAR(512)",
 }
 
 SQLITE_KNOWLEDGE_DOCUMENT_COLUMNS = {

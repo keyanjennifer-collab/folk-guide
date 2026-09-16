@@ -84,17 +84,6 @@
     </view>
   </block>
 
-  <view class="life-section">
-    <view class="section-kicker">A MOMENT FOR YOURSELF</view>
-    <view class="section-title">知时小趣</view>
-    <view class="section-intro">一个人慢慢看，也可以和家人朋友一起玩。</view>
-    <view class="life-entries">
-      <button data-tab="daily" bindtap="toExplore"><text class="life-mark">时</text><view>节气日常<text>观察、散步与书写</text></view><text>›</text></button>
-      <button data-tab="scent" bindtap="toExplore"><text class="life-mark">香</text><view>选香小测<text>按此刻偏好循心择香</text></view><text>›</text></button>
-      <button data-tab="quiz" bindtap="toExplore"><text class="life-mark">问</text><view>国学一题<text>独答或共玩皆有趣</text></view><text>›</text></button>
-    </view>
-  </view>
-
   <view class="gift">
     <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
     <image class="gift-image" src="{{gift.image}}" mode="aspectFit"/>

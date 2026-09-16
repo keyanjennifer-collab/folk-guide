@@ -23,6 +23,12 @@ class CurrentUserOutput(BaseModel):
     phone_bound: bool
     wechat_phone_available: bool
     created_at: datetime
+    nickname: str | None = None
+    avatar_url: str | None = None
+
+class UserProfileInput(BaseModel):
+    nickname: str = Field(min_length=1, max_length=64)
+    avatar_url: str | None = Field(default=None, max_length=512)
 
 
 class PhoneCodeInput(BaseModel):

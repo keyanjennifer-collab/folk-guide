@@ -145,7 +145,6 @@ Page({
     wx.navigateTo({ url: "/pages/product/index?id=" + event.currentTarget.dataset.id });
   },
   toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
-  toExplore(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: "/pages/explore/index?tab=" + (event.currentTarget.dataset.tab || "daily") }); },
   toAi() { wx.switchTab({ url: "/pages/chat/index" }); },
   toMine() { wx.switchTab({ url: "/pages/settings/index" }); },
   onShareAppMessage() { return { title: this.data.shareTitle, path: "/pages/home/index" }; },

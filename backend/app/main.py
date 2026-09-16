@@ -40,6 +40,7 @@ from .schemas import (
     TokenResponse,
     CurrentUserOutput,
     PhoneCodeInput,
+    UserProfileInput,
 )
 from .services import answer_question, exchange_wechat_code, exchange_wechat_phone_code
 from .time_service import beijing_today
@@ -191,8 +192,17 @@ def current_account(user: User = Depends(current_user)):
         "id": user.id, "phone_number": user.phone_number,
         "phone_bound": bool(user.phone_number),
         "wechat_phone_available": bool(settings.wechat_app_id and settings.wechat_app_secret),
-        "created_at": user.created_at,
+        "created_at": user.created_at, "nickname": user.nickname, "avatar_url": user.avatar_url,
     }
+
+@app.put("/api/users/me/profile", response_model=CurrentUserOutput, tags=["账号与微信登录"])
+def update_account_profile(data: UserProfileInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    user.nickname = data.nickname.strip()
+    user.avatar_url = data.avatar_url
+    db.commit(); db.refresh(user)
+    return {"id": user.id, "phone_number": user.phone_number, "phone_bound": bool(user.phone_number),
+            "wechat_phone_available": bool(settings.wechat_app_id and settings.wechat_app_secret),
+            "created_at": user.created_at, "nickname": user.nickname, "avatar_url": user.avatar_url}
 
 
 @app.post(

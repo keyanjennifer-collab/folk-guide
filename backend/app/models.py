@@ -17,6 +17,8 @@ class User(Base):
     # 手机号来自微信 getPhoneNumber 临时 code 的服务端换取结果，前端不能直接传明文覆盖。
     phone_number: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     phone_bound_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    nickname: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     # 档案已配置ORM级联；其他历史表仍由注销服务显式删除，便于审计清理范围。
     profile: Mapped["BirthProfile | None"] = relationship(back_populates="user", cascade="all, delete-orphan")

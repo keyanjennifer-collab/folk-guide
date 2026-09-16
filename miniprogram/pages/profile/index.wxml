@@ -1,7 +1,7 @@
-<view class="profile-page">
+<view class="profile-page {{themeClass}}">
   <view class="profile-hero">
     <view><view class="hero-kicker">PERSONAL PROFILE</view><view class="hero-title">本人档案</view><view class="hero-copy">用于传统历法计算与个人文化参考。除出生日期外，其余信息均可选择不填。</view></view>
-    <view class="completion"><text class="emphasis">{{completeness}}</text><text>%</text><text class="caption">{{completenessIsPreview ? '完整度预览' : '完整度'}}</text></view>
+    <view class="completion"><text class="emphasis">{{completeness}}</text><text>%</text><text class="caption">完整度</text></view>
   </view>
 
   <view wx:if="{{loading}}" class="loading-card">正在加载档案…</view>
@@ -39,3 +39,7 @@
     <view class="safe-note">档案修改后，基于旧资料生成的个人缓存会失效并重新计算。内容仅供传统文化了解和生活参考。</view>
   </block>
 </view>
+
+
+
+

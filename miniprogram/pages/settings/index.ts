@@ -38,7 +38,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
 };
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
-    isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", editingProfile: false, dashboardLoading: false, loginBusy: false, accountError: "",
+    isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", editingProfile: false, showProfileHint: false, dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
     serviceTitle: "时序文化", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
@@ -46,7 +46,7 @@ Page({
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
   },
-  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl }); void this.loadAccount(); },
+  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl, showProfileHint: !!p.nickname && !wx.getStorageSync("profile_edit_hint_shown") }); void this.loadAccount(); },
   onHide() { loadVersion++; this.setData({ dashboardLoading: false }); },
   onPullDownRefresh() { void this.loadAccount().finally(() => wx.stopPullDownRefresh()); },
   resetAccount() {
@@ -105,7 +105,7 @@ Page({
     finally { this.setData({ loginBusy: false }); }
   },
   chooseAvatar(event: any) { this.setData({ avatarUrl: event.detail.avatarUrl }); },
-  toggleProfileEdit() { this.setData({ editingProfile: !this.data.editingProfile }); },
+  toggleProfileEdit() { wx.setStorageSync("profile_edit_hint_shown", true); this.setData({ editingProfile: !this.data.editingProfile, showProfileHint: false }); },
   editNickname(event: any) { this.setData({ nickname: event.detail.value }); },
   async saveProfile() { const nickname = String(this.data.nickname || "").trim(); if (!nickname) { wx.showToast({ title: "请输入昵称", icon: "none" }); return; } saveLocalUserProfile({ nickname, avatarUrl: this.data.avatarUrl, source: "custom" }); try { await updateUserProfile(nickname, this.data.avatarUrl); wx.showToast({ title: "资料已保存", icon: "success" }); this.setData({ editingProfile: false }); } catch (_) { wx.showToast({ title: "已保存到本机", icon: "none" }); } },
   toOrders(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: "/pages/orders/index?status=" + (event.currentTarget.dataset.status || "all") }); },

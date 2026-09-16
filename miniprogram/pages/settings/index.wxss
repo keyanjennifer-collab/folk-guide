@@ -9,6 +9,7 @@
 .identity-copy { min-width: 0; padding-left: 24rpx; }
 .identity-title { color: var(--cream); font-family: "Songti SC", serif; font-size:37rpx; letter-spacing: 3rpx; }
 .identity-subtitle { margin-top: 8rpx; color: var(--muted); font-size:27rpx; }
+.profile-edit-hint { margin-top: 8rpx; color: #c79d68; font-size: 22rpx; }
 .login-button { width: 100%; margin-top: 30rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 5rpx; font-size:31rpx; line-height: 80rpx; letter-spacing: 4rpx; }
 .identity-footer { display: flex; justify-content: space-between; margin-top: 28rpx; padding-top: 22rpx; color: var(--muted); font-size:23rpx; }
 .identity-action { padding: 0; color: var(--copper); background: transparent; font-size:24rpx; }

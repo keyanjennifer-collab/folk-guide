@@ -38,7 +38,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
 };
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
-    isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", dashboardLoading: false, loginBusy: false, accountError: "",
+    isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", editingProfile: false, dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
     serviceTitle: "时序文化", serviceCopy: "登录后查看问答权益", remainingQuestions: "—",
@@ -105,8 +105,9 @@ Page({
     finally { this.setData({ loginBusy: false }); }
   },
   chooseAvatar(event: any) { this.setData({ avatarUrl: event.detail.avatarUrl }); },
+  toggleProfileEdit() { this.setData({ editingProfile: !this.data.editingProfile }); },
   editNickname(event: any) { this.setData({ nickname: event.detail.value }); },
-  async saveProfile() { const nickname = String(this.data.nickname || "").trim(); if (!nickname) { wx.showToast({ title: "请输入昵称", icon: "none" }); return; } saveLocalUserProfile({ nickname, avatarUrl: this.data.avatarUrl, source: "custom" }); try { await updateUserProfile(nickname, this.data.avatarUrl); wx.showToast({ title: "资料已保存", icon: "success" }); } catch (_) { wx.showToast({ title: "已保存到本机", icon: "none" }); } },
+  async saveProfile() { const nickname = String(this.data.nickname || "").trim(); if (!nickname) { wx.showToast({ title: "请输入昵称", icon: "none" }); return; } saveLocalUserProfile({ nickname, avatarUrl: this.data.avatarUrl, source: "custom" }); try { await updateUserProfile(nickname, this.data.avatarUrl); wx.showToast({ title: "资料已保存", icon: "success" }); this.setData({ editingProfile: false }); } catch (_) { wx.showToast({ title: "已保存到本机", icon: "none" }); } },
   toOrders(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: "/pages/orders/index?status=" + (event.currentTarget.dataset.status || "all") }); },
   toProfile() {
     if (!this.data.isLoggedIn) { wx.showToast({ title: "请先点击微信登录", icon: "none" }); return; }

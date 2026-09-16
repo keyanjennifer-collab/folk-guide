@@ -1,10 +1,11 @@
-<view class="mine-page">
+<view class="mine-page {{themeClass}}">
   <view class="mine-heading"><view class="screen-title">我的</view><image class="brand-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <view class="identity-card">
-    <view class="identity-top"><view class="identity-seal">时</view><view class="identity-copy"><view class="identity-title">{{dashboardLoading ? '正在读取账号' : isLoggedIn ? '知时，亦知己' : '与五色，朝夕相伴'}}</view><view class="identity-subtitle">{{isLoggedIn ? '微信用户 · ' + phoneDisplay : '登录后查看订单与专属五色'}}</view></view></view>
+    <view class="identity-top"><image wx:if="{{isLoggedIn}}" class="identity-avatar" src="{{avatarUrl}}" mode="aspectFill"/><view wx:else class="identity-seal">时</view><view class="identity-copy"><view class="identity-title">{{dashboardLoading ? '正在读取账号' : isLoggedIn ? nickname : '与五色，朝夕相伴'}}</view><view class="identity-subtitle">{{isLoggedIn ? '微信用户 · ' + phoneDisplay : '登录后查看订单与专属五色'}}</view></view></view>
     <button wx:if="{{!isLoggedIn}}" class="login-button" bindtap="realLogin" disabled="{{loginBusy || dashboardLoading}}" loading="{{loginBusy}}">微信登录</button>
     <view wx:else class="identity-footer"><text>五色应时 · 知时而行</text><button class="identity-action" bindtap="showPrivacy">账号与隐私 ›</button></view>
     <view wx:if="{{accountError}}" class="account-error">{{accountError}}<button class="identity-action" bindtap="loadAccount">重新读取</button></view>
+    <view wx:if="{{isLoggedIn}}" class="identity-profile-edit"><button class="avatar-edit-button" open-type="chooseAvatar" bindchooseavatar="chooseAvatar"><image src="{{avatarUrl}}" mode="aspectFill"/>更换头像</button><input class="nickname-input" type="nickname" value="{{nickname}}" bindinput="editNickname" placeholder="请输入昵称" maxlength="32"/><button class="save-profile-button" bindtap="saveProfile">保存资料</button></view>
   </view>
   <view class="orders-panel">
     <view class="panel-heading"><view class="panel-title">我的订单</view><button class="text-button" bindtap="toOrders" data-status="all">全部订单 ›</button></view>
@@ -25,7 +26,7 @@
     <button class="menu-row" bindtap="showAbout"><text>关于我们</text><view class="menu-value">›</view></button>
   </view>
   <button wx:if="{{isLoggedIn}}" class="logout-button" bindtap="logout">退出登录</button>
-  <view class="page-foot">五色应时 · 知时而行</view>
+  <view class="page-foot {{themeClass}}">五色应时 · 知时而行</view>
 
   <view wx:if="{{infoDialog}}" class="info-overlay" bindtap="closeInfo" catchtouchmove="noop">
     <view class="info-dialog" catchtap="noop">
@@ -46,3 +47,7 @@
     </view>
   </view>
 </view>
+
+
+
+

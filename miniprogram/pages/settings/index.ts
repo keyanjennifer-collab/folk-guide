@@ -1,5 +1,6 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
-import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone, requestWechatProfile, saveLocalUserProfile, getLocalUserProfile } from "../../services/account";
+import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone, requestWechatProfile, saveLocalUserProfile, getLocalUserProfile, updateUserProfile } from "../../services/account";
 import { getAIHistory, getAIQuota } from "../../services/ai";
 import { getCurrentProfile, isProfileMissing } from "../../services/profile";
 import { getOrders } from "../../services/orders";
@@ -36,7 +37,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
   },
 };
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
@@ -89,11 +90,23 @@ Page({
   },
   async realLogin() {
     if (this.data.loginBusy) return;
+    const consent = await new Promise<boolean>((resolve) => wx.showModal({ title: "使用微信登录", content: "是否使用微信账号登录五色知时？", confirmText: "同意登录", cancelText: "暂不登录", success: (result) => resolve(result.confirm), fail: () => resolve(false) }));
+    if (!consent) return;
     this.setData({ loginBusy: true });
-    try { await loginWithWechat(); try { const profile = await requestWechatProfile(); saveLocalUserProfile({ nickname: profile.userInfo.nickName, avatarUrl: profile.userInfo.avatarUrl, source: "wechat" }); } catch (_) { wx.showToast({ title: "已登录，可稍后设置头像昵称", icon: "none" }); } await this.loadAccount(); }
-    catch (error) { this.setData({ accountError: getApiErrorMessage(error, "登录失败，请重试") }); }
+    try {
+      await loginWithWechat();
+      const profileConsent = await new Promise<boolean>((resolve) => wx.showModal({ title: "授权头像和昵称", content: "是否允许使用你的微信头像和昵称显示在主页？", confirmText: "授权", cancelText: "暂不授权", success: (result) => resolve(result.confirm), fail: () => resolve(false) }));
+      if (profileConsent) {
+        try { const profile = await requestWechatProfile(); saveLocalUserProfile({ nickname: profile.userInfo.nickName, avatarUrl: profile.userInfo.avatarUrl, source: "wechat" }); }
+        catch (_) { wx.showToast({ title: "未授权头像昵称，可稍后设置", icon: "none" }); }
+      }
+      await this.loadAccount();
+    } catch (error) { this.setData({ accountError: getApiErrorMessage(error, "登录失败，请重试") }); }
     finally { this.setData({ loginBusy: false }); }
   },
+  chooseAvatar(event: any) { this.setData({ avatarUrl: event.detail.avatarUrl }); },
+  editNickname(event: any) { this.setData({ nickname: event.detail.value }); },
+  async saveProfile() { const nickname = String(this.data.nickname || "").trim(); if (!nickname) { wx.showToast({ title: "请输入昵称", icon: "none" }); return; } saveLocalUserProfile({ nickname, avatarUrl: this.data.avatarUrl, source: "custom" }); try { await updateUserProfile(nickname, this.data.avatarUrl); wx.showToast({ title: "资料已保存", icon: "success" }); } catch (_) { wx.showToast({ title: "已保存到本机", icon: "none" }); } },
   toOrders(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: "/pages/orders/index?status=" + (event.currentTarget.dataset.status || "all") }); },
   toProfile() {
     if (!this.data.isLoggedIn) { wx.showToast({ title: "请先点击微信登录", icon: "none" }); return; }
@@ -114,3 +127,5 @@ Page({
   closeInfo() { this.setData({ infoDialog: null }); },
   noop() {},
 });
+
+

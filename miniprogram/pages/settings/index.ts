@@ -95,10 +95,13 @@ Page({
     this.setData({ loginBusy: true });
     try {
       await loginWithWechat();
-      const profileConsent = await new Promise<boolean>((resolve) => wx.showModal({ title: "授权头像和昵称", content: "是否允许使用你的微信头像和昵称显示在主页？", confirmText: "授权", cancelText: "暂不授权", success: (result) => resolve(result.confirm), fail: () => resolve(false) }));
-      if (profileConsent) {
+      const savedProfile = getLocalUserProfile();
+      if (savedProfile.source === "default") {
+        const profileConsent = await new Promise<boolean>((resolve) => wx.showModal({ title: "授权头像和昵称", content: "是否允许使用你的微信头像和昵称显示在主页？", confirmText: "授权", cancelText: "暂不授权", success: (result) => resolve(result.confirm), fail: () => resolve(false) }));
+        if (profileConsent) {
         try { const profile = await requestWechatProfile(); saveLocalUserProfile({ nickname: profile.userInfo.nickName, avatarUrl: profile.userInfo.avatarUrl, source: "wechat" }); }
-        catch (_) { wx.showToast({ title: "未授权头像昵称，可稍后设置", icon: "none" }); }
+        catch (_) { this.setData({ editingProfile: true }); }
+        }
       }
       await this.loadAccount();
     } catch (error) { this.setData({ accountError: getApiErrorMessage(error, "登录失败，请重试") }); }
@@ -121,7 +124,7 @@ Page({
     try { await bindWechatPhone(code); await this.loadAccount(); }
     catch (error) { wx.showToast({ title: getApiErrorMessage(error, "绑定失败，请重试"), icon: "none" }); }
   },
-  logout() { loadVersion++; logoutLocalAccount(); this.resetAccount(); this.setData({ dashboardLoading: false }); },
+  logout() { wx.showModal({ title: "退出登录", content: "确定退出当前微信账号吗？", confirmText: "退出", cancelText: "取消", success: (result) => { if (!result.confirm) return; loadVersion++; logoutLocalAccount(); this.resetAccount(); this.setData({ dashboardLoading: false, editingProfile: false }); wx.showToast({ title: "已退出登录", icon: "success" }); } }); },
   showHelp() { this.setData({ infoDialog: INFO_DIALOGS.help }); },
   showPrivacy() { this.setData({ infoDialog: INFO_DIALOGS.privacy }); },
   showAbout() { this.setData({ infoDialog: INFO_DIALOGS.about }); },

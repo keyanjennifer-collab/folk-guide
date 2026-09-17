@@ -45,6 +45,15 @@
       </view>
     </view>
 
+    <view class="personal-lock-card">
+      <view class="personal-lock-copy">
+        <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">已上锁</text></view>
+        <text>结合本人档案与每日时序生成，购买产品后可开通查看。</text>
+      </view>
+      <button bindtap="toPersonalColors">选购开通　›</button>
+    </view>
+
     <view class="detail-section">
       <view class="section-kicker">DAILY GUIDANCE</view>
       <view class="section-title">五色详解</view>
@@ -55,8 +64,6 @@
         <view class="rule-basis-copy">
           <view class="rule-basis-title">日支取象 · {{dayPillar}}日</view>
           <view class="rule-basis-text">{{dayBasis}}</view>
-          <view class="rule-order-label">固定色序关系</view>
-          <view class="rule-order"><text>我生＝贵人　同我＝合作　克我＝奋斗</text><text>生我＝消耗　我克＝不利</text></view>
         </view>
       </view>
 
@@ -89,9 +96,5 @@
     <image class="gift-image" src="{{gift.image}}" mode="aspectFit"/>
   </view>
 
-  <view class="home-links">
-    <button bindtap="toAi"><text>时序文化</text><view>从典籍出发，聊聊此刻的困惑</view><text class="home-link-action">进入问答 ›</text></button>
-    <button bindtap="toMine"><text>我的</text><view>登录、个人五色与订单记录</view><text class="home-link-action">查看账户 ›</text></button>
-  </view>
   <view class="page-foot">五色知时 · 让传统文化自然进入日常</view>
 </view>

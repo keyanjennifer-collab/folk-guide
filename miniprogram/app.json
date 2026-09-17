@@ -39,7 +39,7 @@
       },
       {
         "pagePath": "pages/chat/index",
-        "text": "时序文化",
+        "text": "测一测",
         "iconPath": "assets/nav/ai.png",
         "selectedIconPath": "assets/nav/ai-active.png"
       },

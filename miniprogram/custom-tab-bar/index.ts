@@ -4,7 +4,7 @@ Component({
     tabs: [
       { path: "/pages/home/index", label: "今日五色", icon: "today" },
       { path: "/pages/caikuxiang/index", label: "产品商城", icon: "shop" },
-      { path: "/pages/chat/index", label: "时序文化", icon: "ai" },
+      { path: "/pages/chat/index", label: "测一测", icon: "ai" },
       { path: "/pages/settings/index", label: "我的", icon: "mine" },
     ],
   },

@@ -1,43 +1,45 @@
-<view class="ai-page">
-  <view class="ai-heading"><image src="/assets/brand/logo-ai.png" mode="aspectFit"/><button bindtap="showRules">服务说明</button></view>
-  <view class="ai-intro"><view class="eyebrow">时序文化 · 与古今对话</view><view class="ai-title">问典籍，也问生活</view><view class="ai-subtitle">从一问开始，读懂时序里的日常。</view></view>
-  <view class="service-strip">
-    <view><view class="service-title">{{serviceTitle}}</view><view class="service-copy">{{serviceCopy}}</view></view>
-    <button wx:if="{{!isLoggedIn}}" class="login-link" bindtap="toLogin">去登录 ›</button>
-    <text wx:else class="quota-number">{{remainingQuestions}}<text> / {{dailyLimit}} 次</text></text>
+<view class="test-page">
+  <view class="test-heading">
+    <image src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/>
+    <view class="heading-label">测一测</view>
   </view>
-  <view class="personal-panel" wx:if="{{isLoggedIn}}">
-    <button class="personal-toggle" bindtap="togglePersonal"><view><view>我的今日五色</view><text>{{personalState === 'ready' ? personalDate + ' · ' + personalPrecision : personalStatusCopy}}</text></view><text>{{personalOpen ? '−' : '＋'}}</text></button>
-    <view wx:if="{{personalOpen}}" class="personal-content">
-      <block wx:if="{{personalState === 'ready'}}">
-        <view class="personal-summary">{{personalFocus}}</view>
-        <view class="personal-copy">{{personalCombinationAdvice}}</view>
-        <view wx:for="{{personalColors}}" wx:key="rank" class="personal-color">
-          <button class="personal-color-row" data-rank="{{item.rank}}" bindtap="togglePersonalColor"><text>{{item.rank}}</text><text class="personal-dot {{item.tone}}"/><text>{{item.name}}</text><text>{{item.tendency}}</text><text>{{expandedPersonalRank === item.rank ? '−' : '＋'}}</text></button>
-          <view wx:if="{{expandedPersonalRank === item.rank}}" class="personal-detail"><view>{{item.reason}}</view><view class="personal-label">适合处理</view><view wx:for="{{item.suitable}}" wx:for-item="advice" wx:key="*this">· {{advice}}</view><view class="personal-label">留意之处</view><view>{{item.resistance}}</view><view class="personal-label">行动与穿搭</view><view>{{item.advice}}</view><button class="incense-link" bindtap="toIncense">{{item.incense}} · {{item.scent}} ›</button></view>
-        </view>
-        <view class="personal-copy">{{personalComparisonNote}}</view>
-        <button class="profile-button" bindtap="toProfile">查看或修改本人档案</button>
-      </block>
-      <block wx:else><view class="personal-copy">{{personalStatusCopy}}</view><button wx:if="{{personalState === 'missing'}}" class="profile-button" bindtap="toProfile">完善本人档案</button><button wx:if="{{personalState === 'error'}}" class="profile-button" bindtap="loadPersonalDaily">重新读取</button></block>
-    </view>
+
+  <view class="test-hero">
+    <view class="hero-kicker">ZI WEI DOU SHU</view>
+    <view class="hero-title">紫微斗数</view>
+    <view class="hero-subtitle">起盘与合盘</view>
+    <view class="hero-copy">以出生资料建立命盘结构，从传统术数视角观察阶段运势与关系节奏。</view>
   </view>
-  <view class="suggestion-title">从你感兴趣的开始</view>
-  <view class="question-tabs"><button wx:for="{{questions}}" wx:key="group" class="{{index === activeGroup ? 'active' : ''}}" data-index="{{index}}" bindtap="chooseGroup">{{item.group}}</button></view>
-  <view class="suggestions"><button wx:for="{{questions[activeGroup].items}}" wx:key="*this" data-question="{{item}}" bindtap="chooseQuestion" disabled="{{sending}}"><text>{{item}}</text><text>›</text></button></view>
-  <view class="conversation-heading"><button class="conversation-current" bindtap="returnCurrentConversation">当前对话</button><button bindtap="newConversation">新建对话</button><button bindtap="toggleHistory">历史记录（{{conversations.length}}）</button><view/></view>
-  <view wx:if="{{historyOpen}}" class="history-panel"><view wx:if="{{!conversations.length && !history.length}}" class="history-empty">还没有保存的问答记录</view><view wx:for="{{conversations}}" wx:key="id" class="history-item"><button class="history-open" data-id="{{item.id}}" bindtap="openConversation"><view>{{item.title}}</view><text class="history-meta">{{item.message_count}} 条问答 · {{historyDetailId === item.id ? '点击收起' : '点击查看'}}</text></button><button class="history-delete" data-id="{{item.id}}" bindtap="deleteConversation">删除</button><view wx:if="{{historyDetailId === item.id}}" class="history-detail"><view wx:for="{{historyDetailMessages}}" wx:key="index" class="history-detail-message {{item.role}}"><text class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</text><text selectable>{{item.text}}</text></view><button class="history-continue" bindtap="continueConversation">继续对话</button></view></view><button wx:if="{{!conversations.length}}" wx:for="{{history}}" wx:key="id" class="history-item" data-id="{{item.id}}" bindtap="openHistory"><view>{{item.question}}</view><text class="history-meta">{{item.dateLabel}}</text></button></view>
-  <view wx:if="{{!historyOpen}}" class="messages">
-    <view wx:for="{{messages}}" wx:key="index" class="message {{item.role}}">
-      <view class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</view>
-      <text class="message-text" selectable>{{item.text}}</text>
-      <view wx:if="{{item.safetyStatus === 'output_filtered'}}" class="safety-note">回答已按服务规则处理。</view>
-      <view wx:if="{{item.safetyStatus === 'output_truncated'}}" class="safety-note">回答较长，已截取至服务长度上限。</view>
-      <view wx:if="{{item.references.length}}" class="references"><text>参考资料</text><view wx:for="{{item.references}}" wx:for-item="reference" wx:key="*this">{{reference}}</view></view>
-      <view wx:if="{{item.messageId}}" class="feedback-row"><button class="{{item.feedback === 'helpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="helpful" bindtap="feedback">有帮助</button><button class="{{item.feedback === 'unhelpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="unhelpful" bindtap="feedback">需要纠正</button></view>
-    </view>
-    <view wx:if="{{sending}}" class="thinking">正在整理思路…</view>
+
+  <view class="chart-section">
+    <view class="section-title">选择测算方式</view>
+    <view class="section-copy">先完善准确资料，再进入相应测算。</view>
+
+    <button class="chart-card natal" bindtap="toProfile">
+      <view class="chart-number">01</view>
+      <view class="chart-copy">
+        <view class="chart-kicker">PERSONAL CHART</view>
+        <view class="chart-title">紫微起盘</view>
+        <text>建立个人命盘，查看阶段运势、十二宫位与重要时间节点。</text>
+        <view class="chart-action">准备起盘资料　›</view>
+      </view>
+      <view class="chart-orbit"><view/><view/><text>命</text></view>
+    </button>
+
+    <button class="chart-card match" bindtap="toMatchProfile">
+      <view class="chart-number">02</view>
+      <view class="chart-copy">
+        <view class="chart-kicker">CHART COMPARISON</view>
+        <view class="chart-title">紫微合盘</view>
+        <text>对照两份命盘，观察关系互动、相处节奏与阶段性影响。</text>
+        <view class="chart-action">准备合盘资料　›</view>
+      </view>
+      <view class="chart-orbit double"><view/><view/><text>合</text></view>
+    </button>
   </view>
-  <view wx:if="{{!historyOpen}}" id="conversationEnd"/>
-  <view class="composer-wrap"><view class="composer"><textarea value="{{question}}" bindinput="setQuestion" focus="{{inputFocus}}" auto-height maxlength="500" disabled="{{sending}}" placeholder="写下你的问题…" placeholder-style="color:#8e846f" cursor-spacing="20"/><button bindtap="send" loading="{{sending}}" disabled="{{sending || !question}}" aria-label="发送问题">发送</button></view><view class="ai-disclaimer">仅供传统文化学习与生活参考</view></view>
+
+  <view class="method-note">
+    <view class="note-mark">序</view>
+    <view><view>资料与测算说明</view><text>出生日期为基础资料，准确时辰可提高命盘完整度。测算内容用于传统文化研究与生活参考，不替代医疗、法律、投资或其他专业判断。</text></view>
+  </view>
 </view>

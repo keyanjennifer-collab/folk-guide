@@ -145,7 +145,6 @@ Page({
     wx.navigateTo({ url: "/pages/product/index?id=" + event.currentTarget.dataset.id });
   },
   toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
-  toAi() { wx.switchTab({ url: "/pages/chat/index" }); },
-  toMine() { wx.switchTab({ url: "/pages/settings/index" }); },
+  toPersonalColors() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },
   onShareAppMessage() { return { title: this.data.shareTitle, path: "/pages/home/index" }; },
 });

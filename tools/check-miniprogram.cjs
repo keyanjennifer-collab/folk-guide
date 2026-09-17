@@ -62,6 +62,7 @@ async function main() {
   assert(homeWxml.includes('{{item.relationReason}}') && homeWxml.includes('日支取象'),'home explains the day-branch derivation and each color relation');
   assert(!homeWxml.includes('固定色序关系') && !homeWxml.includes('home-links'),'home removes the fixed relation copy and duplicate chapter links');
   assert(homeWxml.includes('personal-lock-card') && homeWxml.includes('购买产品后可开通查看'),'home shows the locked personal five-color entry');
+  assert(homeWxml.includes('personal-lock-status') && !homeWxml.includes('personal-lock-mark'),'personal lock uses a quiet status label without the bag icon');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
   const subpackageBytes = app.subPackages.reduce((total, item) => total + directoryBytes(path.join(root, item.root)), 0);
@@ -134,8 +135,10 @@ async function main() {
   assert.equal(isPublicRankingQuestion('明天穿什么颜色'),true);
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
   const chatWxml=fs.readFileSync(path.join(root,'pages/chat/index.wxml'),'utf8');
+  const chatWxss=fs.readFileSync(path.join(root,'pages/chat/index.wxss'),'utf8');
   assert(chatWxml.includes('紫微起盘') && chatWxml.includes('紫微合盘'),'test page presents both Ziwei chart paths');
   assert(!/周易|易经|典籍阅读|从你感兴趣的开始/.test(chatWxml),'test page removes the classical reading prompts');
+  assert(chatWxss.includes('font-size: 48rpx') && !chatWxss.includes('font-size: 62rpx'),'Ziwei hero stays compact');
   assert.equal(app.tabBar.list[2].text,'测一测');
   const customTabSource=fs.readFileSync(path.join(root,'custom-tab-bar/index.ts'),'utf8');
   assert(customTabSource.includes('label: "测一测"'),'custom tab uses the new test label');

@@ -46,10 +46,9 @@
     </view>
 
     <view class="personal-lock-card">
-      <view class="personal-lock-mark"><view class="lock-shackle"/><view class="lock-body">五</view></view>
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
-        <view class="personal-lock-title">个人五色</view>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">已上锁</text></view>
         <text>结合本人档案与每日时序生成，购买产品后可开通查看。</text>
       </view>
       <button bindtap="toPersonalColors">选购开通　›</button>

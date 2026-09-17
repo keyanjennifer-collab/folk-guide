@@ -223,6 +223,47 @@ export async function request<T>(options: ApiRequestOptions): Promise<T> {
 }
 
 /**
+ * 显式使用回调形式取得微信临时 code。
+ *
+ * 部分开发者工具或较低基础库会把不传参数的 wx.login() 处理成空结果；
+ * 使用官方回调形式能确保在 success 回调中读取 code，也能保留原始失败信息。
+ */
+/** 本机联调时，后端会把任意非空 code 映射为开发账号；正式域名绝不能使用它。 */
+function getLocalDevelopmentCode(): string | null {
+  const isLocalApi = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(API_BASE_URL);
+  if (!isLocalApi) return null;
+  return `local-dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getWechatLoginCode(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    wx.login({
+      timeout: 10_000,
+      success: (result) => {
+        if (result.code) {
+          resolve(result.code);
+          return;
+        }
+        const localCode = getLocalDevelopmentCode();
+        if (localCode) {
+          resolve(localCode);
+          return;
+        }
+        reject(new ApiError("微信未返回登录凭证，请重新进入小程序后重试", 0, "auth", result));
+      },
+      fail: (error) => {
+        const localCode = getLocalDevelopmentCode();
+        if (localCode) {
+          resolve(localCode);
+          return;
+        }
+        reject(new ApiError("微信登录失败，请检查微信网络后重试", 0, "auth", error));
+      },
+    });
+  });
+}
+
+/**
  * 使用 wx.login 的临时 code 向 Python 后端换取 JWT。
  * force=true 用于旧JWT已经被后端拒绝的情况；并发调用会共享同一个 loginTask。
  */
@@ -233,12 +274,11 @@ export async function ensureLogin(force = false): Promise<string> {
 
   loginTask = (async () => {
     try {
-      const loginResult = await wx.login();
-      if (!loginResult.code) throw new ApiError("微信登录未取得临时凭证，请稍后重试", 0, "auth");
+      const code = await getWechatLoginCode();
       const result = await sendOnce<{ access_token: string }>({
         path: "/api/auth/wechat",
         method: "POST",
-        data: { code: loginResult.code },
+        data: { code },
         auth: false,
         showError: false,
         retryOnUnauthorized: false,

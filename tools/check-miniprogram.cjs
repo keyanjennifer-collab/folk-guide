@@ -60,6 +60,8 @@ async function main() {
   assert.equal((homeWxml.match(/今日五色/g) || []).length,1,'home displays 今日五色 only once');
   assert(homeWxml.includes('{{solarDateLabel}}') && homeWxml.includes('{{lunarDateLabel}}'),'home displays both Gregorian and lunar dates');
   assert(homeWxml.includes('{{item.relationReason}}') && homeWxml.includes('日支取象'),'home explains the day-branch derivation and each color relation');
+  assert(!homeWxml.includes('固定色序关系') && !homeWxml.includes('home-links'),'home removes the fixed relation copy and duplicate chapter links');
+  assert(homeWxml.includes('personal-lock-card') && homeWxml.includes('购买产品后可开通查看'),'home shows the locked personal five-color entry');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
   const subpackageBytes = app.subPackages.reduce((total, item) => total + directoryBytes(path.join(root, item.root)), 0);
@@ -131,8 +133,12 @@ async function main() {
   assert.equal(isPublicRankingQuestion('今日五色排行'),true);
   assert.equal(isPublicRankingQuestion('明天穿什么颜色'),true);
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
-  const chat=instance('pages/chat/index.ts');
-  assert(chat.data.messages.every(message=>Array.isArray(message.references)),'AI page initial messages must be render-safe');
+  const chatWxml=fs.readFileSync(path.join(root,'pages/chat/index.wxml'),'utf8');
+  assert(chatWxml.includes('紫微起盘') && chatWxml.includes('紫微合盘'),'test page presents both Ziwei chart paths');
+  assert(!/周易|易经|典籍阅读|从你感兴趣的开始/.test(chatWxml),'test page removes the classical reading prompts');
+  assert.equal(app.tabBar.list[2].text,'测一测');
+  const customTabSource=fs.readFileSync(path.join(root,'custom-tab-bar/index.ts'),'utf8');
+  assert(customTabSource.includes('label: "测一测"'),'custom tab uses the new test label');
   publicResult={guide_date:'2026-09-09',weekday:'星期三',lunar_date:'七月廿八',solar_term:'白露',day_ganzhi:'丙戌',
     items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:['得生助旺','同气相和','克制求进','生泄耗气','受制势弱'][i],suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
@@ -161,6 +167,8 @@ async function main() {
   assert.equal(home.data.scent.name,'朱蜜');
   home.toggleGuide({currentTarget:{dataset:{rank:2}}});
   assert.equal(home.data.guides.find(g=>g.rank===2).expanded,true);
+  home.toPersonalColors();
+  assert.equal(lastSwitchTab,'/pages/caikuxiang/index','locked personal colors lead to product purchase');
   publicResult=new Error('network');
   await home.loadToday();
   assert.equal(home.data.contentSource,'error','network failures never relabel stale data as today');
@@ -176,6 +184,8 @@ async function main() {
   assert.equal(requests,before,'guest must not fetch personal orders');
   assert.equal(orders.data.loggedIn,false);
   const settings=instance('pages/settings/index.ts');
+  const settingsWxml=fs.readFileSync(path.join(root,'pages/settings/index.wxml'),'utf8');
+  assert(settingsWxml.includes('我的测一测') && !settingsWxml.includes('我的时序文化'),'account page uses the test label');
   settings.showHelp();
   assert.equal(settings.data.infoDialog.title,'使用帮助');
   assert(settings.data.infoDialog.sections.length>=5,'help explains all major areas in detail');
@@ -183,6 +193,6 @@ async function main() {
   assert.equal(settings.data.infoDialog.title,'关于我们');
   settings.closeInfo();
   assert.equal(settings.data.infoDialog,null);
-  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; no stale fallback; public AI guard; scent matching; quiz sources; guest orders');
+  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; locked personal colors; Ziwei test hub; scent matching; quiz sources; guest orders');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

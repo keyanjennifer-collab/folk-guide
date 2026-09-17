@@ -1,7 +1,8 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { DAILY_IDEAS, QUIZ, SCENT_QUIZ, matchScent } from "./discovery";
 import { PRODUCTS, Product } from "../../data/products";
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     tab:"daily", tabs:[{id:"daily",label:"节气日常"},{id:"scent",label:"选香小测"},{id:"quiz",label:"国学一题"}],
     ideas:DAILY_IDEAS, expanded:-1, scentQuestions:SCENT_QUIZ, moment:"", note:"", result:null as Product|null,
     question:QUIZ[0], questionIndex:0, chosen:-1, revealed:false, total:QUIZ.length,
@@ -26,3 +27,4 @@ Page({
   nextQuestion(){const questionIndex=(this.data.questionIndex+1)%QUIZ.length;this.setData({questionIndex,question:QUIZ[questionIndex],chosen:-1,revealed:false});},
   copySource(){wx.setClipboardData({data:this.data.question.source});},
 });
+

@@ -1,4 +1,4 @@
-.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
+.shop-page { min-height: 100vh; padding: 26rpx 30rpx calc(260rpx + env(safe-area-inset-bottom)); color: var(--text); background-color: var(--canvas); background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .shop-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; }
 .shop-heading .screen-title { margin-top: 8rpx; font-size:45rpx; letter-spacing: 3rpx; }
 .shop-heading .eyebrow { font-size:26rpx; }
@@ -52,3 +52,9 @@
 .sale-copy { margin-top: 18rpx; color: #d0c6b9; font-size:27rpx; line-height: 1.8; text-align: left; }
 .sale-points { margin-top: 18rpx; padding: 18rpx 22rpx; color: #e2c49b; background: rgba(20,20,19,.24); border-radius: 16rpx; font-size:25rpx; line-height: 1.9; text-align: left; }
 .sale-dialog button { width: 100%; margin-top: 24rpx; color: #fff9ef; background: #a97743; border-radius: 7rpx; font-size:29rpx; line-height: 76rpx; }
+
+
+.shop-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }
+.shop-page.theme-day .card, .shop-page.theme-day [class*='panel'], .shop-page.theme-day [class*='card'], .shop-page.theme-day [class*='sheet'], .shop-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
+.shop-page.theme-day .muted, .shop-page.theme-day .caption, .shop-page.theme-day .field-note { color: #68675F; }
+

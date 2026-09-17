@@ -19,6 +19,21 @@ page {
   line-height: 1.68;
 }
 
+/* 日间模式：月砚灰为主背景，素绢用于卡片和输入区域。 */
+page.theme-day {
+  --canvas: #D5D3CA;
+  --canvas-deep: #cbc9c0;
+  --surface: #E7E4DA;
+  --surface-raised: #f0eee8;
+  --cream: #34342F;
+  --text: #34342F;
+  --muted: #68675f;
+  --copper: #756242;
+  --copper-deep: #62543b;
+  --line: #b8b5aa;
+  --danger: #8c5149;
+}
+
 view, button, input, textarea, picker { box-sizing: border-box; }
 button { margin: 0; font-family: inherit; font-weight: 400; }
 button::after { border: 0; }
@@ -37,7 +52,8 @@ button[disabled] { opacity: .48; }
 .button { margin-top: 24rpx; }
 .outline-button { padding: 0 26rpx; color: #e7bd83; background: #3b3936; border-radius: 32rpx; font-size:29rpx; line-height: 76rpx; }
 .text-button { padding: 0; color: var(--copper); background: transparent; border-radius: 0; font-size:28rpx; line-height: 1.8; }
-input, textarea, picker { width: 100%; padding: 20rpx; color: var(--text); background: #323232; border: 1rpx solid #5a5650; border-radius: 14rpx; font-size:31rpx; }
+input, textarea, picker { display: block; width: 100%; min-height: 82rpx; padding: 20rpx 24rpx; color: var(--text); background: #323232; border: 2rpx solid #5a5650; border-radius: 14rpx; font-size:31rpx; line-height: 1.35; }
+page.theme-day input, page.theme-day textarea, page.theme-day picker { background: var(--surface-raised); border-color: var(--line); }
 input, picker { margin: 12rpx 0 24rpx; }
 .empty-state { padding: 72rpx 26rpx; text-align: center; }
 .empty-state .empty-mark { margin-bottom: 20rpx; color: var(--copper); font-family: "Songti SC", serif; font-size:67rpx; }
@@ -49,3 +65,9 @@ input, picker { margin: 12rpx 0 24rpx; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
 .sheet-title { color: var(--cream); font-family: "Songti SC", serif; font-size:37rpx; }
 .sheet-close { padding: 0 10rpx; color: var(--copper); background: transparent; font-size:41rpx; line-height: 1.5; }
+.theme-toggle { position: absolute; top: 24rpx; right: 28rpx; z-index: 2; width: 68rpx; height: 58rpx; padding: 0; color: var(--cream); background: var(--surface); border: 1rpx solid var(--line); border-radius: 30rpx; font-size: 25rpx; line-height: 58rpx; }
+
+/* 日间模式统一覆盖各页面的历史深色背景 */
+.theme-day { color: #34342F; }
+.theme-day input, .theme-day textarea, .theme-day picker { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
+

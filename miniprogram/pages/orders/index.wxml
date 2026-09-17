@@ -1,4 +1,4 @@
-<view class="orders-page">
+<view class="orders-page {{themeClass}}">
   <view class="screen-heading"><view><view class="eyebrow">每一份香，都有来处</view><view class="screen-title">我的订单</view></view><image class="order-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <scroll-view class="order-tabs" scroll-x enable-flex><button wx:for="{{tabs}}" wx:key="id" class="{{status === item.id ? 'active' : ''}}" bindtap="selectTab" data-id="{{item.id}}">{{item.label}}</button></scroll-view>
   <view wx:if="{{!loggedIn}}" class="empty-state"><view class="empty-mark">匣</view><view class="empty-title">登录后，查看你的订单</view><view class="muted">订单与物流信息会保存在你的账号中。</view><button class="outline-button" bindtap="toLogin">去登录</button></view>
@@ -11,7 +11,7 @@
       <view class="order-product"><image src="{{item.thumbnail}}" mode="aspectFill"/><view><view>{{item.itemLabel}}</view><text>共 {{item.quantity}} 件</text></view></view>
       <view class="order-total"><text class="price-figure">合计 ¥{{item.amount}}</text><text>订单详情 ›</text></view>
     </button>
-    <view class="page-foot">{{loading ? '正在读取…' : hasMore ? '上拉查看更多' : '已显示全部订单'}}</view>
+    <view class="page-foot {{themeClass}}">{{loading ? '正在读取…' : hasMore ? '上拉查看更多' : '已显示全部订单'}}</view>
   </view>
   <view wx:if="{{selected}}" class="scrim" bindtap="closeDetail" catchtouchmove="noop"/>
   <view wx:if="{{selected}}" class="sheet">
@@ -25,3 +25,7 @@
     <view class="muted order-tip">订单状态由服务端更新。在线支付与售后申请尚未开放。</view>
   </view>
 </view>
+
+
+
+

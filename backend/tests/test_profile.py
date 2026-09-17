@@ -33,6 +33,25 @@ def test_profile_input_normalizes_calendar_time_and_city_conflicts():
     assert normalized.birth_city is None
 
 
+def test_profile_accepts_and_returns_full_birth_address():
+    """三级地区选择和详细地址以一个完整字符串稳定写入、读回。"""
+    full_address = "福建省泉州市晋江市陈埭镇江滨路88号"
+    with TestClient(app) as client:
+        headers = login_headers(client, "profile-full-address")
+        saved = client.put(
+            "/api/profiles/current",
+            headers=headers,
+            json={"birth_date": "1990-01-02", "birth_city": full_address},
+        )
+        assert saved.status_code == 200
+        assert saved.json()["birth_city"] == full_address
+
+        loaded = client.get("/api/profiles/current", headers=headers)
+        assert loaded.status_code == 200
+        assert loaded.json()["birth_city"] == full_address
+        client.delete("/api/account", headers=headers)
+
+
 def test_profile_supports_unknown_time_and_completeness():
     with TestClient(app) as client:
         headers = login_headers(client, "profile-unknown-time")

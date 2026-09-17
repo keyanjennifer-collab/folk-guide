@@ -22,7 +22,7 @@ class AIChatInput(BaseModel):
 
 class AICitation(BaseModel):
     """回答依据；知识片段精确到切片，个人结果明确标成独立规则来源。"""
-    kind: Literal["knowledge", "personal_daily", "web"] = "knowledge"
+    kind: Literal["knowledge", "personal_daily", "ziwei_chart", "ziwei_compatibility", "web"] = "knowledge"
     document_id: int | None
     chunk_id: int | None
     title: str

@@ -9,7 +9,8 @@
     { "root": "pages/product", "pages": ["index"] },
     { "root": "pages/explore", "pages": ["index"] },
     { "root": "pages/profile", "pages": ["index"] },
-    { "root": "pages/orders", "pages": ["index"] }
+    { "root": "pages/orders", "pages": ["index"] },
+    { "root": "pages/ziwei", "pages": ["index"] }
   ],
   "window": {
     "navigationBarTitleText": "今日五色",

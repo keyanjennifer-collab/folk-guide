@@ -1,10 +1,11 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken } from "../../services/api";
 import { Order, ORDER_LABELS, getOrders } from "../../services/orders";
 import { PRODUCTS } from "../../data/products";
 type OrderView = Order & { statusLabel: string; amount: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number };
 let requestVersion = 0;
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     status: "all", loggedIn: false, loading: false, error: "", orders: [] as OrderView[], hasMore: false,
     tabs: [{ id: "all", label: "全部" }, { id: "pending", label: "待付款" }, { id: "paid", label: "待发货" }, { id: "shipped", label: "待收货" }, { id: "completed", label: "已完成" }, { id: "after_sale", label: "售后" }, { id: "cancelled", label: "已取消" }],
     selected: null as OrderView | null,
@@ -12,7 +13,7 @@ Page({
   onLoad(options: Record<string, string>) {
     if (options.status && this.data.tabs.some(item => item.id === options.status)) this.setData({ status: options.status });
   },
-  onShow() { this.setData({ loggedIn: !!getToken(), selected: null, orders: [] }); void this.loadOrders(); },
+  onShow() { const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); this.setData({ loggedIn: !!getToken(), selected: null, orders: [] }); void this.loadOrders(); },
   onHide() { requestVersion++; this.setData({ loading: false, selected: null, orders: [] }); },
   onUnload() { requestVersion++; },
   onPullDownRefresh() { void this.loadOrders().finally(() => wx.stopPullDownRefresh()); },
@@ -45,3 +46,5 @@ Page({
   copyNumber() { if (this.data.selected) wx.setClipboardData({ data: this.data.selected.number }); },
   noop() {},
 });
+
+

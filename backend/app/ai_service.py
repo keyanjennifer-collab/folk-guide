@@ -12,7 +12,10 @@ from .ai_safety import review_model_output
 from .config import get_settings
 from .daily_color_cache_service import ensure_personal_color_cache
 from .llm_provider import AnswerProvider
-from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, User
+from .models import (
+    AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, User,
+    ZiweiChartRecord, ZiweiCompatibilityRecord,
+)
 from .retrieval_service import hybrid_search
 from .time_service import beijing_day_bounds_utc_naive, beijing_today, utc_now_naive
 from .vector_store import VectorStore
@@ -44,6 +47,17 @@ PERSONAL_ACTION_TERMS = {
     "今日重点", "排名", "结果", "行动", "推进", "合作", "项目", "沟通", "财务", "工作",
 }
 PROFILE_TERMS = {"八字", "生辰", "四柱", "档案"}
+PERSONAL_DAILY_RESULT_TERMS = {
+    "颜色", "五色", "穿搭", "穿什么", "衣服", "配色", "香品", "用什么香", "财库香",
+    "今天", "今日", "当天", "本日", "今日重点", "个人排名", "个人结果",
+}
+# 只有明确在问“已保存的本人命盘/合盘”时才读取紫微记录。单纯问术语（如
+# “命宫是什么意思”）仍是通用文化问答，不会触碰用户的排盘快照。
+ZIWEI_TERMS = {
+    "紫微", "斗数", "命盘", "合盘", "命宫", "身宫", "十二宫", "夫妻宫", "官禄宫",
+    "财帛宫", "福德宫", "大限", "主星", "姻缘", "感情", "合伙", "合作", "生意",
+}
+ZIWEI_PERSONAL_TERMS = {"我的", "本人", "自己", "我", "保存", "这张", "刚才", "两人", "双方", "对方"}
 
 
 @dataclass(frozen=True)
@@ -87,6 +101,12 @@ def question_requests_personal_context(question: str) -> bool:
     本函数只做后端可审计的最小分类，不把分类工作交给外部模型。这样普通典籍问题
     不会无故触碰生辰派生结果，个人问题也不会因模型误判而漏读当天结果。
     """
+    # “我的合盘适合怎样合作”里的“合作”属于合盘议题，不能因此要求用户另有
+    # 今日五色档案；若同题还明确问到颜色或当日结果，则两种上下文都会加载。
+    if question_requests_ziwei_context(question) and not any(
+        term in question for term in PERSONAL_DAILY_RESULT_TERMS
+    ):
+        return False
     if any(term in question for term in PERSONAL_EXPLICIT_TERMS):
         return True
     has_action_topic = any(term in question for term in PERSONAL_ACTION_TERMS)
@@ -94,6 +114,19 @@ def question_requests_personal_context(question: str) -> bool:
     asks_about_today = any(term in question for term in TODAY_TERMS)
     has_profile_topic = any(term in question for term in PROFILE_TERMS)
     return has_action_topic and (has_personal_subject or asks_about_today or has_profile_topic)
+
+
+def question_requests_ziwei_context(question: str) -> bool:
+    """判断是否需要读取当前账号保存的紫微起盘或合盘结果。
+
+    合盘本身一定是用户保存的双人结果；其他紫微问题则要求同时出现个人指向，避免
+    为解释通用术语而读取用户命盘。这个判定只决定是否加载上下文，不会代替安全规则。
+    """
+    if "合盘" in question:
+        return True
+    has_ziwei_topic = any(term in question for term in ZIWEI_TERMS)
+    has_personal_subject = any(term in question for term in ZIWEI_PERSONAL_TERMS)
+    return has_ziwei_topic and has_personal_subject
 
 
 def quota_for_user(db: Session, user: User, now: datetime | None = None) -> QuotaState:
@@ -220,6 +253,105 @@ def personal_context_citation(context: dict) -> dict:
     }
 
 
+def _safe_ziwei_chart_summary(record: ZiweiChartRecord, reference: str) -> dict:
+    """从完整命盘快照提取可回答问题的派生结果，绝不发送出生资料或完整 JSON。"""
+    try:
+        chart = json.loads(record.chart_json)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("invalid_ziwei_chart_json chart_id=%s", record.id)
+        return {"reference": reference, "summary_unavailable": True}
+
+    palaces = []
+    for palace in chart.get("palaces", []):
+        stars = [
+            {"name": star.get("name"), "si_hua": star.get("siHua")}
+            for star in palace.get("stars", [])
+            if star.get("type") == "major" and star.get("name")
+        ]
+        palaces.append({"name": palace.get("name"), "branch": palace.get("branch"), "major_stars": stars})
+    current_index = chart.get("currentDaXianIndex")
+    da_xians = chart.get("daXians", [])
+    current_da_xian = (
+        da_xians[current_index] if isinstance(current_index, int) and 0 <= current_index < len(da_xians) else None
+    )
+    return {
+        "reference": reference,
+        "calculation_version": chart.get("calculationVersion"),
+        "ming_gong_branch": chart.get("mingGongBranch"),
+        "shen_gong_branch": chart.get("shenGongBranch"),
+        "wuxing_ju": chart.get("wuxingJuName") or chart.get("wuxingJu"),
+        "current_da_xian": current_da_xian,
+        "palaces": palaces,
+    }
+
+
+def ziwei_context_from_records(
+    charts: list[ZiweiChartRecord], compatibilities: list[ZiweiCompatibilityRecord]
+) -> dict | None:
+    """构造模型可用的紫微结果白名单；合盘绝不带入双方原始资料快照。"""
+    chart_summaries = [
+        _safe_ziwei_chart_summary(record, f"命盘 {index}")
+        for index, record in enumerate(charts, start=1)
+    ]
+    compatibility_summaries = []
+    for record in compatibilities:
+        try:
+            result = json.loads(record.result_json)
+            person_a = json.loads(record.person_a_json)
+            person_b = json.loads(record.person_b_json)
+        except (TypeError, json.JSONDecodeError):
+            logger.warning("invalid_ziwei_compatibility_json compatibility_id=%s", record.id)
+            continue
+
+        # 合盘结论中会包含当时填写的名字。模型只需要知道两项计算结果对应两位参与者，
+        # 因此在离开数据库前统一替换为中性序号，避免把双方身份带入模型上下文。
+        replacements = []
+        for person, replacement in ((person_a, "第一位"), (person_b, "第二位")):
+            for key in ("name", "label"):
+                value = person.get(key)
+                if isinstance(value, str) and value.strip():
+                    replacements.append((value.strip(), replacement))
+
+        def deidentify(value: object) -> object:
+            if isinstance(value, str):
+                for source, replacement in replacements:
+                    value = value.replace(source, replacement)
+                return value
+            if isinstance(value, list):
+                return [deidentify(item) for item in value]
+            return value
+
+        compatibility_summaries.append({
+            "relation_type": record.relation_type,
+            "title": deidentify(result.get("title")),
+            "basis": deidentify(result.get("basis")),
+            "observations": deidentify(result.get("observations", [])),
+            "discussion_topics": deidentify(result.get("discussion_topics", [])),
+            "disclaimer": deidentify(result.get("disclaimer")),
+        })
+    if not chart_summaries and not compatibility_summaries:
+        return None
+    return {"charts": chart_summaries, "compatibilities": compatibility_summaries}
+
+
+def ziwei_context_citations(context: dict) -> list[dict]:
+    """将紫微起盘和合盘各自标成用户已保存的计算结果来源。"""
+    citations: list[dict] = []
+    if context.get("charts"):
+        citations.append({
+            "kind": "ziwei_chart", "document_id": None, "chunk_id": None,
+            "title": "已保存紫微命盘", "heading": f"{len(context['charts'])} 份命盘",
+            "source_name": "当前账号保存的紫微起盘结果", "page_start": None, "page_end": None,
+        })
+    if context.get("compatibilities"):
+        citations.append({
+            "kind": "ziwei_compatibility", "document_id": None, "chunk_id": None,
+            "title": "已保存紫微合盘", "heading": f"{len(context['compatibilities'])} 份合盘",
+            "source_name": "当前账号保存的双人合盘结果", "page_start": None, "page_end": None,
+        })
+    return citations
+
+
 def answer_ai_question(
     db: Session,
     user: User,
@@ -246,6 +378,7 @@ def answer_ai_question(
     quota = quota_for_user(db, user)
     settings = get_settings()
     personal_context: dict | None = None
+    ziwei_context: dict | None = None
     web_results: list[dict] = []
     safety_status = "blocked" if blocked else "safe"
     if blocked:
@@ -280,6 +413,15 @@ def answer_ai_question(
                 )
                 personal_context = personal_context_from_payload(personal_payload)
 
+        if question_requests_ziwei_context(question):
+            charts = db.scalars(select(ZiweiChartRecord).where(
+                ZiweiChartRecord.user_id == user.id
+            ).order_by(ZiweiChartRecord.updated_at.desc()).limit(3)).all()
+            compatibilities = db.scalars(select(ZiweiCompatibilityRecord).where(
+                ZiweiCompatibilityRecord.user_id == user.id
+            ).order_by(ZiweiCompatibilityRecord.created_at.desc()).limit(2)).all()
+            ziwei_context = ziwei_context_from_records(charts, compatibilities)
+
         if category != "profile_required":
             # 内部开关为true时沿用完整RAG链路；false时不查询知识库，引用自然为空。
             # 个人规则上下文与知识库片段使用不同参数，不能把个人数据写进公共向量库。
@@ -311,8 +453,8 @@ def answer_ai_question(
                 ).order_by(AIConversationMessage.id.desc()).limit(6)).all()
                 for prior in reversed(recent):
                     citations = json.loads(prior.references_json)
-                    if question_requests_personal_context(prior.question) or any(
-                        c.get("kind") == "personal_daily" for c in citations):
+                    if question_requests_personal_context(prior.question) or question_requests_ziwei_context(prior.question) or any(
+                        c.get("kind") in {"personal_daily", "ziwei_chart", "ziwei_compatibility"} for c in citations):
                         continue
                     history.extend([{"role": "user", "content": prior.question[:500]},
                                     {"role": "assistant", "content": prior.answer[:1000]}])
@@ -322,6 +464,7 @@ def answer_ai_question(
                 contexts,
                 use_knowledge_base=use_knowledge_base,
                 personal_context=personal_context,
+                ziwei_context=ziwei_context,
                 web_results=web_results,
                 **history_options,
             )
@@ -345,6 +488,8 @@ def answer_ai_question(
     citations.extend(citations_from_web_results(web_results))
     if personal_context is not None:
         citations.append(personal_context_citation(personal_context))
+    if ziwei_context is not None:
+        citations.extend(ziwei_context_citations(ziwei_context))
 
     # 持久化会话与回答共用事务；模型失败不会留下空会话。
     if conversation_id is None:

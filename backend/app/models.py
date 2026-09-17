@@ -35,7 +35,8 @@ class BirthProfile(Base):
     birth_date: Mapped[date] = mapped_column(Date)
     time_known: Mapped[bool] = mapped_column(Boolean, default=False)
     birth_time: Mapped[str | None] = mapped_column(String(5), nullable=True)
-    birth_city: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 保持旧字段名，值升级为“省市区/县 + 详细地址”的完整出生地址，兼容历史城市数据。
+    birth_city: Mapped[str | None] = mapped_column(String(128), nullable=True)
     gender: Mapped[str] = mapped_column(String(16), default="unspecified")
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Shanghai")
     profile_version: Mapped[int] = mapped_column(Integer, default=1)
@@ -45,6 +46,38 @@ class BirthProfile(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user: Mapped[User] = relationship(back_populates="profile")
+
+
+class ZiweiChartRecord(Base):
+    """用户主动保存的紫微命盘；完整排盘 JSON 是结果快照，避免规则更新后改写历史。"""
+    __tablename__ = "ziwei_chart_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    label: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    birth_date: Mapped[date] = mapped_column(Date)
+    calendar_type: Mapped[str] = mapped_column(String(16), default="solar")
+    is_leap_month: Mapped[bool] = mapped_column(Boolean, default=False)
+    birth_time: Mapped[str] = mapped_column(String(5))
+    gender: Mapped[str] = mapped_column(String(16))
+    birth_location: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    chart_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
+
+
+class ZiweiCompatibilityRecord(Base):
+    """用户发起的双人合盘快照；两人资料与结论均按当前账号隔离保存。"""
+    __tablename__ = "ziwei_compatibility_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    relation_type: Mapped[str] = mapped_column(String(16), index=True)
+    person_a_json: Mapped[str] = mapped_column(Text)
+    person_b_json: Mapped[str] = mapped_column(Text)
+    result_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
 
 class DailyGuidance(Base):

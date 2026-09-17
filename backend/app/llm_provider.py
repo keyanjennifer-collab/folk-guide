@@ -29,6 +29,7 @@ class AnswerProvider(Protocol):
         *,
         use_knowledge_base: bool = True,
         personal_context: dict | None = None,
+        ziwei_context: dict | None = None,
         web_results: list[dict] | None = None,
         conversation_history: list[dict] | None = None,
     ) -> str:
@@ -90,21 +91,23 @@ class LocalAnswerProvider:
         *,
         use_knowledge_base: bool = True,
         personal_context: dict | None = None,
+        ziwei_context: dict | None = None,
         web_results: list[dict] | None = None,
         conversation_history: list[dict] | None = None,
     ) -> str:
         """模型未连接时只提供开发提示，不冒充真实AI调用。"""
         if not use_knowledge_base:
             return "AI问答服务尚未连接，请稍后再试。"
-        if not contexts and not personal_context:
+        if not contexts and not personal_context and not ziwei_context:
             return _no_context_answer()
         excerpts = "\n".join(f"- {item['content'][:220]}" for item in contexts[:3])
         personal_preview = (
             f"\n- 今日个人主色：{personal_context['primary_color']}"
             if personal_context else ""
         )
+        ziwei_preview = "\n- 已加载当前账号保存的紫微起盘或合盘摘要" if ziwei_context else ""
         return (
-            f"根据当前可用资料，可先从以下内容理解这个问题：\n{excerpts}{personal_preview}"
+            f"根据当前可用资料，可先从以下内容理解这个问题：\n{excerpts}{personal_preview}{ziwei_preview}"
             "\n\n当前为本地资料预览，模型服务尚未连接。"
         )
 
@@ -139,6 +142,7 @@ class OpenAICompatibleAnswerProvider:
     def _system_prompt(
         use_knowledge_base: bool,
         has_personal_context: bool = False,
+        has_ziwei_context: bool = False,
         has_web_results: bool = False,
     ) -> str:
         """按内部开关选择回答依据；两种模式共享同一安全红线。"""
@@ -158,6 +162,13 @@ class OpenAICompatibleAnswerProvider:
                 "必须优先保持主色、辅助色和排序与结构化结果一致，不得自行改写排名。"
                 "不得反推出或索要用户的完整出生信息，不得暴露内部权重、指纹、用户编号或系统字段。"
                 "如果用户询问的日期超出所给结果，必须说明当前没有该日期的个人结果，不得外推。"
+            )
+        if has_ziwei_context:
+            shared += (
+                "本次可能提供[已保存紫微结果]，它仅是当前账号主动保存的起盘或合盘计算摘要。"
+                "只能围绕其中明确出现的宫位、主星或合盘观察作传统文化解释，不能将其说成确定性预言。"
+                "不得反推出、索要或暴露生日、出生时间、地址、姓名、记录编号、双方身份或完整命盘 JSON。"
+                "合盘只可作为沟通、协作和关系讨论的参考，不能对姻缘、生意成败或收益作保证。"
             )
         if has_web_results:
             shared += (
@@ -196,6 +207,18 @@ class OpenAICompatibleAnswerProvider:
         )
 
     @staticmethod
+    def _ziwei_prompt_block(ziwei_context: dict | None) -> str:
+        """写入已脱敏的紫微计算摘要，原始出生信息与完整排盘均不进入模型请求。"""
+        if ziwei_context is None:
+            return ""
+        serialized = json.dumps(ziwei_context, ensure_ascii=False, separators=(",", ":"))
+        return (
+            "\n\n[已保存紫微结果｜后端白名单摘要]\n"
+            f"{serialized}\n"
+            "仅依据此摘要解释相关传统文化含义；不要把它称为古籍原文或确定性预测。"
+        )
+
+    @staticmethod
     def _web_prompt_block(web_results: list[dict] | None) -> str:
         """把网页摘要放入明确的数据分隔区，防止网页文本被当成系统指令。"""
         if not web_results:
@@ -220,10 +243,12 @@ class OpenAICompatibleAnswerProvider:
         contexts: list[dict],
         use_knowledge_base: bool,
         personal_context: dict | None = None,
+        ziwei_context: dict | None = None,
         web_results: list[dict] | None = None,
     ) -> str:
         """知识库模式绑定引用；个人结果作为独立上下文，不写入知识切片。"""
         personal_block = OpenAICompatibleAnswerProvider._personal_prompt_block(personal_context)
+        ziwei_block = OpenAICompatibleAnswerProvider._ziwei_prompt_block(ziwei_context)
         web_block = OpenAICompatibleAnswerProvider._web_prompt_block(web_results)
         if not use_knowledge_base:
             return (
@@ -232,6 +257,7 @@ class OpenAICompatibleAnswerProvider:
                 "请在该范围内回答，不提及这条范围提示，不编造精确出处，结尾不添加内部模式说明。"
                 + web_block
                 + personal_block
+                + ziwei_block
             )
         materials = []
         for index, item in enumerate(contexts[:5], start=1):
@@ -254,6 +280,7 @@ class OpenAICompatibleAnswerProvider:
             + "\n\n".join(materials)
             + web_block
             + personal_block
+            + ziwei_block
             + "\n\n请先直接回答问题，再简要说明传统文化语境；不要重复大段原文。"
         )
 
@@ -264,11 +291,12 @@ class OpenAICompatibleAnswerProvider:
         *,
         use_knowledge_base: bool = True,
         personal_context: dict | None = None,
+        ziwei_context: dict | None = None,
         web_results: list[dict] | None = None,
         conversation_history: list[dict] | None = None,
     ) -> str:
         """调用模型；知识库开启时仍坚持“无片段不调用”的安全边界。"""
-        if use_knowledge_base and not contexts and personal_context is None and not web_results:
+        if use_knowledge_base and not contexts and personal_context is None and ziwei_context is None and not web_results:
             return _no_context_answer()
         payload = {
             "model": self.model_name,
@@ -278,6 +306,7 @@ class OpenAICompatibleAnswerProvider:
                     "content": self._system_prompt(
                         use_knowledge_base,
                         personal_context is not None,
+                        ziwei_context is not None,
                         bool(web_results),
                     ),
                 },
@@ -285,7 +314,7 @@ class OpenAICompatibleAnswerProvider:
                 {
                     "role": "user",
                     "content": self._user_prompt(
-                        question, contexts, use_knowledge_base, personal_context, web_results
+                        question, contexts, use_knowledge_base, personal_context, ziwei_context, web_results
                     ),
                 },
             ],

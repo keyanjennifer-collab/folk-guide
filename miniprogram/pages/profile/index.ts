@@ -1,3 +1,4 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { ensureLogin, showApiError } from "../../services/api";
 import {
   CalendarResult,
@@ -13,7 +14,7 @@ import {
 } from "../../services/profile";
 
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     loading: true,
     loadFailed: false,
     saving: false,
@@ -24,7 +25,12 @@ Page({
     birthDate: "",
     timeKnown: false,
     birthTime: "",
-    birthCity: "",
+    // 原生 region picker 提供省 / 市 / 区县三级联动，birthAddress 是最终保存、展示的完整地址。
+    birthRegion: [] as string[],
+    birthAddress: "",
+    birthDetailAddress: "",
+    // 旧档案只有一段 birth_city 文本；未重新选择地区前保存时必须原样保留，不能丢失旧资料。
+    birthAddressEdited: false,
     gender: "unspecified" as Gender,
     timezone: "Asia/Shanghai",
     completeness: 50,
@@ -83,7 +89,10 @@ Page({
       birthDate: profile.birth_date,
       timeKnown: profile.time_known,
       birthTime: profile.birth_time || "",
-      birthCity: profile.birth_city || "",
+      birthRegion: [],
+      birthAddress: profile.birth_city || "",
+      birthDetailAddress: "",
+      birthAddressEdited: false,
       gender: profile.gender,
       timezone: profile.timezone,
       completeness: profile.completeness,
@@ -104,7 +113,10 @@ Page({
       birthDate: "",
       timeKnown: false,
       birthTime: "",
-      birthCity: "",
+      birthRegion: [],
+      birthAddress: "",
+      birthDetailAddress: "",
+      birthAddressEdited: false,
       gender: "unspecified",
       timezone: "Asia/Shanghai",
       completeness: 50,
@@ -130,8 +142,13 @@ Page({
     this.setData({ birthTime: String(event.detail.value), timeKnown: true });
     this.updateLocalCompleteness();
   },
-  setCity(event: WechatMiniprogram.Input) {
-    this.setData({ birthCity: event.detail.value });
+  setBirthRegion(event: WechatMiniprogram.PickerChange) {
+    const birthRegion = (event.detail.value as string[]).map((item) => String(item));
+    this.setData({ birthRegion, birthAddress: birthRegion.join(""), birthAddressEdited: true });
+    this.updateLocalCompleteness();
+  },
+  setBirthDetailAddress(event: WechatMiniprogram.Input) {
+    this.setData({ birthDetailAddress: event.detail.value, birthAddressEdited: true });
     this.updateLocalCompleteness();
   },
   setGender(event: WechatMiniprogram.TouchEvent) {
@@ -144,7 +161,7 @@ Page({
   showPrivacy() {
     wx.showModal({
       title: "生辰档案使用说明",
-      content: "出生信息仅用于传统历法计算及个人文化参考。时辰、城市和性别均可选择不填写；资料可随时修改或删除，默认不用于模型训练和广告画像。",
+      content: "出生信息仅用于传统历法计算及个人文化参考。出生地点可选择省、市、区县并补充详细地址；资料可随时修改或删除，默认不用于模型训练和广告画像。",
       showCancel: false,
     });
   },
@@ -153,10 +170,15 @@ Page({
    * 本函数不调用API、不写本地缓存，也不把预览值放进保存请求；保存成功后必须由
    * applyProfile使用后端返回的completeness和result_mode覆盖。
    */
+  getBirthAddress(): string | null {
+    // 为避免编辑其他字段时覆盖旧版本只保存城市的档案，只有用户触碰地址控件后才重新拼接。
+    if (!this.data.birthAddressEdited) return this.data.birthAddress.trim() || null;
+    return `${this.data.birthRegion.join("")}${this.data.birthDetailAddress.trim()}` || null;
+  },
   updateLocalCompleteness() {
     let completeness = 50;
     if (this.data.timeKnown && this.data.birthTime) completeness += 25;
-    if (this.data.birthCity.trim()) completeness += 15;
+    if (this.getBirthAddress()) completeness += 15;
     if (this.data.gender !== "unspecified") completeness += 10;
     this.setData({
       completeness,
@@ -179,7 +201,8 @@ Page({
         birth_date: this.data.birthDate,
         time_known: this.data.timeKnown,
         birth_time: this.data.timeKnown ? this.data.birthTime : null,
-        birth_city: this.data.birthCity.trim() || null,
+        // 后端沿用 birth_city 字段名以兼容已有档案；内容为省、市、区/县和详细地址的拼接结果。
+        birth_city: this.getBirthAddress(),
         gender: this.data.gender,
         timezone: "Asia/Shanghai",
       };
@@ -209,3 +232,4 @@ Page({
     }
   },
 });
+

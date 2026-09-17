@@ -1,45 +1,19 @@
-<view class="test-page">
-  <view class="test-heading">
-    <image src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/>
-    <view class="heading-label">测一测</view>
+<view class="test-page {{themeClass}}">
+  <view class="test-heading"><image src="/assets/brand/logo-ai.png" mode="aspectFit" aria-label="五色知时"/><view class="heading-label">测一测</view></view>
+  <view class="test-hero"><view class="hero-kicker">ZI WEI DOU SHU</view><view class="hero-title">紫微斗数</view><view class="hero-subtitle">起盘与合盘</view><view class="hero-copy">以出生资料建立命盘结构，从传统术数视角观察阶段节奏与关系互动。</view></view>
+
+  <view class="chart-section"><view class="section-title">选择测算方式</view><view class="section-copy">出生日期、具体时辰和地点资料越完整，起盘信息越完整。</view>
+    <button class="chart-card natal" bindtap="toZiwei" data-mode="chart"><view class="chart-number">01</view><view class="chart-copy"><view class="chart-kicker">PERSONAL CHART</view><view class="chart-title">紫微起盘</view><text>建立个人命盘，查看十二宫位、主星与阶段信息。</text><view class="chart-action">开始起盘　›</view></view><view class="chart-orbit"><view/><view/><text>命</text></view></button>
+    <button class="chart-card match" bindtap="toZiwei" data-mode="compatibility"><view class="chart-number">02</view><view class="chart-copy"><view class="chart-kicker">CHART COMPARISON</view><view class="chart-title">紫微合盘</view><text>对照两份命盘，观察生意、姻缘、亲子或朋友互动。</text><view class="chart-action">开始合盘　›</view></view><view class="chart-orbit double"><view/><view/><text>合</text></view></button>
   </view>
+  <view class="method-note"><view class="note-mark">序</view><view><view>资料与测算说明</view><text>测算结果与个人五色仅供传统文化学习和生活参考，不替代医疗、法律、投资或其他专业判断。</text></view></view>
 
-  <view class="test-hero">
-    <view class="hero-kicker">ZI WEI DOU SHU</view>
-    <view class="hero-title">紫微斗数</view>
-    <view class="hero-subtitle">起盘与合盘</view>
-    <view class="hero-copy">以出生资料建立命盘结构，从传统术数视角观察阶段运势与关系节奏。</view>
-  </view>
-
-  <view class="chart-section">
-    <view class="section-title">选择测算方式</view>
-    <view class="section-copy">先完善准确资料，再进入相应测算。</view>
-
-    <button class="chart-card natal" bindtap="toProfile">
-      <view class="chart-number">01</view>
-      <view class="chart-copy">
-        <view class="chart-kicker">PERSONAL CHART</view>
-        <view class="chart-title">紫微起盘</view>
-        <text>建立个人命盘，查看阶段运势、十二宫位与重要时间节点。</text>
-        <view class="chart-action">准备起盘资料　›</view>
-      </view>
-      <view class="chart-orbit"><view/><view/><text>命</text></view>
-    </button>
-
-    <button class="chart-card match" bindtap="toMatchProfile">
-      <view class="chart-number">02</view>
-      <view class="chart-copy">
-        <view class="chart-kicker">CHART COMPARISON</view>
-        <view class="chart-title">紫微合盘</view>
-        <text>对照两份命盘，观察关系互动、相处节奏与阶段性影响。</text>
-        <view class="chart-action">准备合盘资料　›</view>
-      </view>
-      <view class="chart-orbit double"><view/><view/><text>合</text></view>
-    </button>
-  </view>
-
-  <view class="method-note">
-    <view class="note-mark">序</view>
-    <view><view>资料与测算说明</view><text>出生日期为基础资料，准确时辰可提高命盘完整度。测算内容用于传统文化研究与生活参考，不替代医疗、法律、投资或其他专业判断。</text></view>
-  </view>
+  <view id="cultureQa" class="culture-entry"><button bindtap="toggleQa"><view><text>时序文化问答</text><view>保留典籍、五行、历法与个人结果相关问答</view></view><text>{{qaOpen ? '收起 −' : '进入 ›'}}</text></button></view>
+  <block wx:if="{{qaOpen}}">
+    <view class="suggestion-title">传统文化问答</view><view class="question-tabs"><button wx:for="{{questions}}" wx:key="group" class="{{index === activeGroup ? 'active' : ''}}" data-index="{{index}}" bindtap="chooseGroup">{{item.group}}</button></view><view class="suggestions"><button wx:for="{{questions[activeGroup].items}}" wx:key="*this" data-question="{{item}}" bindtap="chooseQuestion" disabled="{{sending}}"><text>{{item}}</text><text>›</text></button></view>
+    <view class="conversation-heading"><button class="conversation-current" bindtap="returnCurrentConversation">当前对话</button><button bindtap="newConversation">新建对话</button><button bindtap="toggleHistory">历史记录（{{conversations.length}}）</button><view/></view>
+    <view wx:if="{{historyOpen}}" class="history-panel"><view wx:if="{{!conversations.length && !history.length}}" class="history-empty">还没有保存的问答记录</view><view wx:for="{{conversations}}" wx:key="id" class="history-item"><button class="history-open" data-id="{{item.id}}" bindtap="openConversation"><view>{{item.title}}</view><text class="history-meta">{{item.message_count}} 条问答 · {{historyDetailId === item.id ? '点击收起' : '点击查看'}}</text></button><button class="history-delete" data-id="{{item.id}}" bindtap="deleteConversation">删除</button><view wx:if="{{historyDetailId === item.id}}" class="history-detail"><view wx:for="{{historyDetailMessages}}" wx:key="index" class="history-detail-message {{item.role}}"><text class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</text><text selectable>{{item.text}}</text></view><button class="history-continue" bindtap="continueConversation">继续对话</button></view></view><button wx:if="{{!conversations.length}}" wx:for="{{history}}" wx:key="id" class="history-item" data-id="{{item.id}}" bindtap="openHistory"><view>{{item.question}}</view><text class="history-meta">{{item.dateLabel}}</text></button></view>
+    <view wx:if="{{!historyOpen}}" class="messages"><view wx:for="{{messages}}" wx:key="index" class="message {{item.role}}"><view class="message-role">{{item.role === 'user' ? '你' : '时序文化'}}</view><text class="message-text" selectable>{{item.text}}</text><view wx:if="{{item.safetyStatus === 'output_filtered'}}" class="safety-note">回答已按服务规则处理。</view><view wx:if="{{item.safetyStatus === 'output_truncated'}}" class="safety-note">回答较长，已截取至服务长度上限。</view><view wx:if="{{item.references.length}}" class="references"><text>参考资料</text><view wx:for="{{item.references}}" wx:for-item="reference" wx:key="*this">{{reference}}</view></view><view wx:if="{{item.messageId}}" class="feedback-row"><button class="{{item.feedback === 'helpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="helpful" bindtap="feedback">有帮助</button><button class="{{item.feedback === 'unhelpful' ? 'chosen' : ''}}" data-index="{{index}}" data-message-id="{{item.messageId}}" data-value="unhelpful" bindtap="feedback">需要纠正</button></view></view><view wx:if="{{sending}}" class="thinking">正在整理思路…</view></view>
+    <view wx:if="{{!historyOpen}}" id="conversationEnd"/><view wx:if="{{!historyOpen}}" class="composer-wrap"><view class="composer"><textarea value="{{question}}" bindinput="setQuestion" focus="{{inputFocus}}" auto-height maxlength="500" disabled="{{sending}}" placeholder="写下你的问题…" placeholder-style="color:#8e846f" cursor-spacing="20"/><button bindtap="send" loading="{{sending}}" disabled="{{sending || !question}}" aria-label="发送问题">发送</button></view><view class="ai-disclaimer">仅供传统文化学习与生活参考</view></view>
+  </block>
 </view>

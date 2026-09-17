@@ -43,7 +43,8 @@ class BirthProfileInput(BaseModel):
     birth_date: date
     time_known: bool = False
     birth_time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
-    birth_city: str | None = Field(default=None, max_length=64)
+    # 字段名为兼容既有客户端保留；保存省、市、区/县与可选详细地址的拼接文本。
+    birth_city: str | None = Field(default=None, max_length=128)
     gender: str = Field(default="unspecified", pattern="^(male|female|unspecified)$")
     timezone: str = Field(default="Asia/Shanghai", pattern=r"^Asia/Shanghai$")
 

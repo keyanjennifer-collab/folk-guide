@@ -1,12 +1,13 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { PRODUCTS } from "../../data/products";
 import { readCart, changeCart, CartItem } from "../../services/cart";
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     products: PRODUCTS, visibleProducts: PRODUCTS, gift: PRODUCTS[0], category: "all",
     filters: [{ id: "all", name: "全部香品" }, { id: "set", name: "线香套装" }, { id: "single", name: "五色单香" }],
     cartItems: [] as CartItem[], cartCount: 0, cartTotal: 0, showCart: false, showSaleNotice: false,
   },
-  onShow() {
+  onShow() { const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` });
     (this as any).getTabBar?.()?.setData({ selected: 1 });
     this.syncCart();
     if (wx.getStorageSync("wuse-open-cart-on-show")) {
@@ -36,3 +37,5 @@ Page({
   closeSaleNotice() { this.setData({ showSaleNotice: false }); },
   noop() {},
 });
+
+

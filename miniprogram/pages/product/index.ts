@@ -1,7 +1,8 @@
+import { getTheme, AppTheme } from "../../services/theme";
 import { PRODUCTS, Product } from "../../data/products";
 import { changeCart } from "../../services/cart";
 Page({
-  data: {
+  data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     product: null as Product | null,
     quantity: 1,
     images: [] as string[],
@@ -33,3 +34,4 @@ Page({
   },
   onShareAppMessage() { return { title: this.data.product?.name || "五色知时", path: "/pages/product/index?id=" + (this.data.product?.id || "gift") }; },
 });
+

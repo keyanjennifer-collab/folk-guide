@@ -1,4 +1,4 @@
-<view class="home-page">
+<view class="home-page {{themeClass}}">
   <view style="height:{{statusBarHeight}}px"/>
 
   <view class="brandbar">
@@ -45,13 +45,22 @@
       </view>
     </view>
 
-    <view class="personal-lock-card">
+    <view wx:if="{{personalState === 'ready'}}" class="personal-lock-card personal-ready-card">
+      <view class="personal-lock-copy">
+        <view class="personal-lock-kicker">PERSONAL FIVE COLORS · {{personalDate}}</view>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">我的五色</view><text class="personal-lock-status">已生成</text></view>
+        <text>首选 {{personalPrimaryColor}} · {{personalFocus}}</text>
+        <view wx:if="{{personalOpen}}" class="personal-home-details"><view wx:for="{{personalColors}}" wx:key="rank" class="personal-home-row"><text>0{{item.rank}} · {{item.name}}</text><view>{{item.tendency}} · {{item.advice}}</view></view></view>
+      </view>
+      <button bindtap="togglePersonalColors">{{personalOpen ? '收起　−' : '查看　›'}}</button>
+    </view>
+    <view wx:else class="personal-lock-card">
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
-        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">已上锁</text></view>
-        <text>结合本人档案与每日时序生成，购买产品后可开通查看。</text>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : '已上锁'}}</text></view>
+        <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : '结合本人档案与每日时序生成，购买产品后可开通查看。'}}</text>
       </view>
-      <button bindtap="toPersonalColors">选购开通　›</button>
+      <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案　›</button><button wx:else bindtap="toPersonalColors">选购开通　›</button>
     </view>
 
     <view class="detail-section">
@@ -96,5 +105,11 @@
     <image class="gift-image" src="{{gift.image}}" mode="aspectFit"/>
   </view>
 
-  <view class="page-foot">五色知时 · 让传统文化自然进入日常</view>
+  <view class="page-foot {{themeClass}}">五色知时 · 让传统文化自然进入日常</view>
 </view>
+
+
+
+
+
+

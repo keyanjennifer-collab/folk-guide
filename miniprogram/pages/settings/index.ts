@@ -46,7 +46,7 @@ Page({
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
   },
-  onShow() { (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl, showProfileHint: !!p.nickname && !wx.getStorageSync("profile_edit_hint_shown") }); void this.loadAccount(); },
+  onShow() { const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl, showProfileHint: !!p.nickname && !wx.getStorageSync("profile_edit_hint_shown") }); void this.loadAccount(); },
   onHide() { loadVersion++; this.setData({ dashboardLoading: false }); },
   onPullDownRefresh() { void this.loadAccount().finally(() => wx.stopPullDownRefresh()); },
   resetAccount() {
@@ -129,5 +129,6 @@ Page({
   closeInfo() { this.setData({ infoDialog: null }); },
   noop() {},
 });
+
 
 

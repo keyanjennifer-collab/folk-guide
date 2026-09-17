@@ -1,4 +1,4 @@
-<view class="shop-page">
+<view class="shop-page {{themeClass}}">
   <view class="shop-heading"><view><view class="eyebrow">五色应时 · 知时而行</view><view class="screen-title">一色一香，一时一境</view></view><image class="shop-logo" src="/assets/brand/logo-ai.png" mode="aspectFit"/></view>
   <button class="shop-hero" bindtap="toGift">
     <image src="{{gift.image}}" mode="aspectFill"/>
@@ -40,3 +40,7 @@
     </view>
   </view>
 </view>
+
+
+
+

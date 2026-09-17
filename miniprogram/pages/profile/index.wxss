@@ -1,4 +1,4 @@
-.profile-page { min-height: 100vh; padding: 28rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
+.profile-page { min-height: 100vh; padding: 28rpx; color: var(--text); background-color: var(--canvas); background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .profile-hero { display: flex; align-items: center; justify-content: space-between; padding: 34rpx; color: #f1e6d6; background: linear-gradient(145deg, #47423c, #32302d); border-radius: 22rpx; box-shadow: 0 12rpx 24rpx rgba(10, 13, 11, .2); }
 .hero-kicker { color: #d5a66a; font-size:24rpx; letter-spacing: 3rpx; }
 .hero-title { color: var(--cream); font-family: "Songti SC", serif; font-size:51rpx; font-weight: 400; }
@@ -20,6 +20,7 @@
 .switch-row .emphasis, .switch-row text { display: block; } .switch-row .emphasis { color: var(--cream); } .switch-row text { color: var(--muted); font-size:26rpx; }
 .picker-value, .profile-page input { width: 100%; padding: 20rpx; color: var(--text); background: #2f2f2e; border: 1rpx solid #5b5650; border-radius: 14rpx; font-size:30rpx; }
 .picker-value { display: flex; justify-content: space-between; } .picker-value.placeholder { color: #9d9b91; }
+.address-detail-input { box-sizing: border-box; margin-top: 14rpx; }
 .profile-page picker { padding: 0; background: transparent; border: 0; }
 .field-note { margin-top: 9rpx; color: var(--muted); font-size:25rpx; }
 .time-field { padding-left: 18rpx; background: rgba(58, 66, 59, .4); }
@@ -49,3 +50,9 @@
 .load-error-card>view:nth-child(2) { flex: 1; } .load-error-card .emphasis, .load-error-card text { display: block; }
 .load-error-card .emphasis { color: var(--cream); font-family: "Songti SC", serif; font-size:28rpx; } .load-error-card text { color: var(--muted); font-size:22rpx; }
 .load-error-card button { width: auto; margin: 0; padding: 0 18rpx; color: #fff; background: var(--copper-deep); border-radius: 4rpx; font-size:24rpx; line-height: 60rpx; }
+
+
+.profile-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }
+.profile-page.theme-day .card, .profile-page.theme-day [class*='panel'], .profile-page.theme-day [class*='card'], .profile-page.theme-day [class*='sheet'], .profile-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
+.profile-page.theme-day .muted, .profile-page.theme-day .caption, .profile-page.theme-day .field-note { color: #68675F; }
+

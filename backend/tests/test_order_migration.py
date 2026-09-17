@@ -28,12 +28,14 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
     assert {"nickname", "avatar_url"}.issubset(
         {column["name"] for column in inspect(engine).get_columns("users")}
     )
+    assert {"ziwei_chart_records", "ziwei_compatibility_records"}.issubset(inspect(engine).get_table_names())
     with engine.connect() as conn:
-        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0004_user_display_profile"
+        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0006_ziwei_calendar_type"
     engine.dispose()
     migrate("downgrade", "0001_initial_schema")
     engine = create_engine(database_url)
     assert "orders" not in inspect(engine).get_table_names()
+    assert "ziwei_chart_records" not in inspect(engine).get_table_names()
     assert "users" in inspect(engine).get_table_names()
     engine.dispose()
     migrate("upgrade", "head")

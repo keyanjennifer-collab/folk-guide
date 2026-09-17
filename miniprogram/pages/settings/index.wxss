@@ -64,3 +64,8 @@
 .info-section-body { margin-top: 8rpx; color: #ccc3b7; font-size:24rpx; line-height: 1.85; }
 .info-confirm { width: 100%; margin-top: 14rpx; color: #fff8ed; background: #a97743; border-radius: 8rpx; font-size:27rpx; line-height: 78rpx; letter-spacing: 3rpx; }
 
+
+.mine-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }
+.mine-page.theme-day .card, .mine-page.theme-day [class*='panel'], .mine-page.theme-day [class*='card'], .mine-page.theme-day [class*='sheet'], .mine-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
+.mine-page.theme-day .muted, .mine-page.theme-day .caption, .mine-page.theme-day .field-note { color: #68675F; }
+

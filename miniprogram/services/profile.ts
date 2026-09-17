@@ -42,6 +42,7 @@ export interface ProfileInput {
   birth_date: string;
   time_known: boolean;
   birth_time: string | null;
+  /** 兼容旧字段名；新值为省、市、区/县及详细地址拼接后的完整出生地址。 */
   birth_city: string | null;
   gender: Gender;
   timezone: "Asia/Shanghai";

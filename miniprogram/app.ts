@@ -1,4 +1,5 @@
 import { AUTH_TOKEN_STORAGE_KEY } from "./config";
+import { applyTheme } from "./services/theme";
 
 /**
  * 小程序全局只保存登录令牌。
@@ -7,5 +8,7 @@ import { AUTH_TOKEN_STORAGE_KEY } from "./config";
 App({
   globalData: {
     token: String(wx.getStorageSync(AUTH_TOKEN_STORAGE_KEY) || ""),
+    theme: "night" as const,
   },
+  onLaunch() { applyTheme(); },
 });

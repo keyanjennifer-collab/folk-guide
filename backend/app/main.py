@@ -24,7 +24,7 @@ from .daily_color_rule_routes import router as daily_color_rule_router
 from .daily_update_routes import router as daily_update_router
 from .daily_update_service import daily_cache_scheduler_loop
 from .migrations import migrate_development_schema
-from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User
+from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User, ZiweiChartRecord, ZiweiCompatibilityRecord
 from .profile_service import profile_output
 from .public_guide_routes import router as public_guide_router
 from .knowledge_routes import router as knowledge_router
@@ -44,6 +44,7 @@ from .schemas import (
 )
 from .services import answer_question, exchange_wechat_code, exchange_wechat_phone_code
 from .time_service import beijing_today
+from .ziwei_routes import router as ziwei_router
 
 
 @asynccontextmanager
@@ -152,6 +153,7 @@ app.include_router(knowledge_router)
 app.include_router(ai_router)
 app.include_router(daily_update_router)
 app.include_router(order_router)
+app.include_router(ziwei_router)
 
 
 @app.get("/health", tags=["系统状态"], summary="检查后端服务是否正常")
@@ -382,6 +384,8 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(ChatMessage).filter(ChatMessage.user_id == user.id).delete()
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
     db.query(Order).filter(Order.user_id == user.id).delete()
+    db.query(ZiweiCompatibilityRecord).filter(ZiweiCompatibilityRecord.user_id == user.id).delete()
+    db.query(ZiweiChartRecord).filter(ZiweiChartRecord.user_id == user.id).delete()
     db.delete(user)
     db.commit()
     return Response(status_code=204)

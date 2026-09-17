@@ -1,4 +1,4 @@
-<view class="explore-page">
+<view class="explore-page {{themeClass}}">
   <view class="explore-heading"><view class="eyebrow">把兴趣，过成日常</view><view class="screen-title">知时小趣</view><text>一个人慢慢看，也可以一起玩。</text></view>
   <view class="explore-tabs"><button wx:for="{{tabs}}" wx:key="id" class="{{tab===item.id?'active':''}}" data-id="{{item.id}}" bindtap="switchSection">{{item.label}}</button></view>
   <view wx:if="{{tab==='daily'}}">
@@ -19,3 +19,7 @@
     <view wx:else class="note">选一个答案，展开解析。没有分数，也没有排行榜。</view>
   </view>
 </view>
+
+
+
+

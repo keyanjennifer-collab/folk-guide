@@ -2,7 +2,7 @@ page { background: var(--canvas); color: var(--text); }
 .product-page { min-height: 100vh; padding-bottom: 140rpx; background: var(--canvas); }
 .product-gallery { height: 700rpx; background: #303030; }
 .product-gallery image { width: 100%; height: 100%; }
-.product-body { padding: 32rpx 30rpx; color: var(--text); background-color: #262626; background-image: linear-gradient(rgba(38,38,38,.9), rgba(29,29,29,.97)), var(--stone-texture); background-size: auto, 720rpx; }
+.product-body { padding: 32rpx 30rpx; color: var(--text); background-color: var(--canvas); background-image: linear-gradient(rgba(38,38,38,.9), rgba(29,29,29,.97)), var(--stone-texture); background-size: auto, 720rpx; }
 .detail-heading { display: flex; align-items: center; justify-content: space-between; }
 .detail-heading .eyebrow { color: var(--copper); }
 .product-title { margin: 7rpx 0; color: var(--cream); font-family: "Songti SC", serif; font-size:47rpx; line-height: 1.5; letter-spacing: 4rpx; }
@@ -24,3 +24,9 @@ page { background: var(--canvas); color: var(--text); }
 .product-actions button { border-radius: 4rpx; font-size:28rpx; line-height: 78rpx; }
 .open-bag { padding: 0 24rpx; color: #dfb67c; background: #3b3936; }
 .add-bag { flex: 1; padding: 0 14rpx; color: #fffaf2; background: var(--copper-deep); }
+
+
+.product-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }
+.product-page.theme-day .card, .product-page.theme-day [class*='panel'], .product-page.theme-day [class*='card'], .product-page.theme-day [class*='sheet'], .product-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
+.product-page.theme-day .muted, .product-page.theme-day .caption, .product-page.theme-day .field-note { color: #68675F; }
+

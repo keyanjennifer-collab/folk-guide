@@ -1,5 +1,8 @@
 import { Product, PRODUCTS, SINGLE_PRODUCTS, SCENT_DETAILS } from "../../data/products";
-import { getPublicDailyGuide, PublicDailyGuide } from "../../services/daily";
+import { getPersonalDailyGuidance, getPublicDailyGuide, PersonalDailyColor, PublicDailyGuide } from "../../services/daily";
+import { getTheme, AppTheme } from "../../services/theme";
+import { getToken, isApiError } from "../../services/api";
+import { getAIQuota } from "../../services/ai";
 
 type Guide = {
   rank: number; name: string; element: string; status: string; tier: string;
@@ -10,6 +13,7 @@ type Guide = {
 type ElementName = "木" | "火" | "土" | "金" | "水";
 type BranchMeta = { zodiac: string; element: ElementName };
 type DayOption = { date: string; label: string; weekday: string; active: boolean };
+type PersonalHomeColor = Pick<PersonalDailyColor, "rank" | "name" | "tendency" | "advice">;
 
 const COLOR_TO_PRODUCT: Record<string, string> = { 白色系: "white", 绿色系: "green", 黑色系: "black", 红色系: "red", 黄色系: "gold" };
 const ELEMENT_TO_PRODUCT: Record<string, string> = { 金: "white", 木: "green", 水: "black", 火: "red", 土: "gold" };
@@ -60,6 +64,7 @@ let midnightTimer: ReturnType<typeof setTimeout> | undefined;
 
 Page({
   data: {
+    theme: "night" as AppTheme, themeClass: "theme-night",
     guides: [] as Guide[], selected: null as Guide | null, dayOptions: [] as DayOption[],
     details: SCENT_DETAILS, statusBarHeight: 44, primaryElement: "",
     scent: SINGLE_PRODUCTS[0], gift: PRODUCTS[0], source: "确定性历法规则",
@@ -67,9 +72,15 @@ Page({
     solarDateLabel: "公历今日", lunarDateLabel: "农历时序", dayPillar: "", dayBranch: "", dayElement: "", dayBasis: "",
     term: "时序流转", summary: "观色知序，为今天安排一份从容。",
     shareTitle: "五色知时 · 今日五色",
+    personalState: "locked" as "locked" | "missing" | "ready" | "error",
+    personalOpen: false,
+    personalDate: "",
+    personalPrimaryColor: "",
+    personalFocus: "",
+    personalColors: [] as PersonalHomeColor[],
   },
-  onLoad() { this.setData({ statusBarHeight: wx.getWindowInfo().statusBarHeight }); },
-  onShow() { (this as any).getTabBar?.()?.setData({ selected: 0 }); void this.loadToday(); this.scheduleRefresh(); },
+  onLoad() { const theme = getTheme(); this.setData({ statusBarHeight: wx.getWindowInfo().statusBarHeight, theme, themeClass: `theme-${theme}` }); },
+  onShow() { (this as any).getTabBar?.()?.setData({ selected: 0 }); void this.loadToday(); void this.loadPersonalColors(); this.scheduleRefresh(); },
   onHide() { if (midnightTimer) clearTimeout(midnightTimer); },
   onUnload() { if (midnightTimer) clearTimeout(midnightTimer); },
   onPullDownRefresh() { void this.loadToday().finally(() => wx.stopPullDownRefresh()); },
@@ -145,6 +156,26 @@ Page({
     wx.navigateTo({ url: "/pages/product/index?id=" + event.currentTarget.dataset.id });
   },
   toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
+  async loadPersonalColors() {
+    if (!getToken()) { this.setData({ personalState: "locked", personalOpen: false, personalColors: [] }); return; }
+    try {
+      const quota = await getAIQuota();
+      if (!quota.active) { this.setData({ personalState: "locked", personalOpen: false, personalColors: [] }); return; }
+      const result = await getPersonalDailyGuidance();
+      this.setData({
+        personalState: "ready", personalDate: result.date, personalPrimaryColor: result.primary_color,
+        personalFocus: result.personal_focus, personalColors: result.colors.map(item => ({
+          rank: item.rank, name: item.name, tendency: item.tendency, advice: item.advice,
+        })),
+      });
+    } catch (error: unknown) {
+      this.setData({ personalState: isApiError(error, 409) ? "missing" : "error", personalColors: [], personalOpen: false });
+    }
+  },
+  togglePersonalColors() { this.setData({ personalOpen: !this.data.personalOpen }); },
+  toProfile() { wx.navigateTo({ url: "/pages/profile/index" }); },
   toPersonalColors() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },
   onShareAppMessage() { return { title: this.data.shareTitle, path: "/pages/home/index" }; },
 });
+
+

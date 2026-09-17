@@ -1,5 +1,5 @@
 import { getTheme, AppTheme } from "../../services/theme";
-import { ensureLogin, showApiError } from "../../services/api";
+import { ensureLogin, getApiErrorMessage, showApiError } from "../../services/api";
 import {
   CalendarResult,
   CalendarType,
@@ -17,6 +17,7 @@ Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     loading: true,
     loadFailed: false,
+    loadError: "",
     saving: false,
     deleting: false,
     hasProfile: false,
@@ -49,7 +50,7 @@ Page({
     try {
       await ensureLogin();
     } catch (error: unknown) {
-      this.setData({ loading: false, loadFailed: true });
+      this.setData({ loading: false, loadFailed: true, loadError: getApiErrorMessage(error, "微信登录失败，请稍后重试") });
       showApiError(error, "微信登录失败，请稍后重试");
       return;
     }
@@ -61,14 +62,14 @@ Page({
    * 非404错误会锁住编辑表单，避免网络故障时把已有档案误当空档案覆盖。
    */
   async loadProfile() {
-    this.setData({ loading: true, loadFailed: false });
+    this.setData({ loading: true, loadFailed: false, loadError: "" });
     try {
       this.applyProfile(await getCurrentProfile());
     } catch (error: unknown) {
       // 404是正常的“第一次创建”状态，不应该提示成系统故障。
       if (isProfileMissing(error)) this.resetEmptyProfile();
       else {
-        this.setData({ loadFailed: true });
+        this.setData({ loadFailed: true, loadError: getApiErrorMessage(error, "档案加载失败，请稍后重试") });
         showApiError(error, "档案加载失败，请稍后重试");
       }
     } finally {

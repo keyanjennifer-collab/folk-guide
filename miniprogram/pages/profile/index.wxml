@@ -5,7 +5,7 @@
   </view>
 
   <view wx:if="{{loading}}" class="loading-card">正在加载档案…</view>
-  <view wx:elif="{{loadFailed}}" class="load-error-card"><view class="load-error-mark">!</view><view><text class="emphasis">暂时无法读取档案</text><text>请确认Python后端已经启动，并检查网络连接后重新加载。</text></view><button bindtap="retryLoad">重新加载</button></view>
+  <view wx:elif="{{loadFailed}}" class="load-error-card"><view class="load-error-mark">!</view><view><text class="emphasis">暂时无法读取档案</text><text>{{loadError || '请检查网络后重新加载。'}}</text></view><button bindtap="retryLoad">重新加载</button></view>
   <block wx:else>
     <view class="mode-card {{resultMode}}"><view class="mode-icon">{{resultMode === 'full' ? '全' : '简'}}</view><view><text class="emphasis">{{resultMode === 'full' ? '完整个人结果模式' : '简化个人结果模式'}}</text><text>{{resultMode === 'full' ? '已填写出生时辰，可使用完整结构计算。' : '不知道时辰也可以使用，部分结果完整度会受到影响。'}}</text></view></view>
 

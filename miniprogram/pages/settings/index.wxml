@@ -5,7 +5,7 @@
     <button wx:if="{{!isLoggedIn}}" class="login-button" bindtap="realLogin" disabled="{{loginBusy || dashboardLoading}}" loading="{{loginBusy}}">微信登录</button>
     <view wx:else class="identity-footer"><text>五色应时 · 知时而行</text><button class="identity-action" bindtap="showPrivacy">账号与隐私 ›</button></view>
     <view wx:if="{{accountError}}" class="account-error">{{accountError}}<button class="identity-action" bindtap="loadAccount">重新读取</button></view>
-    <view wx:if="{{isLoggedIn && editingProfile}}" class="identity-profile-edit"><button class="avatar-edit-button" open-type="chooseAvatar" bindchooseavatar="chooseAvatar"><image src="{{avatarUrl}}" mode="aspectFill"/>更换头像</button><input class="nickname-input" type="nickname" value="{{nickname}}" bindinput="editNickname" placeholder="请输入昵称" maxlength="32"/><button class="save-profile-button" bindtap="saveProfile">保存资料</button></view>
+    <view wx:if="{{isLoggedIn && editingProfile}}" class="identity-profile-edit"><button class="avatar-edit-button" open-type="chooseAvatar" bindchooseavatar="chooseAvatar"><image class="avatar-edit-preview" src="{{avatarUrl}}" mode="aspectFill"/>更换头像</button><input class="nickname-input" type="nickname" value="{{nickname}}" bindinput="editNickname" placeholder="请输入昵称" maxlength="32"/><button class="save-profile-button" bindtap="saveProfile">保存资料</button></view>
   </view>
   <view class="orders-panel">
     <view class="panel-heading"><view class="panel-title">我的订单</view><button class="text-button" bindtap="toOrders" data-status="all">全部订单 ›</button></view>
@@ -46,7 +46,6 @@
     </view>
   </view>
 </view>
-
 
 
 

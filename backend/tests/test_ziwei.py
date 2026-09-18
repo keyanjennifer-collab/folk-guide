@@ -49,5 +49,10 @@ def test_ziwei_chart_and_compatibility_are_saved_per_user():
 
         assert len(client.get("/api/ziwei/compatibilities", headers=owner).json()) == 1
         assert client.get("/api/ziwei/compatibilities", headers=other).json() == []
+        assert client.delete(f"/api/ziwei/charts/{payload['id']}", headers=owner).status_code == 204
+        assert {item["id"] for item in client.get("/api/ziwei/charts", headers=owner).json()} == {lunar_chart.json()["id"]}
+        assert client.delete(f"/api/ziwei/compatibilities/{compatibility['id']}", headers=owner).status_code == 204
+        assert client.get("/api/ziwei/compatibilities", headers=owner).json() == []
+        assert client.delete(f"/api/ziwei/compatibilities/{compatibility['id']}", headers=owner).status_code == 404
         client.delete("/api/account", headers=owner)
         client.delete("/api/account", headers=other)

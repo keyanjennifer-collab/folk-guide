@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from .auth import current_user
 from .database import get_db
-from .models import User, ZiweiChartRecord, ZiweiCompatibilityRecord
+from .models import User, ZiweiAnalysisCache, ZiweiChartRecord, ZiweiCompatibilityRecord
 from .ziwei_schemas import ZiweiBirthInput, ZiweiChartOutput, ZiweiCompatibilityInput, ZiweiCompatibilityOutput
 from .ziwei_service import build_compatibility, generate_chart
 
@@ -64,6 +64,11 @@ def delete_chart(chart_id: int, user: User = Depends(current_user), db: Session 
     record = db.scalar(select(ZiweiChartRecord).where(ZiweiChartRecord.id == chart_id, ZiweiChartRecord.user_id == user.id))
     if record is None:
         raise HTTPException(404, "命盘不存在")
+    # 先清理该命盘的 AI 解读缓存，兼容 PostgreSQL 的外键约束。
+    db.query(ZiweiAnalysisCache).filter(
+        ZiweiAnalysisCache.user_id == user.id,
+        ZiweiAnalysisCache.chart_id == record.id,
+    ).delete(synchronize_session=False)
     db.delete(record)
     db.commit()
     return Response(status_code=204)
@@ -95,3 +100,21 @@ def list_compatibilities(user: User = Depends(current_user), db: Session = Depen
                          .order_by(desc(ZiweiCompatibilityRecord.created_at))).all()
     return [{"id": item.id, "relation_type": item.relation_type, "person_a": json.loads(item.person_a_json),
              "person_b": json.loads(item.person_b_json), "result": json.loads(item.result_json), "created_at": item.created_at} for item in records]
+
+
+@router.delete("/compatibilities/{compatibility_id}", status_code=status.HTTP_204_NO_CONTENT, summary="删除我的合盘记录")
+def delete_compatibility(compatibility_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    record = db.scalar(select(ZiweiCompatibilityRecord).where(
+        ZiweiCompatibilityRecord.id == compatibility_id,
+        ZiweiCompatibilityRecord.user_id == user.id,
+    ))
+    if record is None:
+        raise HTTPException(404, "合盘不存在")
+    # 合盘详细解读也属于该条记录，删除记录时一并清理，避免留下孤立缓存。
+    db.query(ZiweiAnalysisCache).filter(
+        ZiweiAnalysisCache.user_id == user.id,
+        ZiweiAnalysisCache.compatibility_id == record.id,
+    ).delete(synchronize_session=False)
+    db.delete(record)
+    db.commit()
+    return Response(status_code=204)

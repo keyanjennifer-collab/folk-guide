@@ -96,6 +96,31 @@ class DailyGuidance(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class ZiweiAnalysisCache(Base):
+    """紫微单盘/合盘解读缓存；只保存当前用户主动请求生成的结果。"""
+    __tablename__ = "ziwei_analysis_cache"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "chart_id", "compatibility_id", "period_type", "period_key",
+            "topic", "palace_branch", "question_hash", name="uq_ziwei_analysis_cache_request",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    chart_id: Mapped[int | None] = mapped_column(ForeignKey("ziwei_chart_records.id"), nullable=True, index=True)
+    compatibility_id: Mapped[int | None] = mapped_column(ForeignKey("ziwei_compatibility_records.id"), nullable=True, index=True)
+    period_type: Mapped[str] = mapped_column(String(16), default="mingpan")
+    period_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    topic: Mapped[str] = mapped_column(String(32), default="overview")
+    palace_branch: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    question_hash: Mapped[str] = mapped_column(String(64), default="")
+    answer: Mapped[str] = mapped_column(Text)
+    model_name: Mapped[str] = mapped_column(String(128))
+    knowledge_version: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class PublicColorCache(Base):
     """公开接口使用的每日五色规则缓存。
 

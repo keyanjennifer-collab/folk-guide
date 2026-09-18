@@ -30,7 +30,7 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
     )
     assert {"ziwei_chart_records", "ziwei_compatibility_records"}.issubset(inspect(engine).get_table_names())
     with engine.connect() as conn:
-        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0006_ziwei_calendar_type"
+        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0007_ziwei_analysis_cache"
     engine.dispose()
     migrate("downgrade", "0001_initial_schema")
     engine = create_engine(database_url)

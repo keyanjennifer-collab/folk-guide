@@ -60,3 +60,40 @@ class ZiweiCompatibilityOutput(BaseModel):
     person_b: dict
     result: dict
     created_at: datetime
+
+
+class ZiweiInterpretInput(BaseModel):
+    """单盘主题解读请求；命盘本体只接受当前账号保存的记录。"""
+    chart_id: int = Field(gt=0)
+    topic: Literal[
+        "overview", "wealth", "career", "love", "personality", "health",
+        "family", "children", "move", "friends", "home", "spirit", "parents",
+    ] = "overview"
+    period_type: Literal["mingpan", "daxian", "liunian", "xiaoxian", "liuyue", "liuri", "liushi"] = "mingpan"
+    period_key: str | None = Field(default=None, max_length=64)
+    palace_branch: int | None = Field(default=None, ge=0, le=11)
+
+
+class ZiweiInterpretOutput(BaseModel):
+    chart_id: int
+    topic: str
+    period_type: str
+    period_key: str | None
+    palace_branch: int | None
+    answer: str
+    model_name: str
+    cached: bool
+    knowledge_version: str
+
+
+class ZiweiCompatibilityInterpretInput(BaseModel):
+    compatibility_id: int = Field(gt=0)
+    question: str | None = Field(default=None, max_length=1000)
+
+
+class ZiweiCompatibilityInterpretOutput(BaseModel):
+    compatibility_id: int
+    answer: str
+    model_name: str
+    cached: bool
+    knowledge_version: str

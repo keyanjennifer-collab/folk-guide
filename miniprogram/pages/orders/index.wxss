@@ -10,11 +10,11 @@
 .order-top>text:last-child, .detail-status { color: var(--copper); }
 .order-product { display: flex; align-items: center; padding: 22rpx 0; }
 .order-product image { width: 100rpx; height: 128rpx; flex: none; margin-right: 24rpx; border-radius: 4rpx; }
-.order-product>view>view { color: var(--cream); font-family: "Songti SC", serif; font-size:30rpx; }
+.order-product>view>view { color: var(--cream); font-family: var(--font-display); font-size:30rpx; }
 .order-product>view>text { color: var(--muted); font-size:27rpx; }
 .order-total { display: flex; justify-content: space-between; padding-top: 18rpx; border-top: 1rpx solid var(--line); font-size:29rpx; }
 .order-total>text:last-child { color: #d2a367; font-size:26rpx; }
-.detail-status { margin-bottom: 16rpx; font-family: "Songti SC", serif; font-size:37rpx; }
+.detail-status { margin-bottom: 16rpx; font-family: var(--font-display); font-size:37rpx; }
 .order-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); font-size:28rpx; }
 .order-detail-row>text:first-child { color: var(--muted); }
 .order-detail-row button { overflow-wrap: anywhere; font-size:25rpx; }

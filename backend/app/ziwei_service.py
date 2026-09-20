@@ -1,6 +1,8 @@
 """复用 ziwei-doushu-main 的 iztro 排盘内核，并生成可复核的双盘观察结果。"""
 
 import json
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -11,6 +13,21 @@ from .ziwei_schemas import ZiweiBirthInput
 
 RUNTIME_DIR = Path(__file__).with_name("ziwei_runtime")
 RUNTIME_SCRIPT = RUNTIME_DIR / "chart.mjs"
+
+
+def _node_binary() -> str:
+    """解析本地或部署环境的 Node 可执行文件，避免后台进程 PATH 不完整。"""
+    candidates = [
+        os.environ.get("NODE_BINARY"),
+        shutil.which("node"),
+        str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node"),
+        "/opt/homebrew/bin/node",
+        "/usr/local/bin/node",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    raise RuntimeError("紫微排盘运行环境暂不可用")
 
 
 def _hour_branch(value: str) -> int:
@@ -45,7 +62,7 @@ def generate_chart(data: ZiweiBirthInput) -> dict:
     }
     try:
         process = subprocess.run(
-            ["node", str(RUNTIME_SCRIPT)], input=json.dumps(payload, ensure_ascii=False),
+            [_node_binary(), str(RUNTIME_SCRIPT)], input=json.dumps(payload, ensure_ascii=False),
             text=True, encoding="utf-8", capture_output=True, cwd=RUNTIME_DIR, timeout=12, check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:

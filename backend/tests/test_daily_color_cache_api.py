@@ -67,19 +67,27 @@ def test_active_ai_trial_warms_three_personal_days_from_birth_profile():
         daily = client.get("/api/daily", headers=headers)
         assert daily.status_code == 200
         payload = daily.json()
-        assert payload["rule_version"] == "wuse-personal-research-v1.0"
+        assert payload["rule_version"] == "PERSONAL_FIVE_COLOR_V1"
         assert payload["precision_mode"] == "four_pillars"
         assert payload["profile_version"] == created.json()["profile_version"]
         assert payload["entitlement_plan"] == "new_user_3_days"
-        assert payload["content_version"] == "personal-guidance-v1.1"
+        assert payload["content_version"] == "personal-guidance-v1.2"
         assert payload["primary_color"] == payload["colors"][0]["name"]
         assert payload["supporting_colors"] == [payload["colors"][1]["name"], payload["colors"][2]["name"]]
-        assert "出生结构70%" in payload["comparison_note"]
+        assert payload["algorithm_version"] == "PERSONAL_FIVE_COLOR_V1"
+        assert set(payload["factors"]) == {"natalResponse", "dailyStem", "dailyBranchInteraction", "dailyElementDynamic", "publicScore"}
+        assert len(payload["ranking"]) == 5
         assert len(payload["colors"]) == 5
-        assert {item["name"] for item in payload["colors"]} == {"白金", "绿金", "黑金", "红金", "黄金"}
+        assert {item["name"] for item in payload["colors"]} == {"白色系", "绿色系", "黑色系", "红色系", "黄色系"}
+        assert {item["product"] for item in payload["colors"]} == {"白桂", "青木", "墨沉", "朱蜜", "黄檀"}
         assert all(item["reason"] and item["resistance"] and item["advice"] for item in payload["colors"])
         assert "config_fingerprint" not in payload
         assert "input_fingerprint" not in payload
+
+        next_date = date.fromisoformat(payload["date"]) + timedelta(days=1)
+        next_daily = client.get(f"/api/daily?date={next_date.isoformat()}", headers=headers)
+        assert next_daily.status_code == 200
+        assert next_daily.json()["date"] == next_date.isoformat()
 
         with SessionLocal() as db:
             rows = db.scalars(select(DailyGuidance).where(
@@ -91,7 +99,7 @@ def test_active_ai_trial_warms_three_personal_days_from_birth_profile():
         client.delete("/api/account", headers=headers)
 
 
-def test_expired_ai_trial_does_not_generate_personal_cache_until_paid_grant():
+def test_expired_ai_trial_still_reads_default_unlocked_personal_colors():
     with TestClient(app) as client:
         headers, user_id = login(client, "personal-color-expired-trial")
         now = utc_now_naive()
@@ -111,23 +119,9 @@ def test_expired_ai_trial_does_not_generate_personal_cache_until_paid_grant():
             },
         )
         assert created.status_code == 200
-        denied = client.get("/api/daily", headers=headers)
-        assert denied.status_code == 403
-        assert "AI国学体验" in denied.json()["detail"]
-        with SessionLocal() as db:
-            assert db.scalars(select(DailyGuidance).where(DailyGuidance.user_id == user_id)).all() == []
-            db.add(AIServiceGrant(
-                user_id=user_id,
-                grant_type="paid_30_days",
-                start_at=now - timedelta(minutes=1),
-                end_at=now + timedelta(days=30),
-            ))
-            db.commit()
-
         allowed = client.get("/api/daily", headers=headers)
         assert allowed.status_code == 200
-        assert allowed.json()["entitlement_plan"] == "paid_30_days"
-        assert allowed.json()["precision_mode"] == "three_pillars"
+        assert allowed.json()["entitlement_plan"] == "default_unlocked"
         with SessionLocal() as db:
             assert len(db.scalars(select(DailyGuidance).where(DailyGuidance.user_id == user_id)).all()) == 3
 

@@ -56,6 +56,15 @@ docker-compose --env-file .env.production logs --tail=100 api
 curl -fsS https://api.wusezhishi.com/health
 ```
 
+小程序字体由同一 API 域名提供。部署后应确认下面两个地址返回 `200` 且响应类型为 `font/woff2`，否则 iOS 微信无法加载品牌字体：
+
+```bash
+curl -fsSI https://api.wusezhishi.com/font-assets/wuse-sans.woff2
+curl -fsSI https://api.wusezhishi.com/font-assets/wuse-serif.woff2
+```
+
+同时在微信公众平台“开发管理 -> 开发设置”中将 `api.wusezhishi.com` 配置为小程序的请求/下载合法域名。字体资源随 `backend/app/static/fonts/` 部署，授权文本为 `OFL-1.1.txt`，可用于商业产品。
+
 应返回 `{"status":"ok"}`。Caddy 会在 80/443 可访问且 DNS 已生效时自动申请并续期证书。
 
 ## 更新代码

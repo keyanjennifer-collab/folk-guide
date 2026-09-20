@@ -52,6 +52,13 @@ async function main() {
   assert.equal(app.window.navigationBarTextStyle, 'white');
   assert.equal(app.window.navigationBarBackgroundColor.toLowerCase(), '#262626');
   assert.equal(app.tabBar.backgroundColor.toLowerCase(), '#262626');
+  const globalWxss = fs.readFileSync(path.join(root, 'app.wxss'), 'utf8');
+  assert(globalWxss.includes('@font-face') && globalWxss.includes('wuse-sans.woff2') && globalWxss.includes('wuse-serif.woff2'), 'commercially licensed local fonts are bundled');
+  assert(globalWxss.includes('https://api.wusezhishi.com/font-assets/'), 'iOS uses the HTTPS font source supported by WeChat');
+  assert(globalWxss.includes('--font-body') && globalWxss.includes('--font-display') && globalWxss.includes('--font-numeric'), 'font roles use stable cross-platform tokens');
+  const appTs = fs.readFileSync(path.join(root, 'app.ts'), 'utf8');
+  assert(appTs.includes('loadFontFace') && appTs.includes('global: true'), 'brand fonts are explicitly registered globally at launch');
+  for (const fontAsset of ['assets/fonts/wuse-sans.woff2', 'assets/fonts/wuse-serif.woff2', 'assets/fonts/OFL-1.1.txt']) assert(fs.existsSync(path.join(root, fontAsset)), fontAsset + ' is present');
   assert.equal(app.lazyCodeLoading, undefined, 'native tab pages must render reliably in the current WeChat runtime');
   const homeWxml=fs.readFileSync(path.join(root,'pages/home/index.wxml'),'utf8');
   const homeWxss=fs.readFileSync(path.join(root,'pages/home/index.wxss'),'utf8');
@@ -61,7 +68,7 @@ async function main() {
   assert(homeWxml.includes('{{solarDateLabel}}') && homeWxml.includes('{{lunarDateLabel}}'),'home displays both Gregorian and lunar dates');
   assert(homeWxml.includes('{{item.relationReason}}') && homeWxml.includes('日支取象'),'home explains the day-branch derivation and each color relation');
   assert(!homeWxml.includes('固定色序关系') && !homeWxml.includes('home-links'),'home removes the fixed relation copy and duplicate chapter links');
-  assert(homeWxml.includes('personal-lock-card') && homeWxml.includes('购买产品后可开通查看'),'home shows the locked personal five-color entry');
+  assert(homeWxml.includes('personal-lock-card') && homeWxml.includes('登录后即可查看'),'home shows the personal five-color entry without a purchase lock');
   assert(homeWxml.includes('personal-lock-status') && !homeWxml.includes('personal-lock-mark'),'personal lock uses a quiet status label without the bag icon');
   assert(!homeWxml.includes('product.emblem'),'divine-beast emblems stay out of the home page');
   assert(homeWxss.includes('justify-content: center') && homeWxss.includes('linear-gradient(155deg'),'centered brand and full color gradients are retained');
@@ -196,6 +203,6 @@ async function main() {
   assert.equal(settings.data.infoDialog.title,'关于我们');
   settings.closeInfo();
   assert.equal(settings.data.infoDialog,null);
-  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; locked personal colors; Ziwei test hub; scent matching; quiz sources; guest orders');
+  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; unlocked personal colors; Ziwei test hub; scent matching; quiz sources; guest orders');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

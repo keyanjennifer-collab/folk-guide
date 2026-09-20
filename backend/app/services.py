@@ -17,8 +17,11 @@ async def exchange_wechat_code(code: str) -> str:
     # 自动化测试必须始终使用确定性的本地openid，不能受开发者本机.env影响。
     if settings.testing:
         return "test_" + hashlib.sha256(code.encode()).hexdigest()[:24]
-    # 只有开发环境且没有配置AppID时才允许模拟openid，生产环境绝不能走此分支。
-    if settings.environment == "development" and not settings.wechat_app_id:
+    # 开发环境只要微信凭据没有配齐就使用模拟openid；生产环境绝不能走此分支。
+    # 本地 .env 可能已经有 AppID，但没有 AppSecret，仍应允许开发者工具联调。
+    if settings.environment == "development" and (
+        not settings.wechat_app_id or not settings.wechat_app_secret
+    ):
         return "dev_" + hashlib.sha256(code.encode()).hexdigest()[:24]
     if not settings.wechat_app_id or not settings.wechat_app_secret:
         raise HTTPException(status_code=503, detail="微信登录尚未配置")

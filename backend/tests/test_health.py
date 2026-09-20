@@ -17,6 +17,15 @@ def test_product_assets_are_public_without_exposing_admin_pages():
     assert client.get("/product-assets/admin_knowledge.html").status_code == 404
 
 
+def test_brand_fonts_are_public_with_font_content_type():
+    client = TestClient(app)
+    for filename in ("wuse-sans.woff2", "wuse-serif.woff2"):
+        response = client.get(f"/font-assets/{filename}")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "font/woff2"
+        assert len(response.content) > 10_000
+
+
 def test_openapi_routes_are_grouped_and_ai_status_is_explicit():
     """防止新接口重新掉进Swagger的default分组或误称正式AI已经接入。"""
     schema = app.openapi()

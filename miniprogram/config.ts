@@ -10,12 +10,16 @@
  * 真机中的 127.0.0.1 指向手机自身，因此真机调试和正式发布前必须换成 HTTPS 域名，
  * 同时在微信公众平台的“开发管理 -> 开发设置”中配置 request 合法域名。
  */
-export const API_BASE_URL = "https://api.wusezhishi.com";
-//export const API_BASE_URL = "http://127.0.0.1:8000";
+// 微信开发者工具本地联调使用本机后端；发布前再切回正式 HTTPS 域名。
+export const API_BASE_URL = "http://127.0.0.1:8000";
+// export const API_BASE_URL = "https://api.wusezhishi.com";
+/**
+ * 品牌字体由同一 HTTPS 域名提供。微信 iOS 对 WXSS 相对路径字体的支持不稳定，
+ * app.ts 会用 wx.loadFontFace 显式注册这两个字体；本地 WOFF2 仍保留作开发与离线回退。
+ */
+export const FONT_ASSET_BASE_URL = `${API_BASE_URL}/font-assets`;
 /** 单次接口最长等待15秒，避免网络断开后页面长期停留在加载状态。 */
 export const API_TIMEOUT_MS = 15_000;
 
 /** JWT 在微信本地缓存中的键名。修改它会使已有用户需要重新登录。 */
 export const AUTH_TOKEN_STORAGE_KEY = "token";
-
-

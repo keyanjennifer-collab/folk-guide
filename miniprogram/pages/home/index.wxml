@@ -20,6 +20,7 @@
         <view class="today-date">{{solarDateLabel}}</view>
         <view class="today-title">今日五色</view>
         <view class="today-lunar">{{lunarDateLabel}}</view>
+        <view class="today-tagline">穿衣、配饰与一缕香，都可以从今天的色序开始。</view>
       </view>
       <scroll-view class="date-strip" scroll-x="true" enable-flex="true">
         <button wx:for="{{dayOptions}}" wx:key="date" class="date-option {{item.active ? 'active' : ''}}" bindtap="selectDate" data-date="{{item.date}}">
@@ -50,23 +51,37 @@
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS · {{personalDate}}</view>
         <view class="personal-lock-title-row"><view class="personal-lock-title">我的五色</view><text class="personal-lock-status">已生成</text></view>
         <text>首选 {{personalPrimaryColor}} · {{personalFocus}}</text>
-        <view wx:if="{{personalOpen}}" class="personal-home-details"><view wx:for="{{personalColors}}" wx:key="rank" class="personal-home-row"><text>0{{item.rank}} · {{item.name}}</text><view>{{item.tendency}} · {{item.advice}}</view></view></view>
+        <view wx:if="{{personalOpen}}" class="personal-home-details">
+          <view wx:for="{{personalColors}}" wx:key="rank" class="personal-home-row">
+            <view class="personal-row-head">
+              <text class="personal-row-rank">0{{item.rank}}</text>
+              <view class="personal-row-swatches"><view wx:for="{{item.swatches}}" wx:for-item="swatch" wx:key="*this" class="personal-row-swatch" style="background:{{swatch}}"/></view>
+              <view class="personal-row-main">
+                <view class="personal-row-title">{{item.name}} <text>· {{item.product}}</text></view>
+                <view class="personal-row-meta">{{item.tendency}} · {{item.score}}分 · 公共第{{item.public_rank}}名 · {{item.rankChangeLabel}}</view>
+              </view>
+            </view>
+            <view class="personal-row-palette"><text>穿衣色</text>{{item.palette}}</view>
+            <view class="personal-row-advice"><text>穿衣与搭配</text>{{item.advice}}</view>
+            <view class="personal-row-caution"><text>少用 / 留意</text>{{item.resistance}}</view>
+          </view>
+        </view>
       </view>
       <button bindtap="togglePersonalColors">{{personalOpen ? '收起　−' : '查看　›'}}</button>
     </view>
     <view wx:else class="personal-lock-card">
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
-        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : '已上锁'}}</text></view>
-        <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : '结合本人档案与每日时序生成，购买产品后可开通查看。'}}</text>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : '请登录'}}</text></view>
+        <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : '登录后即可查看结合本命与当日流日生成的个人五色。'}}</text>
       </view>
-      <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案　›</button><button wx:else bindtap="toPersonalColors">选购开通　›</button>
+      <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案　›</button><button wx:else bindtap="toSettings">登录查看　›</button>
     </view>
 
     <view class="detail-section">
       <view class="section-kicker">DAILY GUIDANCE</view>
-      <view class="section-title">五色详解</view>
-      <view class="section-intro">从适宜之事到行动节奏，把颜色建议落进真实的一天。</view>
+      <view class="section-title">五色穿衣指南</view>
+      <view class="section-intro">每个颜色都有对应的穿衣解释，也会清楚标出今天需要少用或留意的搭配。</view>
 
       <view class="rule-basis-card">
         <view class="rule-seal"><text>{{dayBranch}}</text><view>{{dayElement}}</view></view>
@@ -82,14 +97,24 @@
           <view class="guide-identity"><view>{{item.name}}</view><text>{{item.element}} · {{item.tier}}</text></view>
           <view class="guide-actions"><view class="status-chip">{{item.status}}</view><button bindtap="toggleGuide" data-rank="{{item.rank}}" aria-label="{{item.expanded ? '收起详情' : '展开详情'}}">{{item.expanded ? '收起 −' : '展开 ＋'}}</button></view>
         </view>
-        <view class="swatch-row"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" style="background:{{swatch}}"/><text>{{item.palette}}</text></view>
+        <view class="swatch-row">
+          <view class="swatch-colors"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" class="guide-swatch" style="background:{{swatch}}"/></view>
+          <view class="swatch-copy"><text>今日穿衣色</text><text>{{item.palette}}</text></view>
+        </view>
+        <view class="guide-summary">
+          <view class="guide-note guide-note-fit">
+            <view class="guide-note-label">穿衣与搭配</view>
+            <view class="guide-note-copy">{{item.advice}}</view>
+          </view>
+          <view class="guide-note guide-note-caution">
+            <view class="guide-note-label">今日少用 / 留意</view>
+            <view class="guide-note-copy">{{item.resistance}}</view>
+          </view>
+        </view>
         <view wx:if="{{item.expanded}}" class="advice-panel">
           <view class="relation-explanation"><text>色序依据</text><view>{{item.relationReason}}</view></view>
           <view class="micro-title">今日适宜</view>
           <view class="suitable-list"><text wx:for="{{item.suitable}}" wx:key="*this">{{item}}</text></view>
-          <view class="micro-title">行动建议</view>
-          <view class="body-copy">{{item.advice}}</view>
-          <view class="notice"><text>留意</text><view>{{item.resistance}}</view></view>
         </view>
         <view wx:if="{{item.expanded}}" class="product-row">
           <view><text>对应香品</text><view>{{item.product.name}} · {{item.product.mood}}</view></view>
@@ -107,9 +132,4 @@
 
   <view class="page-foot {{themeClass}}">五色知时 · 让传统文化自然进入日常</view>
 </view>
-
-
-
-
-
 

@@ -32,6 +32,10 @@ export interface PersonalDailyColor {
   rank: number;
   name: string;
   element: string;
+  product: string;
+  score: number;
+  public_rank: number;
+  rank_change: number;
   tendency: string;
   suitable: string[];
   resistance: string;
@@ -49,6 +53,12 @@ export interface PersonalDailyGuidance {
   rule_status: string;
   precision_mode: "three_pillars" | "four_pillars";
   profile_version: number;
+  algorithm_version: string;
+  bazi: Record<string, string | null>;
+  public_ranking: Array<{ rank: number; color: string; element: string; product: string; score: number }>;
+  factors: Record<string, Record<string, number>>;
+  final_scores: Record<string, number>;
+  ranking: Array<{ rank: number; color: string; element: string; product: string; score: number; public_rank: number; rank_change: number; tendency: string }>;
   entitlement_plan: string;
   primary_color: string;
   supporting_colors: string[];
@@ -63,8 +73,9 @@ export interface PersonalDailyGuidance {
 }
 
 /** 后端会再次校验权益；前端判断只用于避免无权益时加载个人档案结果。 */
-export function getPersonalDailyGuidance(): Promise<PersonalDailyGuidance> {
-  return request<PersonalDailyGuidance>({ path: "/api/daily", showError: false });
+export function getPersonalDailyGuidance(targetDate?: string): Promise<PersonalDailyGuidance> {
+  const path = targetDate ? `/api/daily?date=${encodeURIComponent(targetDate)}` : "/api/daily";
+  return request<PersonalDailyGuidance>({ path, showError: false });
 }
 
 /** 按北京时间读取由确定性规则自动生成并缓存的公共每日五色。 */

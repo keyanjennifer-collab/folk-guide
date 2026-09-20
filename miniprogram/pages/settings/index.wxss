@@ -5,9 +5,9 @@
 .identity-card { padding: 34rpx; color: var(--text); background: linear-gradient(145deg, #403e3a, #32312f); border-radius: 22rpx; box-shadow: 0 14rpx 30rpx rgba(11, 14, 12, .24); }
 .identity-top { display: flex; align-items: center; }
 .identity-avatar { width: 98rpx; height: 98rpx; flex: none; border-radius: 50%; }
-.identity-seal { display: flex; width: 98rpx; height: 98rpx; flex: none; align-items: center; justify-content: center; color: #dfb77d; border: 1rpx solid #bc8b53; border-radius: 50%; font-family: "Songti SC", serif; font-size:47rpx; }
+.identity-seal { display: flex; width: 98rpx; height: 98rpx; flex: none; align-items: center; justify-content: center; color: #dfb77d; border: 1rpx solid #bc8b53; border-radius: 50%; font-family: var(--font-display); font-size:47rpx; }
 .identity-copy { min-width: 0; padding-left: 24rpx; }
-.identity-title { color: var(--cream); font-family: "Songti SC", serif; font-size:37rpx; letter-spacing: 3rpx; }
+.identity-title { color: var(--cream); font-family: var(--font-display); font-size:37rpx; letter-spacing: 3rpx; }
 .identity-subtitle { margin-top: 8rpx; color: var(--muted); font-size:27rpx; }
 .profile-edit-hint { margin-top: 8rpx; color: #c79d68; font-size: 22rpx; }
 .login-button { width: 100%; margin-top: 30rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 5rpx; font-size:31rpx; line-height: 80rpx; letter-spacing: 4rpx; }
@@ -21,7 +21,7 @@
 .save-profile-button { padding: 0 14rpx; color: #fff5e8; background: var(--copper-deep); border-radius: 22rpx; font-size: 22rpx; line-height: 58rpx; }
 .orders-panel, .service-panel { margin-top: 20rpx; padding: 28rpx; background: #343331; border-radius: 20rpx; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
-.panel-title { color: var(--cream); font-family: "Songti SC", serif; font-size:34rpx; letter-spacing: 3rpx; }
+.panel-title { color: var(--cream); font-family: var(--font-display); font-size:34rpx; letter-spacing: 3rpx; }
 .panel-heading .text-button { font-size:25rpx; }
 .order-entries { display: flex; justify-content: space-between; padding: 6rpx 0; }
 .order-entry { width: 25%; padding: 0 4rpx; color: #d0c8bd; background: transparent; border-radius: 0; font-size:27rpx; line-height: 1.6; }
@@ -34,8 +34,8 @@
 .order-symbol.service::before { top: 13rpx; left: 12rpx; width: 16rpx; height: 10rpx; border: 1rpx solid #c0955b; border-radius: 50%; }
 .order-count { position: absolute; top: -14rpx; right: -20rpx; min-width: 28rpx; color: #ddb071; background: var(--canvas); font-size:22rpx; line-height: 28rpx; text-align: center; }
 .profile-link { display: flex; align-items: center; width: 100%; margin-top: 18rpx; padding: 28rpx; color: #dec298; background: #373634; border-radius: 20rpx; line-height: 1.6; text-align: left; }
-.profile-seal { width: 68rpx; height: 68rpx; flex: none; margin-right: 22rpx; color: #d4aa70; border: 1rpx solid #b99660; border-radius: 50%; font-family: serif; font-size:33rpx; line-height: 68rpx; text-align: center; }
-.profile-title { color: var(--cream); font-family: "Songti SC", serif; font-size:32rpx; letter-spacing: 3rpx; }
+.profile-seal { width: 68rpx; height: 68rpx; flex: none; margin-right: 22rpx; color: #d4aa70; border: 1rpx solid #b99660; border-radius: 50%; font-family: var(--font-display); font-size:33rpx; line-height: 68rpx; text-align: center; }
+.profile-title { color: var(--cream); font-family: var(--font-display); font-size:32rpx; letter-spacing: 3rpx; }
 .profile-link .muted { margin-top: 4rpx; font-size:26rpx; }
 .arrow { margin-left: auto; padding-left: 16rpx; color: #d6ab71; font-size:33rpx; }
 .service-label { color: #aaa99f; font-size:23rpx; letter-spacing: 2rpx; }
@@ -52,15 +52,15 @@
 .info-dialog { position: relative; display: flex; width: 100%; max-height: 100%; flex-direction: column; padding: 30rpx 34rpx 24rpx; overflow: hidden; color: var(--text); background-color: #343331; background-image: linear-gradient(145deg,rgba(68,63,57,.96),rgba(42,41,39,.99)),var(--stone-texture); background-size: auto,720rpx; border-radius: 30rpx 30rpx 0 0; box-shadow: 0 -22rpx 60rpx rgba(0,0,0,.4); }
 .info-halo { position: absolute; top: -180rpx; right: -150rpx; width: 430rpx; height: 430rpx; background: radial-gradient(circle,rgba(194,141,78,.18),transparent 67%); pointer-events: none; }
 .info-heading { position: relative; display: flex; align-items: center; }
-.info-seal { display: flex; width: 76rpx; height: 76rpx; flex: none; align-items: center; justify-content: center; color: #e2bc86; border: 1rpx solid rgba(205,157,95,.75); border-radius: 50%; font-family: "Songti SC",serif; font-size:35rpx; }
+.info-seal { display: flex; width: 76rpx; height: 76rpx; flex: none; align-items: center; justify-content: center; color: #e2bc86; border: 1rpx solid rgba(205,157,95,.75); border-radius: 50%; font-family: var(--font-display); font-size:35rpx; }
 .info-heading-copy { min-width: 0; margin-left: 20rpx; }
 .info-eyebrow { color: #c99557; font-size:19rpx; letter-spacing: 4rpx; }
-.info-title { margin-top: 3rpx; color: #f2e5d3; font-family: "Songti SC",serif; font-size:39rpx; letter-spacing: 4rpx; }
+.info-title { margin-top: 3rpx; color: #f2e5d3; font-family: var(--font-display); font-size:39rpx; letter-spacing: 4rpx; }
 .info-close { width: 66rpx; height: 66rpx; margin-left: auto; padding: 0; color: #d8c6ad; background: rgba(31,30,29,.5); border-radius: 50%; font-size:35rpx; line-height: 62rpx; }
-.info-intro { position: relative; margin-top: 24rpx; padding: 20rpx 22rpx; color: #e5d6c2; background: rgba(177,124,67,.16); border-radius: 16rpx; font-family: "Songti SC",serif; font-size:26rpx; line-height: 1.7; }
+.info-intro { position: relative; margin-top: 24rpx; padding: 20rpx 22rpx; color: #e5d6c2; background: rgba(177,124,67,.16); border-radius: 16rpx; font-family: var(--font-display); font-size:26rpx; line-height: 1.7; }
 .info-scroll { height: 380rpx; flex: none; margin-top: 8rpx; }
 .info-section { padding: 24rpx 4rpx 20rpx; }
-.info-section-title { color: #dfb77f; font-family: "Songti SC",serif; font-size:28rpx; letter-spacing: 2rpx; }
+.info-section-title { color: #dfb77f; font-family: var(--font-display); font-size:28rpx; letter-spacing: 2rpx; }
 .info-section-body { margin-top: 8rpx; color: #ccc3b7; font-size:24rpx; line-height: 1.85; }
 .info-confirm { width: 100%; margin-top: 14rpx; color: #fff8ed; background: #a97743; border-radius: 8rpx; font-size:27rpx; line-height: 78rpx; letter-spacing: 3rpx; }
 

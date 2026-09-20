@@ -23,7 +23,23 @@ from .daily_color_schemas import (
     ImmutableModel,
     RuleStatus,
 )
-from .public_guide_schemas import COLOR_ELEMENT_MAP
+
+
+PERSONAL_COLOR_ELEMENT_MAP = {
+    "白色系": "金",
+    "绿色系": "木",
+    "黑色系": "水",
+    "红色系": "火",
+    "黄色系": "土",
+}
+
+PERSONAL_PRODUCT_MAP = {
+    "金": "白桂",
+    "木": "青木",
+    "水": "墨沉",
+    "火": "朱蜜",
+    "土": "黄檀",
+}
 
 
 StrengthRegime = Literal["weak", "balanced", "strong"]
@@ -176,8 +192,11 @@ class PersonalRuleConfiguration(ImmutableModel):
     balance_target_percent: float = Field(ge=0, le=100)
     deficiency_weight: float = Field(ge=0, le=10)
     deficiency_adjustment_limit: float = Field(ge=0, le=100)
-    birth_structure_weight: int = Field(ge=0, le=100)
-    public_environment_weight: int = Field(ge=0, le=100)
+    natal_response_weight: int = Field(ge=0, le=100)
+    daily_stem_weight: int = Field(ge=0, le=100)
+    daily_branch_interaction_weight: int = Field(ge=0, le=100)
+    daily_element_dynamic_weight: int = Field(ge=0, le=100)
+    public_score_weight: int = Field(ge=0, le=100)
     tie_break_color_order: list[str] = Field(min_length=5, max_length=5)
     tendency_thresholds: TendencyThresholds
     research_references: list[str] = Field(min_length=1, max_length=20)
@@ -197,14 +216,19 @@ class PersonalRuleConfiguration(ImmutableModel):
                 raise ValueError(f"{branch}的藏干不能重复")
         if set(self.month_dominant_elements) != branches:
             raise ValueError("月支主气配置必须完整包含十二地支")
-        if self.birth_structure_weight + self.public_environment_weight != 100:
-            raise ValueError("出生结构与公共环境融合权重合计必须等于100")
-        if set(self.tie_break_color_order) != set(COLOR_ELEMENT_MAP):
-            raise ValueError("个人同分顺序必须完整且不重复地包含五种颜色")
+        if sum((
+            self.natal_response_weight,
+            self.daily_stem_weight,
+            self.daily_branch_interaction_weight,
+            self.daily_element_dynamic_weight,
+            self.public_score_weight,
+        )) != 100:
+            raise ValueError("个人五项因子权重合计必须为100")
+        if set(self.tie_break_color_order) != set(PERSONAL_COLOR_ELEMENT_MAP):
+            raise ValueError("个人同分顺序必须完整且不重复地包含五种色系")
         return self
 
     def fingerprint(self) -> str:
         """个人配置内容指纹，不含公共配置本身的指纹。"""
         payload = json.dumps(self.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-

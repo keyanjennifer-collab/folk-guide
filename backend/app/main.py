@@ -7,7 +7,7 @@ from contextlib import suppress
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
@@ -108,7 +108,7 @@ OPENAPI_TAGS = [
     },
     {
         "name": "个人五色·用户端",
-        "description": "按本人档案与当天时序生成个人五色，需有效AI国学体验或服务权益；提前缓存未来3天。",
+        "description": "按本人档案、当天流日和已发布公共五色生成个人五色；当前阶段默认开放，提前缓存未来3天。",
     },
     {
         "name": "每日缓存·运维",
@@ -134,6 +134,11 @@ app.mount(
     "/product-assets",
     StaticFiles(directory=Path(__file__).with_name("static") / "products"),
     name="product-assets",
+)
+app.mount(
+    "/font-assets",
+    StaticFiles(directory=Path(__file__).with_name("static") / "fonts"),
+    name="font-assets",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -304,12 +309,11 @@ def save_profile(data: BirthProfileInput, user: User = Depends(current_user), db
     # 档案首次创建或版本更新后，删除该用户所有日期的旧个人建议。未来改成三天预缓存
     # 时仍使用同一失效入口，避免旧生辰对应的结果继续被读取。
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
-    # 只有AI国学体验或正式服务有效时才使用档案生成个人五色。个人结果不扣问答次数。
+    # 个人五色已按当前产品阶段默认开放，不消耗AI问答次数；权益仍保留在响应元数据中。
     quota = quota_for_user(db, user)
-    if quota.active and quota.plan:
-        warm_personal_color_cache(
-            db, profile, quota.plan, beijing_today(), commit=False
-        )
+    warm_personal_color_cache(
+        db, profile, quota.plan or "default_unlocked", beijing_today(), commit=False
+    )
     db.commit()
     db.refresh(profile)
     return profile_output(profile)
@@ -337,18 +341,19 @@ def delete_profile(user: User = Depends(current_user), db: Session = Depends(get
     tags=["个人五色·用户端"],
     summary="读取本人今日五色并预热未来3天",
 )
-def get_daily(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """权益有效时读取个人五色；未授权时不会加载档案进入个人规则计算。"""
-    # 权益校验必须排在档案查询之前。体验到期后即使数据库还有旧缓存也不能返回。
+def get_daily(
+    target_date: date | None = Query(default=None, alias="date"),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """读取已开放的个人五色；个人五色不扣AI问答次数，可按日期读取预热结果。"""
     quota = quota_for_user(db, user)
-    if not quota.active or not quota.plan:
-        raise HTTPException(status_code=403, detail="个人五色需要有效的AI国学体验或服务权益")
     profile = db.scalar(select(BirthProfile).where(BirthProfile.user_id == user.id))
     if profile is None:
         raise HTTPException(status_code=409, detail="请先创建生辰档案")
-    today = beijing_today()
-    payloads = warm_personal_color_cache(db, profile, quota.plan, today)
-    return payloads[today]
+    guide_date = target_date or beijing_today()
+    payloads = warm_personal_color_cache(db, profile, quota.plan or "default_unlocked", guide_date)
+    return payloads[guide_date]
 
 
 @app.post(

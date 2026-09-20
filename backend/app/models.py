@@ -93,6 +93,12 @@ class DailyGuidance(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     guidance_date: Mapped[date] = mapped_column(Date)
     payload_json: Mapped[str] = mapped_column(Text)
+    algorithm_version: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    final_scores_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ranking_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    factors_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    public_ranking_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    calculation_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

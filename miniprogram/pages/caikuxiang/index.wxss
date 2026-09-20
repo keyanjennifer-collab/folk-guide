@@ -6,7 +6,7 @@
 .shop-hero { position: relative; display: block; width: 100%; height: 450rpx; padding: 0; overflow: hidden; color: #f0dfc2; background: #303030; border-radius: 24rpx; box-shadow: 0 16rpx 34rpx rgba(11, 13, 11, .3); text-align: left; }
 .shop-hero image { width: 100%; height: 100%; }
 .hero-copy { position: absolute; right: 0; bottom: 0; left: 0; padding: 82rpx 30rpx 28rpx; background: linear-gradient(transparent, rgba(10, 12, 10, .9)); text-shadow: 0 2rpx 8rpx #000; }
-.hero-title { font-family: "Songti SC", serif; font-size:41rpx; letter-spacing: 3rpx; }
+.hero-title { font-family: var(--font-display); font-size:41rpx; letter-spacing: 3rpx; }
 .hero-copy>view:nth-child(2) { margin-top: 4rpx; color: #ddd2c5; font-size:27rpx; }
 .hero-copy>text { display: block; margin-top: 12rpx; color: #e7bd82; font-size:28rpx; }
 .catalog-header { display: flex; align-items: center; justify-content: space-between; margin: 26rpx 0 18rpx; color: var(--muted); font-size:26rpx; }
@@ -20,24 +20,24 @@
 .product-image { background: #1d1d1d; }
 .product-tag { position: absolute; top: 12rpx; left: 12rpx; padding: 6rpx 11rpx; color: #f0d4aa; background: rgba(23, 28, 24, .82); border: 1rpx solid rgba(216, 170, 108, .35); font-size:25rpx; letter-spacing: 1rpx; }
 .product-info { padding: 12rpx 3rpx 0; }
-.product-name { color: var(--cream); font-family: "Songti SC", serif; font-size:37rpx; line-height: 1.5; }
+.product-name { color: var(--cream); font-family: var(--font-display); font-size:37rpx; line-height: 1.5; }
 .product-mood { margin-top: 3rpx; color: var(--muted); font-size:26rpx; }
-.product-price { display: flex; align-items: center; margin-top: 10rpx; color: var(--copper); font-family: "Avenir Next", "DIN Alternate", "Helvetica Neue", sans-serif; font-size:36rpx; }
-.product-price>text { margin-left: 9rpx; color: #b8b7ad; font-family: sans-serif; font-size:24rpx; }
+.product-price { display: flex; align-items: center; margin-top: 10rpx; color: var(--copper); font-family: var(--font-numeric); font-size:36rpx; }
+.product-price>text { margin-left: 9rpx; color: #b8b7ad; font-family: var(--font-body); font-size:24rpx; }
 .shop-note { margin-top: 24rpx; padding: 22rpx; color: #bbb9af; background: #343331; border-radius: 18rpx; font-size:26rpx; text-align: center; }
 .shop-story { display: flex; flex-direction: column; align-items: center; padding: 38rpx 0 42rpx; text-align: left; }
 .shop-story .eyebrow { width: 470rpx; }
-.shop-story>view:last-child { width: 470rpx; margin-top: 14rpx; color: #ddc096; font-family: "Songti SC", serif; font-size:37rpx; letter-spacing: 4rpx; }
+.shop-story>view:last-child { width: 470rpx; margin-top: 14rpx; color: #ddc096; font-family: var(--font-display); font-size:37rpx; letter-spacing: 4rpx; }
 .shop-story text { display: block; }
 .bag-bar { position: fixed; z-index: 10; right: 0; bottom: calc(110rpx + env(safe-area-inset-bottom)); left: 0; display: flex; align-items: center; height: 126rpx; padding: 0 30rpx; background: rgba(38,38,38,.98); box-shadow: 0 -12rpx 32rpx rgba(0,0,0,.18); }
 .bag-open { padding: 0; color: var(--cream); background: transparent; font-size:31rpx; line-height: 1.6; }
 .bag-open text { margin-left: 8rpx; padding: 3rpx 12rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 30rpx; font-size:26rpx; }
-.bag-total { flex: 1; margin-right: 18rpx; color: #d0c8bc; font-family: "Avenir Next", "DIN Alternate", "Helvetica Neue", sans-serif; font-size:28rpx; text-align: right; }
+.bag-total { flex: 1; margin-right: 18rpx; color: #d0c8bc; font-family: var(--font-numeric); font-size:28rpx; text-align: right; }
 .bag-view { padding: 0 23rpx; color: #fffaf2; background: var(--copper-deep); border-radius: 5rpx; font-size:28rpx; line-height: 72rpx; }
 .cart-row { display: flex; align-items: center; padding: 22rpx 0; border-bottom: 1rpx solid var(--line); }
 .cart-row image { width: 82rpx; height: 106rpx; flex: none; border-radius: 3rpx; }
 .cart-copy { min-width: 0; flex: 1; padding: 0 16rpx; }
-.cart-copy>view { font-family: serif; font-size:28rpx; }
+.cart-copy>view { font-family: var(--font-display); font-size:28rpx; }
 .cart-copy>text { color: var(--muted); font-size:24rpx; }
 .quantity { display: flex; align-items: center; gap: 14rpx; }
 .quantity button { width: 44rpx; height: 52rpx; padding: 0; color: #e4bc82; background: #403e3a; border-radius: 20rpx; font-size:26rpx; line-height: 52rpx; }
@@ -46,9 +46,9 @@
 .cart-note { margin-top: 18rpx; color: var(--muted); font-size:23rpx; text-align: center; }
 .sale-overlay { position: fixed; z-index: 70; inset: 0; display: flex; align-items: center; justify-content: center; padding: 40rpx; background: rgba(8,8,8,.74); backdrop-filter: blur(10rpx); }
 .sale-dialog { position: relative; width: 100%; padding: 38rpx 34rpx 32rpx; overflow: hidden; color: #ddd2c4; background: linear-gradient(145deg,#48433d,#302f2d 64%); border-radius: 26rpx; box-shadow: 0 24rpx 70rpx rgba(0,0,0,.44); text-align: center; }
-.sale-seal { display: flex; width: 82rpx; height: 82rpx; margin: 0 auto 18rpx; align-items: center; justify-content: center; color: #e1b67d; border: 1rpx solid #b78851; border-radius: 50%; font-family: "Songti SC",serif; font-size:39rpx; }
+.sale-seal { display: flex; width: 82rpx; height: 82rpx; margin: 0 auto 18rpx; align-items: center; justify-content: center; color: #e1b67d; border: 1rpx solid #b78851; border-radius: 50%; font-family: var(--font-display); font-size:39rpx; }
 .sale-eyebrow { color: #c99557; font-size:21rpx; letter-spacing: 4rpx; }
-.sale-title { margin-top: 7rpx; color: #f2e6d5; font-family: "Songti SC",serif; font-size:41rpx; letter-spacing: 4rpx; }
+.sale-title { margin-top: 7rpx; color: #f2e6d5; font-family: var(--font-display); font-size:41rpx; letter-spacing: 4rpx; }
 .sale-copy { margin-top: 18rpx; color: #d0c6b9; font-size:27rpx; line-height: 1.8; text-align: left; }
 .sale-points { margin-top: 18rpx; padding: 18rpx 22rpx; color: #e2c49b; background: rgba(20,20,19,.24); border-radius: 16rpx; font-size:25rpx; line-height: 1.9; text-align: left; }
 .sale-dialog button { width: 100%; margin-top: 24rpx; color: #fff9ef; background: #a97743; border-radius: 7rpx; font-size:29rpx; line-height: 76rpx; }

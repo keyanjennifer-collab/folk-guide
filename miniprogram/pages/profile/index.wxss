@@ -1,7 +1,7 @@
 .profile-page { min-height: 100vh; padding: 28rpx; color: var(--text); background-color: var(--canvas); background-image: linear-gradient(rgba(38, 38, 38, .88), rgba(25, 25, 25, .95)), var(--stone-texture); background-size: auto, 720rpx; }
 .profile-hero { display: flex; align-items: center; justify-content: space-between; padding: 34rpx; color: #f1e6d6; background: linear-gradient(145deg, #47423c, #32302d); border-radius: 22rpx; box-shadow: 0 12rpx 24rpx rgba(10, 13, 11, .2); }
 .hero-kicker { color: #d5a66a; font-size:24rpx; letter-spacing: 3rpx; }
-.hero-title { color: var(--cream); font-family: "Songti SC", serif; font-size:51rpx; font-weight: 400; }
+.hero-title { color: var(--cream); font-family: var(--font-display); font-size:51rpx; font-weight: 400; }
 .hero-copy { max-width: 500rpx; color: #cbc3b5; font-size:27rpx; }
 .completion { display: flex; width: 120rpx; height: 120rpx; flex-wrap: wrap; align-items: baseline; justify-content: center; padding-top: 14rpx; background: rgba(208, 166, 106, .1); border: 1rpx solid #8f7046; border-radius: 50%; }
 .completion .emphasis { font-size:45rpx; } .completion>text { font-size:25rpx; } .completion .caption { width: 100%; margin-top: -18rpx; color: #c9c1b3; font-size:24rpx; text-align: center; }
@@ -32,23 +32,23 @@
 .safe-note { padding: 16rpx 20rpx 40rpx; color: #b7b6ad; font-size:25rpx; text-align: center; }
 .calendar-head { display: flex; align-items: center; justify-content: space-between; }
 .hero-kicker.dark { color: var(--copper); }
-.calendar-title { color: var(--cream); font-family: "Songti SC", serif; font-size:35rpx; }
+.calendar-title { color: var(--cream); font-family: var(--font-display); font-size:35rpx; }
 .version-tag { padding: 6rpx 12rpx; color: #d5b47e; background: #414941; border-radius: 20rpx; font-size:20rpx; }
 .date-results, .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13rpx; margin: 22rpx 0; }
 .date-results view, .meta-grid view { padding: 18rpx; background: #3e3c39; border-radius: 14rpx; }
 .date-results text, .date-results .emphasis, .meta-grid text, .meta-grid .emphasis, .meta-grid .caption { display: block; }
 .date-results text, .meta-grid text, .meta-grid .caption { color: var(--muted); font-size:25rpx; }
 .date-results .emphasis { margin-top: 4rpx; color:var(--cream); font-size:26rpx; } .meta-grid .emphasis { color: var(--cream); font-size:26rpx; }
-.pillars-title { margin: 25rpx 0 12rpx; color: var(--cream); font-family: "Songti SC", serif; font-size:28rpx; }
+.pillars-title { margin: 25rpx 0 12rpx; color: var(--cream); font-family: var(--font-display); font-size:28rpx; }
 .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10rpx; }
 .pillars view { padding: 17rpx 8rpx; color: var(--cream); background: #5c5145; border-radius: 14rpx; text-align: center; }
-.pillars text, .pillars .emphasis { display: block; } .pillars text { color: #d6b079; font-size:24rpx; } .pillars .emphasis { color:var(--cream);font-family: serif; font-size:33rpx; }
+.pillars text, .pillars .emphasis { display: block; } .pillars text { color: #d6b079; font-size:24rpx; } .pillars .emphasis { color:var(--cream);font-family: var(--font-display); font-size:33rpx; }
 .pillars .muted-pillar { color: #a19f96; background: #3b3a38; }
 .calendar-note { margin-top: 18rpx; color: var(--muted); font-size:24rpx; }
 .load-error-card { display: flex; align-items: center; gap: 18rpx; }
-.load-error-mark { display: flex; width: 62rpx; height: 62rpx; flex: none; align-items: center; justify-content: center; color: #e0a397; border: 1rpx solid #a27a70; border-radius: 50%; font-family: serif; font-size:33rpx; }
+.load-error-mark { display: flex; width: 62rpx; height: 62rpx; flex: none; align-items: center; justify-content: center; color: #e0a397; border: 1rpx solid #a27a70; border-radius: 50%; font-family: var(--font-display); font-size:33rpx; }
 .load-error-card>view:nth-child(2) { flex: 1; } .load-error-card .emphasis, .load-error-card text { display: block; }
-.load-error-card .emphasis { color: var(--cream); font-family: "Songti SC", serif; font-size:28rpx; } .load-error-card text { color: var(--muted); font-size:22rpx; }
+.load-error-card .emphasis { color: var(--cream); font-family: var(--font-display); font-size:28rpx; } .load-error-card text { color: var(--muted); font-size:22rpx; }
 .load-error-card button { width: auto; margin: 0; padding: 0 18rpx; color: #fff; background: var(--copper-deep); border-radius: 4rpx; font-size:24rpx; line-height: 60rpx; }
 
 

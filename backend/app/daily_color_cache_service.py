@@ -1,8 +1,8 @@
 """公共未来7天与个人未来3天的五色缓存服务。
 
 本模块只把已经确定的规则结果转换成稳定内容，不调用大模型。公共结果不含个人
-信息；个人结果必须由路由先验证AI国学权益后才能读取或生成。缓存元数据同时包含
-规则版本、配置指纹和档案版本，任何一项变化都会重算。
+信息；当前产品阶段个人结果默认开放，权益计划只作为响应元数据保留。缓存元数据
+同时包含规则版本、配置指纹和档案版本，任何一项变化都会重算。
 """
 
 import hashlib
@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .daily_color_context import build_personal_rule_input, build_public_rule_input
-from .daily_color_personal_engine import calculate_personal_rule, combined_config_fingerprint
+from .daily_color_personal_engine_v1 import calculate_personal_rule_v1, combined_config_fingerprint
 from .daily_color_research_v1 import PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG
 from .daily_color_rule_engine import calculate_public_rule
 from .models import BirthProfile, DailyGuidance, PublicColorCache
@@ -22,7 +22,7 @@ from .public_guide_schemas import PublicGuideInput
 
 PUBLIC_CACHE_DAYS = 7
 PERSONAL_CACHE_DAYS = 3
-PERSONAL_CONTENT_VERSION = "personal-guidance-v1.1"
+PERSONAL_CONTENT_VERSION = "personal-guidance-v1.2"
 PUBLIC_CACHE_FORMAT_VERSION = "public-guide-v3"
 DISCLAIMER = "内容用于传统文化了解和生活搭配参考，不构成医疗、法律、投资或其他专业意见。"
 PUBLIC_COLOR_LABELS = {"白金": "白色系", "绿金": "绿色系", "黑金": "黑色系", "红金": "红色系", "黄金": "黄色系"}
@@ -161,10 +161,17 @@ def warm_public_color_cache(db: Session, start_date: date, days: int = PUBLIC_CA
     return payloads
 
 
-def _personal_payload(profile: BirthProfile, target_date: date, entitlement_plan: str) -> dict:
+def _personal_payload(db: Session, profile: BirthProfile, target_date: date, entitlement_plan: str) -> dict:
     """按当前档案计算一天个人五色，并加入缓存校验元数据。"""
+    # 个人层只读取公共缓存快照；这里不调用公共规则引擎。
+    public_payload = ensure_public_color_cache(db, target_date)
     rule_input = build_personal_rule_input(profile, target_date, PERSONAL_RESEARCH_CONFIG.version)
-    calculation = calculate_personal_rule(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG)
+    calculation = calculate_personal_rule_v1(
+        rule_input,
+        PERSONAL_RESEARCH_CONFIG,
+        PUBLIC_RESEARCH_CONFIG,
+        public_ranking=public_payload["items"],
+    )
     traces_by_color = {trace.color: trace for trace in calculation.color_traces}
     colors = []
     for item in calculation.result.ranking.items:
@@ -174,29 +181,35 @@ def _personal_payload(profile: BirthProfile, target_date: date, entitlement_plan
             "rank": item.rank,
             "name": item.color,
             "element": item.element,
-            "tendency": TENDENCY_TO_LABEL[item.tendency],
+            "product": item.product,
+            "score": item.score,
+            "public_rank": item.public_rank,
+            "rank_change": item.rank_change,
+            "tendency": item.tendency,
             "suitable": content["suitable"],
             "resistance": content["resistance"],
             "advice": content["advice"],
             "incense": content["incense"],
             "scent": content["scent"],
             "reason": (
-                f"结合本人出生结构与{target_date.month}月{target_date.day}日的公共时序，"
-                f"{item.color}排在个人第{item.rank}位；{PERSONAL_ROLE_EXPLANATION[trace.role]}。"
+                f"本命响应、今日流日与公共环境综合后，{item.color}排在个人第{item.rank}位；"
+                f"{PERSONAL_ROLE_EXPLANATION[trace.role]}，相对公共排名"
+                f"{'上升' if item.rank_change > 0 else '下降' if item.rank_change < 0 else '不变'}"
+                f"{abs(item.rank_change)}位。"
             ),
         })
     top = colors[0]
     supporting = [colors[1]["name"], colors[2]["name"]]
-    public_top = calculation.public_calculation.result.ranking.items[0].color
+    public_top = calculation.result.public_ranking[0]["color"]
     if public_top == top["name"]:
         comparison_note = (
-            f"你的个人首位与今日公共首位同为{public_top}。个人排序仍按出生结构70%与"
-            "今日公共环境30%综合计算，因此后续颜色的次序仍可能不同。"
+            f"你的个人首位与今日公共首位同为{public_top}。个人排序还综合了本命、流日天干、"
+            "今日日支互动与当日五行动态，因此其他名次仍可能不同。"
         )
     else:
         comparison_note = (
             f"今日公共首位为{public_top}；结合本人出生结构后，个人首位调整为{top['name']}。"
-            "个人排序按出生结构70%与今日公共环境30%综合计算，所以不应直接照搬公共排名。"
+            "个人排序同时考虑流日干支与公共环境，不应直接照搬公共排名。"
         )
     return {
         "date": target_date.isoformat(),
@@ -206,6 +219,12 @@ def _personal_payload(profile: BirthProfile, target_date: date, entitlement_plan
         "rule_status": calculation.result.rule_status,
         "precision_mode": calculation.result.precision_mode,
         "profile_version": calculation.result.profile_version,
+        "algorithm_version": calculation.result.rule_version,
+        "bazi": calculation.result.bazi,
+        "public_ranking": calculation.result.public_ranking,
+        "factors": calculation.result.factors,
+        "final_scores": calculation.result.final_scores,
+        "ranking": [item.__dict__ for item in calculation.result.ranking.items],
         "calendar_version": profile.calculation_version,
         "entitlement_plan": entitlement_plan,
         "primary_color": top["name"],
@@ -230,7 +249,7 @@ def _personal_payload(profile: BirthProfile, target_date: date, entitlement_plan
         ),
         "disclaimer": DISCLAIMER,
         # 以下字段只用于服务端判断缓存有效性，FastAPI响应模型不会返回给小程序。
-        "config_fingerprint": calculation.result.config_fingerprint,
+        "config_fingerprint": combined_config_fingerprint(PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG),
         "input_fingerprint": calculation.result.input_fingerprint,
     }
 
@@ -255,7 +274,7 @@ def ensure_personal_color_cache(
     target_date: date,
     entitlement_plan: str,
 ) -> dict:
-    """取得一个用户某天的个人缓存；调用前必须已经完成权益校验。"""
+    """取得一个用户某天的个人缓存；调用方负责确认登录和出生档案。"""
     cached = db.scalar(select(DailyGuidance).where(
         DailyGuidance.user_id == profile.user_id,
         DailyGuidance.guidance_date == target_date,
@@ -270,15 +289,26 @@ def ensure_personal_color_cache(
             payload["entitlement_plan"] = entitlement_plan
             return payload
 
-    payload = _personal_payload(profile, target_date, entitlement_plan)
+    payload = _personal_payload(db, profile, target_date, entitlement_plan)
     serialized = json.dumps(payload, ensure_ascii=False)
+    persisted = {
+        "algorithm_version": payload.get("algorithm_version"),
+        "final_scores_json": json.dumps(payload.get("final_scores", {}), ensure_ascii=False, sort_keys=True),
+        "ranking_json": json.dumps(payload.get("ranking", []), ensure_ascii=False),
+        "factors_json": json.dumps(payload.get("factors", {}), ensure_ascii=False, sort_keys=True),
+        "public_ranking_snapshot_json": json.dumps(payload.get("public_ranking", []), ensure_ascii=False),
+        "calculation_version": payload.get("calendar_version"),
+    }
     if cached:
         cached.payload_json = serialized
+        for key, value in persisted.items():
+            setattr(cached, key, value)
     else:
         db.add(DailyGuidance(
             user_id=profile.user_id,
             guidance_date=target_date,
             payload_json=serialized,
+            **persisted,
         ))
     return payload
 

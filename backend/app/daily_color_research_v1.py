@@ -29,9 +29,10 @@ from .daily_color_rule_config import (
 
 
 PUBLIC_RESEARCH_VERSION = "wuse-public-day-branch-v2.1"
-PERSONAL_RESEARCH_VERSION = "wuse-personal-research-v1.0"
-# 公共与个人引擎均使用同一确定性同分顺序，避免两份列表日后漂移。
-COLOR_TIE_BREAK_ORDER = ["绿金", "红金", "黄金", "白金", "黑金"]
+PERSONAL_RESEARCH_VERSION = "PERSONAL_FIVE_COLOR_V1"
+# 公共规则的内部同分顺序保持不变；个人层使用产品确认的色系名称。
+PUBLIC_COLOR_TIE_BREAK_ORDER = ["绿金", "红金", "黄金", "白金", "黑金"]
+PERSONAL_COLOR_TIE_BREAK_ORDER = ["绿色系", "红色系", "黄色系", "白色系", "黑色系"]
 
 
 # 二十四节气按其所在月建的主五行归类：寅卯木、辰土、巳午火、未土、申酉金、
@@ -75,7 +76,7 @@ PUBLIC_RESEARCH_CONFIG = PublicRuleConfiguration(
     solar_term_elements=SOLAR_TERM_ELEMENT_V1,
     # 精确同分仅用于保证缓存和测试的确定性。顺序采用木→火→土→金→水的相生循环，
     # 不表示在任何日期木色天然优先。
-    tie_break_color_order=COLOR_TIE_BREAK_ORDER,
+    tie_break_color_order=PUBLIC_COLOR_TIE_BREAK_ORDER,
     tendency_thresholds=TendencyThresholds(
         strong_support_min=50,
         support_min=40,
@@ -122,10 +123,9 @@ PERSONAL_RESEARCH_CONFIG = PersonalRuleConfiguration(
     status="source_reviewed",
     public_rule_version=PUBLIC_RESEARCH_VERSION,
     algorithm_summary=(
-        "个人层以出生日干为日主，月支为最高单项权重；天干按本气计，地支按版本化"
-        "藏干比例展开，再用月令旺相休囚死倍率形成五行结构。以生我加同我的占比划分"
-        "偏弱、平衡、偏强，分别使用生扶、补缺、泄耗克策略。个人出生结构占70%，"
-        "当天公共环境占30%；未知时辰删除时柱后归一化，不补造数据。"
+        "个人层基于本命四柱、今日流日干支和已缓存的公共五色结果，按本命响应25%、"
+        "今日天干20%、今日日支互动20%、今日五行动态15%、公共环境20%计算；"
+        "未知时辰删除时柱后归一化，不补造数据。"
     ),
     pillar_weights=PersonalPillarWeights(
         year_stem=8,
@@ -158,9 +158,12 @@ PERSONAL_RESEARCH_CONFIG = PersonalRuleConfiguration(
     balance_target_percent=20.0,
     deficiency_weight=0.8,
     deficiency_adjustment_limit=15.0,
-    birth_structure_weight=70,
-    public_environment_weight=30,
-    tie_break_color_order=COLOR_TIE_BREAK_ORDER,
+    natal_response_weight=25,
+    daily_stem_weight=20,
+    daily_branch_interaction_weight=20,
+    daily_element_dynamic_weight=15,
+    public_score_weight=20,
+    tie_break_color_order=PERSONAL_COLOR_TIE_BREAK_ORDER,
     tendency_thresholds=TendencyThresholds(
         strong_support_min=22,
         support_min=10,
@@ -171,7 +174,7 @@ PERSONAL_RESEARCH_CONFIG = PersonalRuleConfiguration(
         "《五行大义》卷二：四时旺相休囚死及五行生克次序。",
         "《子平真诠评注》：专求月令；得时为旺、失时为衰，并结合年日时根气。",
         "《滴天髓》相关篇章：扶抑须得其宜、损益以求其中；用于原则约束，不直接提供数值。",
-        "藏干百分比、柱权重、旺衰倍率、42/58阈值和70/30融合均为资料综合后的工程参数。",
+        "藏干百分比、柱权重、旺衰倍率、42/58阈值和五项25/20/20/15/20融合均为资料综合后的工程参数。",
         "《协纪辨方书》主要用于历法与择日义例，本版本不把其宜忌条目直接换算成个人颜色分。",
     ],
 )

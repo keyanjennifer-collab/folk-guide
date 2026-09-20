@@ -106,6 +106,10 @@ class DailyGuidanceColorOutput(BaseModel):
     rank: int = Field(ge=1, le=5)
     name: str
     element: str
+    product: str = Field(min_length=1, max_length=100)
+    score: int = Field(ge=0, le=100)
+    public_rank: int = Field(ge=1, le=5)
+    rank_change: int = Field(ge=-4, le=4)
     tendency: str
     suitable: list[str] = Field(min_length=1)
     resistance: str = Field(min_length=1, max_length=500)
@@ -124,6 +128,12 @@ class DailyGuidanceOutput(BaseModel):
     rule_status: str
     precision_mode: str = Field(pattern="^(three_pillars|four_pillars)$")
     profile_version: int = Field(ge=1)
+    algorithm_version: str = Field(min_length=1, max_length=64)
+    bazi: dict[str, str | None]
+    public_ranking: list[dict] = Field(min_length=5, max_length=5)
+    factors: dict[str, dict[str, float]]
+    final_scores: dict[str, int]
+    ranking: list[dict] = Field(min_length=5, max_length=5)
     entitlement_plan: str
     primary_color: str
     supporting_colors: list[str] = Field(min_length=2, max_length=2)

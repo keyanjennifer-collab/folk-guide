@@ -5,17 +5,17 @@ page { background: var(--canvas); color: var(--text); }
 .product-body { padding: 32rpx 30rpx; color: var(--text); background-color: var(--canvas); background-image: linear-gradient(rgba(38,38,38,.9), rgba(29,29,29,.97)), var(--stone-texture); background-size: auto, 720rpx; }
 .detail-heading { display: flex; align-items: center; justify-content: space-between; }
 .detail-heading .eyebrow { color: var(--copper); }
-.product-title { margin: 7rpx 0; color: var(--cream); font-family: "Songti SC", serif; font-size:47rpx; line-height: 1.5; letter-spacing: 4rpx; }
+.product-title { margin: 7rpx 0; color: var(--cream); font-family: var(--font-display); font-size:47rpx; line-height: 1.5; letter-spacing: 4rpx; }
 .product-mood { color: var(--muted); font-size:27rpx; letter-spacing: 3rpx; }
 .product-emblem { width: 146rpx; height: 146rpx; flex: none; margin-left: 20rpx; filter: drop-shadow(0 8rpx 14rpx rgba(0,0,0,.28)); }
 .price-row { display: flex; align-items: center; gap: 20rpx; padding: 22rpx 0; }
-.price { color: #e3bc84; font-family: "Avenir Next", "DIN Alternate", "Helvetica Neue", sans-serif; font-size:47rpx; }
+.price { color: #e3bc84; font-family: var(--font-numeric); font-size:47rpx; }
 .price-row>text:last-child { color: var(--muted); font-size:26rpx; }
 .quantity-row { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 0; font-size:30rpx; }
 .quantity-row>view { display: flex; align-items: center; gap: 30rpx; }
 .quantity-row button { width: 56rpx; height: 56rpx; padding: 0; color: #e0bd88; background: #44413d; border-radius: 50%; line-height: 56rpx; }
 .detail-section { margin-top: 15rpx; padding: 26rpx; background: #363533; border-radius: 20rpx; }
-.detail-label { margin-bottom: 18rpx; color: var(--cream); font-family: "Songti SC", serif; font-size:35rpx; letter-spacing: 3rpx; }
+.detail-label { margin-bottom: 18rpx; color: var(--cream); font-family: var(--font-display); font-size:35rpx; letter-spacing: 3rpx; }
 .story { color: #d2cabf; font-size:31rpx; line-height: 1.95; }
 .notes { margin-top: 18rpx; color: #d9ae79; font-size:28rpx; }
 .care-row { margin-bottom: 12rpx; color: #c7c0b5; font-size:29rpx; line-height: 1.85; }

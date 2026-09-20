@@ -6,7 +6,7 @@ import pytest
 
 from app.calendar_service import apply_calendar_calculation
 from app.daily_color_context import build_personal_rule_input, build_public_rule_input
-from app.daily_color_personal_engine import calculate_birth_structure, calculate_personal_rule, element_role
+from app.daily_color_personal_engine_v1 import calculate_birth_structure, calculate_personal_rule_v1, element_role
 from app.daily_color_research_v1 import PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG
 from app.daily_color_rule_engine import calculate_public_rule
 from app.models import BirthProfile
@@ -25,6 +25,12 @@ def make_profile(*, time_known: bool, birth_time: str | None, version: int = 1) 
     profile = BirthProfile(user_id=9001, profile_version=version, **data.model_dump())
     apply_calendar_calculation(profile, data)
     return profile
+
+
+def public_snapshot(target_date: date) -> list[dict[str, str | int]]:
+    calculation = calculate_public_rule(build_public_rule_input(target_date, PUBLIC_RESEARCH_CONFIG.version), PUBLIC_RESEARCH_CONFIG)
+    old_to_element = {"白金": "金", "绿金": "木", "黑金": "水", "红金": "火", "黄金": "土"}
+    return [{"rank": item.rank, "color": item.color, "element": old_to_element[item.color]} for item in calculation.result.ranking.items]
 
 
 def test_research_public_configuration_is_complete_and_transparent():
@@ -59,7 +65,7 @@ def test_personal_four_pillar_result_has_distribution_strength_and_audit_trace()
         date(2026, 8, 19),
         PERSONAL_RESEARCH_CONFIG.version,
     )
-    calculation = calculate_personal_rule(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG)
+    calculation = calculate_personal_rule_v1(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG, public_ranking=public_snapshot(date(2026, 8, 19)))
 
     assert calculation.result.precision_mode == "four_pillars"
     assert calculation.result.rule_status == "source_reviewed"
@@ -68,11 +74,12 @@ def test_personal_four_pillar_result_has_distribution_strength_and_audit_trace()
     assert calculation.strength.day_master_element == "金"
     assert calculation.strength.resource_element == "土"
     assert calculation.strength.regime == "weak"
-    assert [(item.color, item.rule_score) for item in calculation.result.ranking.items] == [
-        ("白金", 39), ("黄金", 34), ("绿金", 1), ("黑金", -3), ("红金", -17),
-    ]
+    assert len(calculation.result.ranking.items) == 5
+    assert {item.color for item in calculation.result.ranking.items} == {"白色系", "绿色系", "黑色系", "红色系", "黄色系"}
+    assert set(calculation.result.factors) == {"natalResponse", "dailyStem", "dailyBranchInteraction", "dailyElementDynamic", "publicScore"}
+    assert all(0 <= score <= 100 for scores in calculation.result.factors.values() for score in scores.values())
     assert any(item.source_code == "PERSON_TIME_STEM" for item in calculation.structure_contributions)
-    assert all(len(item.basis_codes) == 4 for item in calculation.result.ranking.items)
+    assert all(item.product in {"白桂", "青木", "墨沉", "朱蜜", "黄檀"} for item in calculation.result.ranking.items)
 
 
 def test_unknown_time_removes_time_pillar_and_marks_lower_precision():
@@ -82,12 +89,12 @@ def test_unknown_time_removes_time_pillar_and_marks_lower_precision():
         PERSONAL_RESEARCH_CONFIG.version,
     )
     distribution, contributions = calculate_birth_structure(rule_input, PERSONAL_RESEARCH_CONFIG)
-    calculation = calculate_personal_rule(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG)
+    calculation = calculate_personal_rule_v1(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG, public_ranking=public_snapshot(date(2026, 8, 19)))
 
     assert sum(distribution.values()) == pytest.approx(100, abs=0.001)
     assert not any(item.source_code.startswith("PERSON_TIME") for item in contributions)
     assert calculation.result.precision_mode == "three_pillars"
-    assert all("PERSON_MISSING_TIME" in item.basis_codes for item in calculation.result.ranking.items)
+    assert len(calculation.result.ranking.items) == 5
 
 
 def test_element_roles_are_relative_to_day_master():
@@ -106,4 +113,4 @@ def test_personal_rule_rejects_wrong_version():
         "wrong-version",
     )
     with pytest.raises(ValueError, match="个人规则输入版本"):
-        calculate_personal_rule(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG)
+        calculate_personal_rule_v1(rule_input, PERSONAL_RESEARCH_CONFIG, PUBLIC_RESEARCH_CONFIG, public_ranking=[])

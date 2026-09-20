@@ -42,6 +42,15 @@ SQLITE_ZIWEI_CHART_COLUMNS = {
     "is_leap_month": "BOOLEAN NOT NULL DEFAULT 0",
 }
 
+SQLITE_DAILY_GUIDANCE_COLUMNS = {
+    "algorithm_version": "VARCHAR(64)",
+    "final_scores_json": "TEXT",
+    "ranking_json": "TEXT",
+    "factors_json": "TEXT",
+    "public_ranking_snapshot_json": "TEXT",
+    "calculation_version": "VARCHAR(64)",
+}
+
 
 def migrate_development_schema(engine: Engine) -> None:
     """兼容已经存在的 SQLite 原型数据库。
@@ -86,6 +95,11 @@ def migrate_development_schema(engine: Engine) -> None:
             for name, definition in SQLITE_ZIWEI_CHART_COLUMNS.items():
                 if name not in existing:
                     connection.execute(text(f"ALTER TABLE ziwei_chart_records ADD COLUMN {name} {definition}"))
+        if "daily_guidance" in tables:
+            existing = {column["name"] for column in inspector.get_columns("daily_guidance")}
+            for name, definition in SQLITE_DAILY_GUIDANCE_COLUMNS.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE daily_guidance ADD COLUMN {name} {definition}"))
         if "users" in tables:
             existing = {column["name"] for column in inspector.get_columns("users")}
             for name, definition in SQLITE_USER_COLUMNS.items():

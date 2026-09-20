@@ -2,7 +2,6 @@ import { Product, PRODUCTS, SINGLE_PRODUCTS, SCENT_DETAILS } from "../../data/pr
 import { getPersonalDailyGuidance, getPublicDailyGuide, PersonalDailyColor, PublicDailyGuide } from "../../services/daily";
 import { getTheme, AppTheme } from "../../services/theme";
 import { getToken, isApiError } from "../../services/api";
-import { getAIQuota } from "../../services/ai";
 
 type Guide = {
   rank: number; name: string; element: string; status: string; tier: string;
@@ -13,7 +12,11 @@ type Guide = {
 type ElementName = "木" | "火" | "土" | "金" | "水";
 type BranchMeta = { zodiac: string; element: ElementName };
 type DayOption = { date: string; label: string; weekday: string; active: boolean };
-type PersonalHomeColor = Pick<PersonalDailyColor, "rank" | "name" | "tendency" | "advice">;
+type PersonalHomeColor = Pick<PersonalDailyColor, "rank" | "name" | "element" | "product" | "score" | "public_rank" | "rank_change" | "tendency" | "advice" | "suitable" | "resistance"> & {
+  rankChangeLabel: string;
+  palette: string;
+  swatches: string[];
+};
 
 const COLOR_TO_PRODUCT: Record<string, string> = { 白色系: "white", 绿色系: "green", 黑色系: "black", 红色系: "red", 黄色系: "gold" };
 const ELEMENT_TO_PRODUCT: Record<string, string> = { 金: "white", 木: "green", 水: "black", 火: "red", 土: "gold" };
@@ -140,7 +143,7 @@ Page({
   async selectDate(event: WechatMiniprogram.TouchEvent) {
     const targetDate = String(event.currentTarget.dataset.date || "");
     if (!targetDate || targetDate === this.data.dayOptions.find(item => item.active)?.date) return;
-    await this.loadToday(targetDate);
+    await Promise.all([this.loadToday(targetDate), this.loadPersonalColors(targetDate)]);
   },
   selectGuide(event: WechatMiniprogram.TouchEvent) {
     const guide = this.data.guides.find(item => item.rank === Number(event.currentTarget.dataset.rank));
@@ -156,16 +159,22 @@ Page({
     wx.navigateTo({ url: "/pages/product/index?id=" + event.currentTarget.dataset.id });
   },
   toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
-  async loadPersonalColors() {
+  async loadPersonalColors(targetDate?: string) {
     if (!getToken()) { this.setData({ personalState: "locked", personalOpen: false, personalColors: [] }); return; }
     try {
-      const quota = await getAIQuota();
-      if (!quota.active) { this.setData({ personalState: "locked", personalOpen: false, personalColors: [] }); return; }
-      const result = await getPersonalDailyGuidance();
+      const result = await getPersonalDailyGuidance(targetDate);
       this.setData({
         personalState: "ready", personalDate: result.date, personalPrimaryColor: result.primary_color,
         personalFocus: result.personal_focus, personalColors: result.colors.map(item => ({
-          rank: item.rank, name: item.name, tendency: item.tendency, advice: item.advice,
+          ...(() => {
+            const productId = COLOR_TO_PRODUCT[item.name] || ELEMENT_TO_PRODUCT[item.element];
+            const product = PRODUCTS.find(candidate => candidate.id === productId);
+            return { palette: product ? COLOR_PALETTES[product.id] : "", swatches: product?.swatches || [] };
+          })(),
+          rank: item.rank, name: item.name, element: item.element, product: item.product, score: item.score,
+          public_rank: item.public_rank, rank_change: item.rank_change,
+          rankChangeLabel: item.rank_change > 0 ? `↑${item.rank_change}` : item.rank_change < 0 ? `↓${-item.rank_change}` : "→0",
+          tendency: item.tendency, suitable: item.suitable, resistance: item.resistance, advice: item.advice,
         })),
       });
     } catch (error: unknown) {
@@ -174,8 +183,7 @@ Page({
   },
   togglePersonalColors() { this.setData({ personalOpen: !this.data.personalOpen }); },
   toProfile() { wx.navigateTo({ url: "/pages/profile/index" }); },
+  toSettings() { wx.switchTab({ url: "/pages/settings/index" }); },
   toPersonalColors() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },
   onShareAppMessage() { return { title: this.data.shareTitle, path: "/pages/home/index" }; },
 });
-
-

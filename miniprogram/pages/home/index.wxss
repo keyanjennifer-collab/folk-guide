@@ -56,3 +56,84 @@ button { font-family: inherit; }
 .home-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }
 .home-page.theme-day .card, .home-page.theme-day [class*='panel'], .home-page.theme-day [class*='card'], .home-page.theme-day [class*='sheet'], .home-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
 .home-page.theme-day .muted, .home-page.theme-day .caption, .home-page.theme-day .field-note { color: #68675F; }
+
+/* 首页紧凑排版：保留层级，把首屏和指南卡片的纵向篇幅收回来。 */
+.home-page .loading-card,
+.home-page .reload-card,
+.home-page .overview-card { padding: 30rpx; }
+.home-page .today-date { font-size: 25rpx; }
+.home-page .today-title { margin-top: 9rpx; font-size: 58rpx; line-height: 1.18; letter-spacing: 6rpx; }
+.home-page .today-lunar { margin-top: 9rpx; font-size: 26rpx; line-height: 1.5; }
+.home-page .today-tagline { margin-top: 9rpx; font-size: 24rpx; line-height: 1.55; }
+.home-page .date-strip { margin-top: 20rpx; }
+.home-page .date-option { width: 108rpx; height: 78rpx; padding: 8rpx 6rpx; }
+.home-page .date-option text { font-size: 23rpx; }
+.home-page .date-option .date-weekday { margin-top: 5rpx; font-size: 19rpx; }
+.home-page .rank-pills { gap: 8rpx; margin-top: 20rpx; }
+.home-page .rank-pill { height: 120rpx; padding: 11rpx 4rpx; }
+.home-page .rank-pill>text:first-child { font-size: 20rpx; }
+.home-page .rank-pill view { margin-top: 7rpx; font-size: 24rpx; }
+.home-page .rank-pill .rank-tier { margin-top: 6rpx; font-size: 19rpx; }
+.home-page .featured { min-height: 278rpx; margin-top: 16rpx; }
+.home-page .featured-copy { padding: 24rpx 0 22rpx 24rpx; }
+.home-page .featured-label { font-size: 22rpx; }
+.home-page .featured-name { margin-top: 8rpx; font-size: 44rpx; letter-spacing: 3rpx; }
+.home-page .featured-mood { margin-top: 4rpx; font-size: 24rpx; }
+.home-page .featured-text { margin-top: 13rpx; font-size: 23rpx; line-height: 1.55; }
+.home-page .featured-copy button { margin-top: 15rpx; padding: 0 20rpx; font-size: 24rpx; line-height: 56rpx; }
+.home-page .detail-section { padding-top: 38rpx; }
+.home-page .section-title { margin-top: 8rpx; font-size: 45rpx; letter-spacing: 3rpx; line-height: 1.22; }
+.home-page .section-intro { margin-top: 11rpx; font-size: 26rpx; line-height: 1.6; }
+.home-page .personal-lock-card { gap: 16rpx; margin-top: 20rpx; padding: 26rpx; }
+.home-page .personal-lock-kicker { font-size: 21rpx; }
+.home-page .personal-lock-title-row { gap: 12rpx; margin-top: 7rpx; }
+.home-page .personal-lock-title { font-size: 39rpx; letter-spacing: 3rpx; }
+.home-page .personal-lock-status { padding: 5rpx 11rpx; font-size: 20rpx; }
+.home-page .personal-lock-copy>text { margin-top: 9rpx; font-size: 25rpx; line-height: 1.6; }
+.home-page .personal-lock-card button { padding: 0 18rpx; font-size: 24rpx; line-height: 56rpx; }
+.home-page .personal-ready-card > button { top: 26rpx; right: 26rpx; }
+.home-page .rule-basis-card { gap: 18rpx; margin-top: 20rpx; padding: 20rpx; }
+.home-page .rule-seal { width: 88rpx; height: 98rpx; }
+.home-page .rule-seal text { font-size: 40rpx; }
+.home-page .rule-seal view { margin-top: 6rpx; font-size: 19rpx; }
+.home-page .rule-basis-title { font-size: 27rpx; }
+.home-page .rule-basis-text { margin-top: 7rpx; font-size: 23rpx; line-height: 1.6; }
+.home-page .guide-card { margin-top: 20rpx; padding: 24rpx; }
+.home-page .guide-rank { font-size: 36rpx; }
+.home-page .guide-identity { margin-left: 16rpx; }
+.home-page .guide-identity>view { font-size: 37rpx; letter-spacing: 2rpx; line-height: 1.25; }
+.home-page .guide-identity text { margin-top: 5rpx; font-size: 24rpx; }
+.home-page .guide-actions { gap: 7rpx; }
+.home-page .status-chip { padding: 7rpx 13rpx; font-size: 22rpx; }
+.home-page .guide-actions button { font-size: 24rpx; }
+.home-page .swatch-row { gap: 16rpx; margin-top: 22rpx; padding: 16rpx 18rpx; }
+.home-page .guide-swatch { width: 56rpx; height: 56rpx; border-radius: 14rpx; }
+.home-page .swatch-copy text:first-child { font-size: 23rpx; }
+.home-page .swatch-copy text:last-child { margin-top: 5rpx; font-size: 24rpx; line-height: 1.45; }
+.home-page .guide-summary { margin-top: 17rpx; }
+.home-page .guide-note { padding: 16rpx 18rpx; }
+.home-page .guide-note + .guide-note { margin-top: 11rpx; }
+.home-page .guide-note-label { font-size: 23rpx; }
+.home-page .guide-note-copy { margin-top: 6rpx; font-size: 25rpx; line-height: 1.65; }
+.home-page .advice-panel { margin-top: 18rpx; padding: 22rpx; }
+.home-page .relation-explanation { margin-bottom: 18rpx; padding: 17rpx; }
+.home-page .relation-explanation text { font-size: 22rpx; }
+.home-page .relation-explanation view { margin-top: 7rpx; font-size: 25rpx; line-height: 1.6; }
+.home-page .micro-title { margin-top: 18rpx; font-size: 24rpx; }
+.home-page .suitable-list { gap: 9rpx; margin-top: 10rpx; }
+.home-page .suitable-list text { padding: 9rpx 14rpx; font-size: 24rpx; }
+.home-page .product-row { margin-top: 17rpx; }
+.home-page .product-row>view text { font-size: 22rpx; }
+.home-page .product-row>view view { margin-top: 4rpx; font-size: 25rpx; }
+.home-page .product-row button { padding: 0 17rpx; font-size: 24rpx; line-height: 56rpx; }
+.home-page .source-note { padding: 26rpx 12rpx; font-size: 22rpx; line-height: 1.6; }
+.home-page .gift { height: 350rpx; margin-top: 8rpx; }
+.home-page .gift-copy { padding: 34rpx 0 0 28rpx; }
+.home-page .gift-kicker { font-size: 21rpx; }
+.home-page .gift-title { margin-top: 10rpx; font-size: 36rpx; }
+.home-page .gift-desc { margin-top: 7rpx; font-size: 22rpx; }
+.home-page .gift-price { margin: 14rpx 0; font-size: 40rpx; }
+.home-page .gift-price text { font-size: 20rpx; }
+.home-page .gift-button { padding: 0 21rpx; font-size: 24rpx; line-height: 56rpx; }
+.home-page .gift-image { right: -100rpx; width: 450rpx; height: 335rpx; }
+.home-page .page-foot { padding: 26rpx 20rpx 40rpx; font-size: 22rpx; }

@@ -50,8 +50,8 @@ export function saveZiweiCompatibility(data: { relation_type: ZiweiRelationType;
 export function getZiweiCompatibilities(): Promise<ZiweiCompatibilityRecord[]> { return request<ZiweiCompatibilityRecord[]>({ path: "/api/ziwei/compatibilities" }); }
 export function deleteZiweiCompatibility(compatibilityId: number): Promise<void> { return request<void>({ path: `/api/ziwei/compatibilities/${compatibilityId}`, method: "DELETE" }); }
 export function interpretZiwei(data: { chart_id: number; topic: ZiweiAnalysisTopic; period_type: ZiweiPeriodType; period_key?: string | null; palace_branch?: number | null }): Promise<ZiweiInterpretation> {
-  return request<ZiweiInterpretation>({ path: "/api/ziwei/interpret", method: "POST", data });
+  return request<ZiweiInterpretation>({ path: "/api/ziwei/interpret", method: "POST", data, timeoutMs: 120_000 });
 }
 export function interpretZiweiCompatibility(data: { compatibility_id: number; question?: string }): Promise<ZiweiCompatibilityInterpretation> {
-  return request<ZiweiCompatibilityInterpretation>({ path: "/api/ziwei/compatibility/analyze", method: "POST", data });
+  return request<ZiweiCompatibilityInterpretation>({ path: "/api/ziwei/compatibility/analyze", method: "POST", data, timeoutMs: 120_000 });
 }

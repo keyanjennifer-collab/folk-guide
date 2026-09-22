@@ -30,6 +30,8 @@ export interface ApiRequestOptions {
   showError?: boolean;
   /** JWT 失效时是否自动重新登录并重试一次，默认开启。 */
   retryOnUnauthorized?: boolean;
+  /** 覆盖单次 wx.request 超时时间；模型生成等慢请求可单独放宽。 */
+  timeoutMs?: number;
 }
 
 /** 错误来自哪个阶段，便于页面针对网络、登录或普通接口错误作不同处理。 */
@@ -170,7 +172,7 @@ function sendOnce<T>(options: ApiRequestOptions): Promise<T> {
       method,
       data: options.data,
       header,
-      timeout: API_TIMEOUT_MS,
+      timeout: options.timeoutMs ?? API_TIMEOUT_MS,
       success: (response) => {
         if (response.statusCode >= 200 && response.statusCode < 300) {
           resolve(response.data as T);

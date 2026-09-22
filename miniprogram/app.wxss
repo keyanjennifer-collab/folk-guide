@@ -1,15 +1,13 @@
 @font-face {
   font-family: "Wuse Sans";
-  src: url("https://api.wusezhishi.com/font-assets/wuse-sans.woff2") format("woff2"),
-    url("./assets/fonts/wuse-sans.woff2") format("woff2");
+  src: url("https://api.wusezhishi.com/font-assets/wuse-sans.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
 }
 
 @font-face {
   font-family: "Wuse Serif";
-  src: url("https://api.wusezhishi.com/font-assets/wuse-serif.woff2") format("woff2"),
-    url("./assets/fonts/wuse-serif.woff2") format("woff2");
+  src: url("https://api.wusezhishi.com/font-assets/wuse-serif.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
 }

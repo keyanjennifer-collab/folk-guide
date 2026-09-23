@@ -1,4 +1,4 @@
-"""验证本人订单隔离、状态筛选、分页、金额和注销清理。"""
+"""验证本人订单隔离、状态筛选、分页、金额和客户端不能伪造支付状态。"""
 import json
 from fastapi.testclient import TestClient
 from app.main import app
@@ -35,7 +35,9 @@ def test_orders_are_owner_scoped_and_read_only():
         assert page2["items"][0]["id"] != item["id"] and not page2["has_more"]
         assert client.get("/api/orders?status=unknown", headers=alice).status_code == 422
         assert client.get("/api/orders?offset=-1", headers=alice).status_code == 422
-        assert client.post("/api/orders", headers=alice, json={"status": "paid"}).status_code == 405
+        # 创建订单接口只接受商品、地址和幂等键；客户端不能直接提交 paid 状态。
+        assert client.post("/api/orders", headers=alice, json={"status": "paid"}).status_code == 422
+        assert client.get("/api/orders?status=pending", headers=alice).json()["items"][0]["status"] == "pending"
         assert client.delete("/api/account", headers=alice).status_code == 204
         with SessionLocal() as db:
             assert db.query(Order).filter(Order.user_id == alice_id).count() == 0

@@ -2,6 +2,11 @@ import { Product, PRODUCTS, SINGLE_PRODUCTS, SCENT_DETAILS } from "../../data/pr
 import { getPersonalDailyGuidance, getPublicDailyGuide, PersonalDailyColor, PublicDailyGuide } from "../../services/daily";
 import { getTheme, AppTheme } from "../../services/theme";
 import { getToken, isApiError } from "../../services/api";
+import {
+  drawPublicGuidePoster,
+  PUBLIC_GUIDE_POSTER_HEIGHT,
+  PUBLIC_GUIDE_POSTER_WIDTH,
+} from "../../utils/public-guide-poster";
 
 type Guide = {
   rank: number; name: string; element: string; status: string; tier: string;
@@ -81,6 +86,9 @@ Page({
     personalPrimaryColor: "",
     personalFocus: "",
     personalColors: [] as PersonalHomeColor[],
+    posterGenerating: false,
+    posterVisible: false,
+    posterPath: "",
   },
   onLoad() { const theme = getTheme(); this.setData({ statusBarHeight: wx.getWindowInfo().statusBarHeight, theme, themeClass: `theme-${theme}` }); },
   onShow() { (this as any).getTabBar?.()?.setData({ selected: 0 }); void this.loadToday(); void this.loadPersonalColors(); this.scheduleRefresh(); },
@@ -182,6 +190,96 @@ Page({
     }
   },
   togglePersonalColors() { this.setData({ personalOpen: !this.data.personalOpen }); },
+  getPublicGuidePosterCanvas(): Promise<WechatMiniprogram.Canvas> {
+    return new Promise((resolve, reject) => {
+      // 2D Canvas 必须先通过节点查询取得实例，不能使用旧版 canvas-id 上下文混画。
+      wx.createSelectorQuery().in(this).select("#publicGuidePoster").fields({ node: true, size: true }, (result: WechatMiniprogram.IAnyObject) => {
+        const canvas = result?.node as WechatMiniprogram.Canvas | undefined;
+        if (canvas) resolve(canvas);
+        else reject(new Error("poster-canvas-not-found"));
+      }).exec();
+    });
+  },
+  async generatePublicPoster() {
+    if (this.data.posterGenerating) return;
+    if (this.data.contentSource !== "ready" || this.data.guides.length !== 5) {
+      wx.showToast({ title: "今日五色尚未准备好", icon: "none" });
+      return;
+    }
+    this.setData({ posterGenerating: true });
+    wx.showLoading({ title: "正在生成海报", mask: true });
+    try {
+      const canvas = await this.getPublicGuidePosterCanvas();
+      await drawPublicGuidePoster(canvas, {
+        solarDate: this.data.solarDateLabel,
+        lunarDate: this.data.lunarDateLabel,
+        summary: this.data.summary,
+        // 海报只取公共五色字段，个人档案和个人排名不会进入可分享图片。
+        items: this.data.guides.map(item => ({
+          rank: item.rank,
+          name: item.name,
+          element: item.element,
+          tier: item.tier,
+          status: item.status,
+          palette: item.palette,
+          advice: item.advice,
+          resistance: item.resistance,
+          swatches: item.product.swatches,
+        })),
+      }, "/assets/share/public-five-colors-code.jpg");
+      await new Promise<void>(resolve => canvas.requestAnimationFrame(() => resolve()));
+      const result = await wx.canvasToTempFilePath({
+        canvas,
+        width: PUBLIC_GUIDE_POSTER_WIDTH,
+        height: PUBLIC_GUIDE_POSTER_HEIGHT,
+        destWidth: PUBLIC_GUIDE_POSTER_WIDTH,
+        destHeight: PUBLIC_GUIDE_POSTER_HEIGHT,
+        fileType: "jpg",
+        quality: 0.94,
+      }, this);
+      this.setData({ posterPath: result.tempFilePath, posterVisible: true });
+    } catch (error) {
+      console.error("生成公共五色海报失败", error);
+      wx.showToast({ title: "海报生成失败，请重试", icon: "none" });
+    } finally {
+      wx.hideLoading();
+      this.setData({ posterGenerating: false });
+    }
+  },
+  closePublicPoster() { this.setData({ posterVisible: false }); },
+  preventPosterTouchMove() {},
+  async sharePublicPoster() {
+    if (!this.data.posterPath) return;
+    try {
+      await wx.showShareImageMenu({
+        path: this.data.posterPath,
+        entrancePath: "/pages/home/index",
+        needShowEntrance: true,
+      });
+    } catch (error) {
+      const message = String((error as WechatMiniprogram.GeneralCallbackResult)?.errMsg || "");
+      if (!message.includes("cancel")) wx.showToast({ title: "暂时无法分享，请先保存图片", icon: "none" });
+    }
+  },
+  async savePublicPoster() {
+    if (!this.data.posterPath) return;
+    try {
+      await wx.saveImageToPhotosAlbum({ filePath: this.data.posterPath });
+      wx.showToast({ title: "已保存到相册", icon: "success" });
+    } catch (error) {
+      const message = String((error as WechatMiniprogram.GeneralCallbackResult)?.errMsg || "");
+      if (message.includes("auth deny") || message.includes("authorize:fail")) {
+        wx.showModal({
+          title: "需要相册权限",
+          content: "请在设置中允许保存到相册，再回来保存海报。",
+          confirmText: "去设置",
+          success: result => { if (result.confirm) void wx.openSetting(); },
+        });
+      } else if (!message.includes("cancel")) {
+        wx.showToast({ title: "保存失败，请重试", icon: "none" });
+      }
+    }
+  },
   toProfile() { wx.navigateTo({ url: "/pages/profile/index" }); },
   toSettings() { wx.switchTab({ url: "/pages/settings/index" }); },
   toPersonalColors() { wx.switchTab({ url: "/pages/caikuxiang/index" }); },

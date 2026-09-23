@@ -137,3 +137,19 @@ button { font-family: inherit; }
 .home-page .gift-button { padding: 0 21rpx; font-size: 24rpx; line-height: 56rpx; }
 .home-page .gift-image { right: -100rpx; width: 450rpx; height: 335rpx; }
 .home-page .page-foot { padding: 26rpx 20rpx 40rpx; font-size: 22rpx; }
+
+/* Public poster entry and preview. The canvas stays mounted off-screen so the
+   WeChat 2D node API can render it before the preview is opened. */
+.today-title-row { display: flex; align-items: center; justify-content: space-between; gap: 18rpx; }
+.today-title-row .today-title { min-width: 0; flex: 1; }
+.public-poster-trigger { flex: none; margin: 12rpx 0 0; padding: 0 20rpx; color: #f4dfc2; background: rgba(165,112,61,.48); border: 1rpx solid rgba(229,184,125,.54); border-radius: 30rpx; font-family: var(--font-body); font-size: 24rpx; line-height: 62rpx; }
+.public-poster-trigger[disabled] { color: #a69a8d; background: rgba(78,73,67,.6); }
+.public-poster-canvas { position: fixed; left: -2000rpx; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.poster-modal { position: fixed; z-index: 30; inset: 0; display: flex; align-items: center; justify-content: center; padding: 42rpx 28rpx calc(42rpx + env(safe-area-inset-bottom)); background: rgba(15,15,14,.82); }
+.poster-sheet { width: 100%; max-height: 100%; padding: 24rpx; overflow: hidden; background: #37332e; border: 1rpx solid rgba(224,181,123,.32); border-radius: 28rpx; box-shadow: 0 20rpx 70rpx rgba(0,0,0,.42); }
+.poster-sheet-head { display: flex; align-items: center; justify-content: space-between; color: #f0dfc6; font-family: var(--font-display); font-size: 34rpx; letter-spacing: 2rpx; }
+.poster-close { margin: 0; padding: 0 16rpx; color: #cdbba5; background: rgba(255,255,255,.08); border-radius: 24rpx; font-size: 23rpx; line-height: 54rpx; }
+.poster-preview { display: block; width: 100%; max-height: 72vh; margin-top: 18rpx; border-radius: 12rpx; background: #252422; }
+.poster-actions { display: flex; gap: 18rpx; margin-top: 20rpx; }
+.poster-actions button { min-width: 0; flex: 1; padding: 0 14rpx; color: #f0dfc6; background: rgba(255,255,255,.1); border-radius: 28rpx; font-size: 26rpx; line-height: 64rpx; }
+.poster-actions .poster-share { color: #33271c; background: #d5a56b; }

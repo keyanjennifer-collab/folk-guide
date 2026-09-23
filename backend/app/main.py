@@ -1,6 +1,7 @@
 """FastAPI 应用入口：装配登录、档案、每日建议及后台路由。"""
 
 import asyncio
+import mimetypes
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from contextlib import suppress
@@ -16,6 +17,8 @@ from sqlalchemy.orm import Session
 from .auth import create_token, current_user
 from .ai_routes import router as ai_router
 from .ai_service import quota_for_user
+from .admin_auth_routes import router as admin_auth_router
+from .admin_order_routes import router as admin_order_router
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -25,6 +28,7 @@ from .daily_update_routes import router as daily_update_router
 from .daily_update_service import daily_cache_scheduler_loop
 from .migrations import migrate_development_schema
 from .models import AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, ChatMessage, DailyGuidance, User, ZiweiChartRecord, ZiweiCompatibilityRecord
+from .commerce_models import ShippingAddress
 from .profile_service import profile_output
 from .public_guide_routes import router as public_guide_router
 from .knowledge_routes import router as knowledge_router
@@ -80,6 +84,9 @@ async def lifespan(_: FastAPI):
 settings = get_settings()
 validate_runtime_settings(settings)
 
+# Windows 的系统 MIME 注册表可能把 .woff2 识别成 text/plain；显式注册后各平台一致。
+mimetypes.add_type("font/woff2", ".woff2", strict=True)
+
 # Swagger /docs 按真实业务域分组。
 OPENAPI_TAGS = [
     {
@@ -113,6 +120,18 @@ OPENAPI_TAGS = [
     {
         "name": "每日缓存·运维",
         "description": "北京时间每日00:00批量预热公共7天和有效用户个人3天缓存；状态与补跑接口需要 X-Admin-Key。",
+    },
+    {
+        "name": "商城交易",
+        "description": "商品库存、收货地址、服务端计价、订单、微信支付与退款。",
+    },
+    {
+        "name": "管理员登录",
+        "description": "后台管理员账号登录、HttpOnly会话和退出。",
+    },
+    {
+        "name": "商城运营后台",
+        "description": "库存设置、订单查询与人工发货；网页使用管理员账号会话，内部脚本可使用 X-Admin-Key。",
     },
     {
         "name": "旧版兼容接口",
@@ -159,6 +178,8 @@ app.include_router(knowledge_router)
 app.include_router(ai_router)
 app.include_router(daily_update_router)
 app.include_router(order_router)
+app.include_router(admin_auth_router)
+app.include_router(admin_order_router)
 app.include_router(ziwei_router)
 app.include_router(ziwei_interpret_router)
 
@@ -390,6 +411,7 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(AIServiceGrant).filter(AIServiceGrant.user_id == user.id).delete()
     db.query(ChatMessage).filter(ChatMessage.user_id == user.id).delete()
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
+    db.query(ShippingAddress).filter(ShippingAddress.user_id == user.id).delete()
     db.query(Order).filter(Order.user_id == user.id).delete()
     db.query(ZiweiCompatibilityRecord).filter(ZiweiCompatibilityRecord.user_id == user.id).delete()
     db.query(ZiweiChartRecord).filter(ZiweiChartRecord.user_id == user.id).delete()

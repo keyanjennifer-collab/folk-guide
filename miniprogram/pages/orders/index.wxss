@@ -20,6 +20,9 @@
 .order-detail-row button { overflow-wrap: anywhere; font-size:25rpx; }
 .order-tip { margin-top: 24rpx; font-size:26rpx; }
 .sheet .outline-button { margin-top: 24rpx; }
+.order-address { padding: 18rpx 0; color: var(--muted); font-size:26rpx; line-height:1.7; }
+.detail-actions { display:flex; gap:16rpx; margin-top:20rpx; }
+.detail-actions button { flex:1; margin-top:0 !important; font-size:26rpx; line-height:72rpx; }
 
 
 .orders-page.theme-day { color: #34342F; background-color: #D5D3CA !important; background-image: none !important; }

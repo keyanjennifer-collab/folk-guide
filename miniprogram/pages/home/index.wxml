@@ -18,7 +18,7 @@
     <view class="overview-card">
       <view class="today-heading">
         <view class="today-date">{{solarDateLabel}}</view>
-        <view class="today-title">今日五色</view>
+        <view class="today-title-row"><view class="today-title">今日五色</view><button class="public-poster-trigger" bindtap="generatePublicPoster" loading="{{posterGenerating}}" disabled="{{posterGenerating}}">生成海报</button></view>
         <view class="today-lunar">{{lunarDateLabel}}</view>
         <view class="today-tagline">穿衣、配饰与一缕香，都可以从今天的色序开始。</view>
       </view>
@@ -124,6 +124,17 @@
       <view class="source-note">传统文化与日常生活参考，请结合实际情境判断。</view>
     </view>
   </block>
+
+  <!-- 2D canvas 需要一直在页面树中，生成海报时才能取得节点实例。 -->
+  <canvas type="2d" id="publicGuidePoster" class="public-poster-canvas"></canvas>
+
+  <view wx:if="{{posterVisible}}" class="poster-modal" catchtouchmove="preventPosterTouchMove">
+    <view class="poster-sheet">
+      <view class="poster-sheet-head"><view>今日公共五色</view><button class="poster-close" bindtap="closePublicPoster">关闭</button></view>
+      <image class="poster-preview" src="{{posterPath}}" mode="widthFix"/>
+      <view class="poster-actions"><button bindtap="savePublicPoster">保存图片</button><button class="poster-share" bindtap="sharePublicPoster">分享海报</button></view>
+    </view>
+  </view>
 
   <view class="gift">
     <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>

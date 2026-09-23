@@ -7,13 +7,13 @@
   <view class="catalog-header"><view class="filters"><button wx:for="{{filters}}" wx:key="id" data-id="{{item.id}}" bindtap="filterProducts" class="{{category === item.id ? 'active' : ''}}">{{item.name}}</button></view><text>{{visibleProducts.length}} 款</text></view>
   <view class="product-grid">
     <button wx:for="{{visibleProducts}}" wx:key="id" class="product-card" data-id="{{item.id}}" bindtap="showProduct">
-      <view class="product-picture"><image class="product-image" src="{{item.image}}" mode="{{item.category === 'set' ? 'aspectFill' : 'aspectFit'}}"/><text class="product-tag">{{item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
-      <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price price-figure">¥{{item.price}}<text>参考价</text></view></view>
+      <view class="product-picture"><image class="product-image" src="{{item.image}}" mode="{{item.category === 'set' ? 'aspectFill' : 'aspectFit'}}"/><text class="product-tag">{{!item.active || item.available <= 0 ? '暂时售罄' : item.category === 'set' ? '五色套装' : item.element + ' · ' + item.beast}}</text></view>
+      <view class="product-info"><view class="product-name">{{item.name}}</view><view class="product-mood">{{item.mood}}</view><view class="product-price price-figure">¥{{item.price}}<text>{{item.available > 0 ? '有货' : '补货中'}}</text></view></view>
     </button>
   </view>
-  <view class="shop-note">目前为商品展示，价格与规格以正式开售信息为准。</view>
+  <view class="shop-note">{{saleNote}}</view>
   <view class="shop-story"><view class="eyebrow">五方图腾 · 五色香气</view><view>从一缕香开始，<text>把时间还给自己。</text></view></view>
-  <view class="bag-bar"><button class="bag-open" bindtap="openCart">购物袋 <text>{{cartCount}}</text></button><text class="bag-total price-figure">{{cartCount ? '参考合计 ¥' + cartTotal : '循心选香'}}</text><button class="bag-view" bindtap="openCart">查看清单 ›</button></view>
+  <view class="bag-bar"><button class="bag-open" bindtap="openCart">购物袋 <text>{{cartCount}}</text></button><text class="bag-total price-figure">{{cartCount ? '合计 ¥' + cartTotal : '循心选香'}}</text><button class="bag-view" bindtap="openCart">查看清单 ›</button></view>
   <view wx:if="{{showCart}}" class="scrim" bindtap="closeCart" catchtouchmove="noop"/>
   <view wx:if="{{showCart}}" class="sheet">
     <view class="sheet-head"><view class="sheet-title">我的购物袋</view><button class="sheet-close" bindtap="closeCart" aria-label="关闭">×</button></view>
@@ -21,23 +21,13 @@
     <block wx:else>
       <view wx:for="{{cartItems}}" wx:key="id" class="cart-row">
         <image src="{{item.image}}" mode="aspectFill"/>
-        <view class="cart-copy"><view>{{item.name}}</view><text class="price-figure">¥{{item.price}} · 参考价</text></view>
+        <view class="cart-copy"><view>{{item.name}}</view><text class="price-figure">¥{{item.price}}</text></view>
         <view class="quantity"><button data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity" aria-label="减少数量">−</button><text>{{item.quantity}}</text><button data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity" disabled="{{item.quantity >= 99}}" aria-label="增加数量">＋</button></view>
       </view>
-      <view class="cart-summary"><text>共 {{cartCount}} 件</text><text class="price-figure">参考合计 ¥{{cartTotal}}</text></view>
-      <button class="solid-button" bindtap="checkout">开售说明</button>
-      <view class="cart-note">本机选香清单 · 暂未开放下单</view>
+      <view class="cart-summary"><text>共 {{cartCount}} 件</text><text class="price-figure">合计 ¥{{cartTotal}}</text></view>
+      <button class="solid-button" bindtap="checkout" disabled="{{!saleEnabled}}">{{saleEnabled ? '去结算' : '商城尚未开售'}}</button>
+      <view class="cart-note">结算时将由服务端重新核对价格与库存</view>
     </block>
-  </view>
-  <view wx:if="{{showSaleNotice}}" class="sale-overlay" bindtap="closeSaleNotice" catchtouchmove="noop">
-    <view class="sale-dialog" catchtap="noop">
-      <view class="sale-seal">香</view>
-      <view class="sale-eyebrow">OPENING NOTICE</view>
-      <view class="sale-title">开售说明</view>
-      <view class="sale-copy">选香清单已经保存在本机。当前商品与价格用于展示，在线下单和微信支付尚未开放。</view>
-      <view class="sale-points"><view>不会生成正式订单</view><view>不会发起支付或扣款</view><view>正式开售后将补充规格与配送信息</view></view>
-      <button bindtap="closeSaleNotice">继续选香</button>
-    </view>
   </view>
 </view>
 

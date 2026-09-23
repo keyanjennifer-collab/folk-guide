@@ -19,10 +19,14 @@
     <view class="detail-status">{{selected.statusLabel}}</view>
     <view class="order-detail-row" wx:for="{{selected.items}}" wx:key="product_id"><text>{{item.name}}</text><text>× {{item.quantity}}</text></view>
     <view class="order-detail-row"><text>订单金额</text><text class="price-figure">¥{{selected.amount}}</text></view>
+    <view class="order-detail-row"><text>商品 / 运费</text><text class="price-figure">¥{{selected.subtotal}} / ¥{{selected.shipping}}</text></view>
+    <view class="order-detail-row"><text>收货人</text><text>{{selected.receiver_name}} · {{selected.receiver_phone}}</text></view>
+    <view class="order-address">{{selected.receiver_address}}</view>
     <view class="order-detail-row"><text>订单编号</text><button class="text-button" bindtap="copyNumber">{{selected.number}} · 复制</button></view>
     <view class="order-detail-row"><text>下单日期</text><text>{{selected.dateLabel}}</text></view>
-    <block wx:if="{{selected.tracking_number}}"><view class="order-detail-row"><text>物流公司</text><text>{{selected.carrier || '承运中'}}</text></view><button class="outline-button" bindtap="copyTracking">复制物流单号</button></block>
-    <view class="muted order-tip">订单状态由服务端更新。在线支付与售后申请尚未开放。</view>
+    <block wx:if="{{selected.tracking_number}}"><view class="order-detail-row"><text>物流公司</text><text>{{selected.carrier || '承运中'}}</text></view><view class="order-detail-row"><text>运单号</text><button class="text-button" bindtap="copyTracking">{{selected.tracking_number}} · 复制</button></view></block>
+    <view class="detail-actions"><button wx:if="{{selected.status === 'pending'}}" class="outline-button" disabled="{{actionLoading}}" bindtap="cancelSelected">取消订单</button><button wx:if="{{selected.status === 'pending'}}" class="solid-button" loading="{{actionLoading}}" bindtap="paySelected">继续支付</button><button wx:if="{{selected.status === 'paid'}}" class="outline-button" loading="{{actionLoading}}" bindtap="refundSelected">申请整单退款</button><button wx:if="{{selected.status === 'shipped'}}" class="solid-button" loading="{{actionLoading}}" bindtap="completeSelected">确认收货</button></view>
+    <view class="muted order-tip">支付、退款和发货状态均由服务端记录；已发货订单如需售后请联系客服。</view>
   </view>
 </view>
 

@@ -23,3 +23,9 @@ export function changeCart(id: string, delta: number): CartItem[] {
   wx.setStorageSync(KEY, next);
   return readCart();
 }
+export function removeCartItems(ids: string[]): CartItem[] {
+  const removed = new Set(ids);
+  const next = readCart().filter(item => !removed.has(item.id)).map(item => ({ id: item.id, quantity: item.quantity }));
+  wx.setStorageSync(KEY, next);
+  return readCart();
+}

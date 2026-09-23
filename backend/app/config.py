@@ -1,6 +1,7 @@
 """集中读取环境变量和 .env 配置。"""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +22,25 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 7 * 24 * 60
     wechat_app_id: str = ""
     wechat_app_secret: str = ""
+    # 商城总开关。生产环境只有完成微信支付配置后才允许开启。
+    commerce_enabled: bool = False
+    commerce_pending_minutes: int = 15
+    commerce_shipping_fee_fen: int = 1000
+    commerce_free_shipping_threshold_fen: int = 19900
+    commerce_merchant_name: str = "五色知时"
+    commerce_customer_service: str = ""
+    commerce_shipping_eta: str = "付款后3个工作日内发货"
+    # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
+    wechat_pay_mode: str = "disabled"
+    wechat_pay_mch_id: str = ""
+    wechat_pay_cert_serial: str = ""
+    wechat_pay_private_key_path: str = ""
+    wechat_pay_public_key_id: str = ""
+    wechat_pay_public_key_path: str = ""
+    wechat_pay_api_v3_key: str = ""
+    wechat_pay_notify_url: str = ""
+    wechat_pay_refund_notify_url: str = ""
+    wechat_pay_api_base_url: str = "https://api.mch.weixin.qq.com"
     llm_api_key: str = ""
     llm_base_url: str = ""
     llm_model: str = ""
@@ -67,8 +87,11 @@ class Settings(BaseSettings):
     mineru_enabled: bool = False
     mineru_base_url: str = ""
     mineru_timeout_seconds: float = 1200.0
-    # 共享 Key 只用于原型后台，不能作为正式运营人员权限系统。
+    # 正式后台使用管理员账号会话；共享 Key 只保留给受控的内部脚本和旧运维接口。
     admin_api_key: str = "dev-admin-key"
+    admin_session_hours: int = 8
+    admin_max_failed_logins: int = 5
+    admin_lock_minutes: int = 15
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -100,8 +123,48 @@ def validate_runtime_settings(settings: Settings | None = None) -> None:
         errors.append("JWT_SECRET 必须是至少32位的随机密钥")
     if not runtime.wechat_app_id or not runtime.wechat_app_secret:
         errors.append("WECHAT_APP_ID 和 WECHAT_APP_SECRET 必须同时配置")
+    if runtime.commerce_enabled:
+        if not runtime.commerce_merchant_name.strip():
+            errors.append("COMMERCE_MERCHANT_NAME 未配置")
+        if not runtime.commerce_customer_service.strip():
+            errors.append("COMMERCE_CUSTOMER_SERVICE 未配置")
+        if runtime.wechat_pay_mode != "wechat":
+            errors.append("正式开售时 WECHAT_PAY_MODE 必须为 wechat")
+        required_payment_values = {
+            "WECHAT_PAY_MCH_ID": runtime.wechat_pay_mch_id,
+            "WECHAT_PAY_CERT_SERIAL": runtime.wechat_pay_cert_serial,
+            "WECHAT_PAY_PRIVATE_KEY_PATH": runtime.wechat_pay_private_key_path,
+            "WECHAT_PAY_PUBLIC_KEY_ID": runtime.wechat_pay_public_key_id,
+            "WECHAT_PAY_PUBLIC_KEY_PATH": runtime.wechat_pay_public_key_path,
+            "WECHAT_PAY_API_V3_KEY": runtime.wechat_pay_api_v3_key,
+            "WECHAT_PAY_NOTIFY_URL": runtime.wechat_pay_notify_url,
+            "WECHAT_PAY_REFUND_NOTIFY_URL": runtime.wechat_pay_refund_notify_url,
+        }
+        for name, value in required_payment_values.items():
+            if not value:
+                errors.append(f"{name} 未配置")
+        if runtime.wechat_pay_api_v3_key and len(runtime.wechat_pay_api_v3_key.encode("utf-8")) != 32:
+            errors.append("WECHAT_PAY_API_V3_KEY 必须恰好为32字节")
+        for name, value in (
+            ("WECHAT_PAY_PRIVATE_KEY_PATH", runtime.wechat_pay_private_key_path),
+            ("WECHAT_PAY_PUBLIC_KEY_PATH", runtime.wechat_pay_public_key_path),
+        ):
+            if value and not Path(value).is_file():
+                errors.append(f"{name} 指向的文件不存在")
+        for name, value in (
+            ("WECHAT_PAY_NOTIFY_URL", runtime.wechat_pay_notify_url),
+            ("WECHAT_PAY_REFUND_NOTIFY_URL", runtime.wechat_pay_refund_notify_url),
+        ):
+            if value and not value.startswith("https://"):
+                errors.append(f"{name} 必须使用 HTTPS")
     if not runtime.admin_api_key or runtime.admin_api_key == "dev-admin-key" or len(runtime.admin_api_key) < 24:
         errors.append("ADMIN_API_KEY 必须是至少24位的随机密钥")
+    if not 1 <= runtime.admin_session_hours <= 24:
+        errors.append("ADMIN_SESSION_HOURS 必须在1至24之间")
+    if not 3 <= runtime.admin_max_failed_logins <= 10:
+        errors.append("ADMIN_MAX_FAILED_LOGINS 必须在3至10之间")
+    if not 5 <= runtime.admin_lock_minutes <= 1440:
+        errors.append("ADMIN_LOCK_MINUTES 必须在5至1440之间")
     if not runtime.cors_origins.strip():
         errors.append("CORS_ORIGINS 必须明确列出允许的来源")
     if errors:

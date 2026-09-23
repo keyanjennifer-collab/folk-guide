@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>五色知时 · 管理员登录</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#f2f3ef;color:#29352f;font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif}.card{width:min(420px,100%);padding:32px;background:#fff;border-radius:18px;box-shadow:0 14px 42px #26352e18}h1{margin:0 0 6px;font-size:25px}.muted{margin:0 0 26px;color:#718078}label{display:block;margin:16px 0 6px;font-weight:600}input{width:100%;padding:12px 13px;border:1px solid #d5ded8;border-radius:9px;font:inherit;outline:none}input:focus{border-color:#385f4d;box-shadow:0 0 0 3px #385f4d18}button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:9px;background:#385f4d;color:#fff;font:inherit;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.error{min-height:22px;margin:14px 0 0;color:#a23d35}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>五色知时管理后台</h1>
+    <p class="muted">仅限授权管理员登录</p>
+    <form id="login-form">
+      <label for="username">管理员账号</label>
+      <input id="username" name="username" autocomplete="username" minlength="3" maxlength="64" required autofocus>
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+      <button id="submit" type="submit">登录</button>
+      <p id="error" class="error" role="alert"></p>
+    </form>
+  </main>
+  <script>
+    const form=document.getElementById('login-form'),button=document.getElementById('submit'),error=document.getElementById('error');
+    form.addEventListener('submit',async event=>{event.preventDefault();button.disabled=true;error.textContent='';try{const response=await fetch('/api/admin/auth/login',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({username:form.username.value.trim(),password:form.password.value})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||'登录失败');location.replace('/admin/orders')}catch(reason){error.textContent=reason.message||'登录失败，请稍后重试';button.disabled=false}});
+  </script>
+</body>
+</html>

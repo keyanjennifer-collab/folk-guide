@@ -1,12 +1,15 @@
 import { getTheme, AppTheme } from "../../services/theme";
 import { PRODUCTS, Product } from "../../data/products";
 import { changeCart } from "../../services/cart";
+import { getCatalog } from "../../services/commerce";
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     product: null as Product | null,
     quantity: 1,
     images: [] as string[],
     added: false,
+    saleEnabled: false,
+    available: 0,
     // 礼盒内容直接来自商品目录，避免在模板中重复维护单品名称。
     setContents: PRODUCTS.filter(item => item.category === "single").map(item => item.name).join("、") + "。五款线香与对应矿石香插，承载一份应时心意。",
   },
@@ -15,13 +18,24 @@ Page({
     if (product) {
       this.setData({ product, images: product.gallery });
       wx.setNavigationBarTitle({ title: product.name });
+      void this.syncCatalog(product);
     }
+  },
+  async syncCatalog(product: Product) {
+    try {
+      const catalog = await getCatalog();
+      const live = catalog.items.find(item => item.id === product.id);
+      if (!live) return;
+      this.setData({ product: { ...product, price: live.price_fen / 100 }, saleEnabled: catalog.sale_enabled && live.active, available: live.available });
+    } catch (_) { this.setData({ saleEnabled: false, available: 0 }); }
   },
   changeQuantity(event: WechatMiniprogram.TouchEvent) {
     this.setData({ quantity: Math.min(99, Math.max(1, this.data.quantity + Number(event.currentTarget.dataset.delta))), added: false });
   },
   addToBag() {
     if (!this.data.product) return;
+    if (!this.data.saleEnabled) { wx.showToast({ title: "商城尚未正式开启收款", icon: "none" }); return; }
+    if (this.data.available < this.data.quantity) { wx.showToast({ title: "当前库存不足", icon: "none" }); return; }
     try {
       changeCart(this.data.product.id, this.data.quantity);
       this.setData({ added: true });

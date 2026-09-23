@@ -51,6 +51,26 @@ SQLITE_DAILY_GUIDANCE_COLUMNS = {
     "calculation_version": "VARCHAR(64)",
 }
 
+SQLITE_ORDER_COLUMNS = {
+    "idempotency_key": "VARCHAR(64)",
+    "subtotal_fen": "INTEGER NOT NULL DEFAULT 0",
+    "shipping_fee_fen": "INTEGER NOT NULL DEFAULT 0",
+    "receiver_name": "VARCHAR(64) NOT NULL DEFAULT ''",
+    "receiver_phone": "VARCHAR(32) NOT NULL DEFAULT ''",
+    "receiver_address": "VARCHAR(512) NOT NULL DEFAULT ''",
+    "remark": "VARCHAR(200)",
+    "wx_transaction_id": "VARCHAR(64)",
+    "payment_prepay_id": "VARCHAR(128)",
+    "refund_number": "VARCHAR(64)",
+    "expires_at": "DATETIME",
+    "paid_at": "DATETIME",
+    "shipped_at": "DATETIME",
+    "completed_at": "DATETIME",
+    "cancelled_at": "DATETIME",
+    "refunded_at": "DATETIME",
+    "updated_at": "DATETIME",
+}
+
 
 def migrate_development_schema(engine: Engine) -> None:
     """兼容已经存在的 SQLite 原型数据库。
@@ -105,6 +125,16 @@ def migrate_development_schema(engine: Engine) -> None:
             for name, definition in SQLITE_USER_COLUMNS.items():
                 if name not in existing:
                     connection.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
+        if "orders" in tables:
+            existing = {column["name"] for column in inspector.get_columns("orders")}
+            for name, definition in SQLITE_ORDER_COLUMNS.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE orders ADD COLUMN {name} {definition}"))
+            connection.execute(text("UPDATE orders SET subtotal_fen = total_fen WHERE subtotal_fen = 0"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_expires_at ON orders (expires_at)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_user_idempotency ON orders (user_id, idempotency_key)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_wx_transaction_id ON orders (wx_transaction_id)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_refund_number ON orders (refund_number)"))
         if "knowledge_documents" in tables:
             existing = {column["name"] for column in inspector.get_columns("knowledge_documents")}
             for name, definition in SQLITE_KNOWLEDGE_DOCUMENT_COLUMNS.items():

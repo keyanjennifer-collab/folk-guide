@@ -13,7 +13,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
     sections: [
       { title: "查看今日五色", body: "首页内容以北京时间公历自然日为边界自动更新。系统取得当日日柱后，仅取日支所属五行作为“当日五行”，再按固定生克关系排列贵人色、合作色、奋斗色、消耗色与不利色。" },
       { title: "阅读色序建议", body: "点击首页五种色系可切换对应香品；进入“五色详解”后，点击“展开”可查看色序依据、今日适宜、行动建议与需要留意的事项。" },
-      { title: "选香与购物袋", body: "商城包含五色知时线香套装及青木、朱蜜、黄檀、白桂、墨沉五款单香。商品详情可调整数量并加入购物袋；购物袋保存在本机。目前为展示阶段，不会生成订单或发起扣款。" },
+      { title: "选香、结算与支付", body: "商城包含五色知时线香套装及青木、朱蜜、黄檀、白桂、墨沉五款单香。加入购物袋后，可填写收货地址并使用微信支付；正式价格、运费和库存均在提交订单时由服务端核验。" },
       { title: "使用测一测", body: "“测一测”用于紫微斗数起盘与合盘。可先完善本人出生资料，为后续建立个人命盘或对照两份命盘做准备；相关内容仅供传统文化研究与生活参考。" },
       { title: "管理个人内容", body: "微信登录后可完善本人档案、查看个人五色及订单状态。手机号仅在你主动授权后绑定。若页面内容未及时更新，可下拉刷新或重新进入小程序。" },
     ],
@@ -23,8 +23,8 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
     sections: [
       { title: "账号信息", body: "微信登录用于识别你的账号并同步订单、档案与问答记录。手机号不会自动读取，只有在你点击授权后才会绑定。" },
       { title: "本人档案", body: "你填写的档案用于生成个人五色等功能，可随时进入“本人档案”修改或删除。传统文化内容仅供学习与生活参考。" },
-      { title: "本机数据", body: "购物袋是保存在当前设备上的选香清单。退出登录会清除本机登录状态，但不会自动删除账号内已经保存的记录。" },
-      { title: "你的选择", body: "你可以不绑定手机号，也可以在本人档案中管理已填写内容。如需进一步处理账号数据，可通过后续开放的客服入口提出申请。" },
+      { title: "订单与收货信息", body: "购物袋保存在当前设备；收货人、电话和地址在你提交后保存于账号，仅用于计价、配送、售后和依法留存。退出登录不会删除已经提交的订单。" },
+      { title: "你的选择", body: "你可以不绑定微信手机号，也可以在本人档案中管理已填写内容。交易与售后相关问题可通过结算页“购买、配送与售后须知”中公示的客服方式提出。" },
     ],
   },
   about: {
@@ -78,7 +78,7 @@ Page({
       else this.setData({ serviceCopy: "权益暂时无法读取，请刷新" });
       if (orders.status === "fulfilled") {
         const c = orders.value.counts;
-        this.setData({ orderCounts: { pending: String(c.pending), paid: String(c.paid), shipped: String(c.shipped), after_sale: String(c.after_sale) }, orderError: "" });
+        this.setData({ orderCounts: { pending: String(c.pending), paid: String(c.paid), shipped: String(c.shipped), after_sale: String((c.after_sale || 0) + (c.refunded || 0)) }, orderError: "" });
       } else this.setData({ orderError: "订单暂时无法读取，点此重试" });
     } catch (error) {
       if (version !== loadVersion) return;

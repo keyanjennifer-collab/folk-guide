@@ -2,13 +2,15 @@ import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken } from "../../services/api";
 import { Order, ORDER_LABELS, getOrders } from "../../services/orders";
 import { PRODUCTS } from "../../data/products";
-type OrderView = Order & { statusLabel: string; amount: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number };
+import { cancelOrder, completeOrder, payOrder, refundOrder } from "../../services/commerce";
+type OrderView = Order & { statusLabel: string; amount: string; subtotal: string; shipping: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number };
 let requestVersion = 0;
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
     status: "all", loggedIn: false, loading: false, error: "", orders: [] as OrderView[], hasMore: false,
-    tabs: [{ id: "all", label: "全部" }, { id: "pending", label: "待付款" }, { id: "paid", label: "待发货" }, { id: "shipped", label: "待收货" }, { id: "completed", label: "已完成" }, { id: "after_sale", label: "售后" }, { id: "cancelled", label: "已取消" }],
+    tabs: [{ id: "all", label: "全部" }, { id: "pending", label: "待付款" }, { id: "paid", label: "待发货" }, { id: "shipped", label: "待收货" }, { id: "completed", label: "已完成" }, { id: "after_sale", label: "退款中" }, { id: "refunded", label: "已退款" }, { id: "cancelled", label: "已取消" }],
     selected: null as OrderView | null,
+    actionLoading: false,
   },
   onLoad(options: Record<string, string>) {
     if (options.status && this.data.tabs.some(item => item.id === options.status)) this.setData({ status: options.status });
@@ -27,7 +29,7 @@ Page({
       const result = await getOrders(this.data.status, previous.length);
       if (version !== requestVersion) return;
       const orders = result.items.map(item => ({
-        ...item, statusLabel: ORDER_LABELS[item.status], amount: (item.total_fen / 100).toFixed(2),
+        ...item, statusLabel: ORDER_LABELS[item.status], amount: (item.total_fen / 100).toFixed(2), subtotal: (item.subtotal_fen / 100).toFixed(2), shipping: (item.shipping_fee_fen / 100).toFixed(2),
         dateLabel: item.created_at.slice(0, 10), thumbnail: PRODUCTS.find(p => p.id === item.items[0]?.product_id)?.image || PRODUCTS[0].image,
         itemLabel: item.items.map(p => p.name).join("、"), quantity: item.items.reduce((n, p) => n + p.quantity, 0),
       }));
@@ -44,6 +46,26 @@ Page({
   closeDetail() { this.setData({ selected: null }); },
   copyTracking() { if (this.data.selected?.tracking_number) wx.setClipboardData({ data: this.data.selected.tracking_number }); },
   copyNumber() { if (this.data.selected) wx.setClipboardData({ data: this.data.selected.number }); },
+  async paySelected() {
+    const order = this.data.selected; if (!order || this.data.actionLoading) return;
+    this.setData({ actionLoading: true });
+    try { await payOrder(order.id); wx.showToast({ title: "支付已提交", icon: "success" }); this.setData({ selected: null }); setTimeout(() => void this.loadOrders(), 1200); }
+    catch (error) { const raw = String((error as { errMsg?: unknown })?.errMsg || ""); if (raw.includes("cancel")) wx.showToast({ title: "已取消支付", icon: "none" }); }
+    finally { this.setData({ actionLoading: false }); }
+  },
+  cancelSelected() { this.confirmAction("确定取消这张待付款订单吗？", id => cancelOrder(id)); },
+  refundSelected() { this.confirmAction("确认申请整单原路退款吗？", id => refundOrder(id)); },
+  completeSelected() { this.confirmAction("确认已经收到商品吗？", id => completeOrder(id)); },
+  confirmAction(content: string, action: (id: number) => Promise<unknown>) {
+    const order = this.data.selected; if (!order || this.data.actionLoading) return;
+    wx.showModal({ title: "请确认", content, success: async result => {
+      if (!result.confirm) return;
+      this.setData({ actionLoading: true });
+      try { await action(order.id); this.setData({ selected: null }); await this.loadOrders(); wx.showToast({ title: "操作成功", icon: "success" }); }
+      catch (_) { /* 请求层已展示错误 */ }
+      finally { this.setData({ actionLoading: false }); }
+    } });
+  },
   noop() {},
 });
 

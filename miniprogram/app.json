@@ -10,6 +10,7 @@
     { "root": "pages/explore", "pages": ["index"] },
     { "root": "pages/profile", "pages": ["index"] },
     { "root": "pages/orders", "pages": ["index"] },
+    { "root": "pages/checkout", "pages": ["index", "policy"] },
     { "root": "pages/ziwei", "pages": ["index", "result", "compatibility-result"] }
   ],
   "window": {

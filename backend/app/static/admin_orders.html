@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>五色知时 · 订单发货</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f2f3ef;color:#29352f;font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif}header{padding:24px 5%;background:#29493a;color:#fff}.header-row{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0}.wrap{max-width:1180px;margin:20px auto;padding:0 20px}.panel{margin-bottom:18px;padding:20px;background:#fff;border-radius:14px;box-shadow:0 6px 24px #26352e0d}.toolbar,.row,.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}input,select{padding:10px;border:1px solid #dbe2dd;border-radius:8px;font:inherit}input{min-width:220px}button{padding:9px 14px;border:0;border-radius:8px;background:#385f4d;color:#fff;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#e6ece8;color:#385f4d}.header-button{background:#ffffff22;border:1px solid #ffffff55}.muted{color:#718078}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{padding:14px;border:1px solid #dfe5e1;border-radius:10px}.order{padding:16px 0;border-bottom:1px solid #e5e8e6}.order:last-child{border:0}.title{font-weight:700}.status{padding:3px 8px;border-radius:12px;background:#edf3ef}.ship{margin-top:10px}@media(max-width:760px){.grid{grid-template-columns:1fr}.toolbar>*{width:100%}input{min-width:0}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-row">
+      <div><h1>五色知时 · 订单与发货</h1><div>管理员账号安全登录｜关键操作留有审计记录</div></div>
+      <div class="row"><span id="admin-name"></span><button class="header-button" onclick="logout()">退出登录</button></div>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="panel"><div class="toolbar"><select id="status" onchange="loadOrders()"><option value="">全部订单</option><option value="paid">待发货</option><option value="shipped">已发货</option><option value="after_sale">售后中</option></select><button class="secondary" onclick="reloadAll()">刷新</button></div><p id="message" class="muted"></p></section>
+    <section class="panel"><h2>商品库存</h2><p id="inventory-note" class="muted"></p><div id="inventory" class="grid"></div></section>
+    <section class="panel"><h2>订单</h2><div id="orders"></div></section>
+  </main>
+  <script>
+    const message=document.getElementById('message');let csrfToken='',adminProfile=null;
+    async function api(path,options={}){const method=(options.method||'GET').toUpperCase(),headers={...(options.headers||{})};if(options.body)headers['content-type']='application/json';if(!['GET','HEAD'].includes(method))headers['X-CSRF-Token']=csrfToken;const response=await fetch(path,{...options,method,headers,credentials:'same-origin'});if(response.status===401){location.replace('/admin/login');throw new Error('登录已失效')}const data=response.status===204?null:await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||'请求失败');return data}
+    function money(fen){return '¥'+(fen/100).toFixed(2)}
+    function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+    async function loadInventory(){try{const rows=await api('/api/admin/inventory'),canEdit=adminProfile.role==='superadmin';document.getElementById('inventory-note').textContent=canEdit?'超级管理员可修改库存和上下架状态。':'当前账号为订单运营，仅可查看库存。';document.getElementById('inventory').innerHTML=rows.map(x=>`<div class="card"><div class="title">${esc(x.name)} · ${money(x.price_fen)}</div><p>可售 ${Number(x.available)}｜锁定 ${Number(x.reserved)}｜已售 ${Number(x.sold)}</p>${canEdit?`<div class="row"><input id="stock-${esc(x.product_id)}" type="number" min="0" value="${Number(x.available)}" style="min-width:100px;width:110px"><label><input id="active-${esc(x.product_id)}" type="checkbox" ${x.active?'checked':''} style="min-width:auto"> 上架</label><button onclick="saveStock('${esc(x.product_id)}')">保存</button></div>`:`<div class="muted">${x.active?'已上架':'已下架'}</div>`}</div>`).join('')}catch(e){message.textContent=e.message}}
+    async function saveStock(id){try{await api('/api/admin/inventory/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({available:Number(document.getElementById('stock-'+id).value),active:document.getElementById('active-'+id).checked})});message.textContent='库存已保存';loadInventory()}catch(e){message.textContent=e.message}}
+    async function loadOrders(){try{const value=document.getElementById('status').value;const rows=await api('/api/admin/orders'+(value?'?status='+encodeURIComponent(value):''));document.getElementById('orders').innerHTML=rows.length?rows.map(x=>`<div class="order"><div class="row"><span class="title">${esc(x.number)}</span><span class="status">${esc(x.status)}</span><span>${money(x.total_fen)}</span><span>${esc(x.receiver_name)} ${esc(x.receiver_phone)}</span></div><div>${x.items.map(i=>esc(i.name)+' × '+Number(i.quantity)).join('、')}</div><div class="muted">${esc(x.receiver_address)}</div>${x.status==='paid'?`<div class="row ship"><input id="carrier-${Number(x.id)}" placeholder="快递公司"><input id="tracking-${Number(x.id)}" placeholder="运单号"><button onclick="ship(${Number(x.id)})">确认发货</button></div>`:(x.tracking_number?`<div>物流：${esc(x.carrier||'')} ${esc(x.tracking_number)}</div>`:'')}</div>`).join(''):'<p class="muted">暂无订单</p>'}catch(e){message.textContent=e.message}}
+    async function ship(id){try{await api('/api/admin/orders/'+id+'/ship',{method:'POST',body:JSON.stringify({carrier:document.getElementById('carrier-'+id).value,tracking_number:document.getElementById('tracking-'+id).value})});message.textContent='已确认发货';loadOrders()}catch(e){message.textContent=e.message}}
+    async function logout(){try{await api('/api/admin/auth/logout',{method:'POST'})}finally{location.replace('/admin/login')}}
+    function reloadAll(){message.textContent='';loadInventory();loadOrders()}
+    async function initialize(){try{adminProfile=await api('/api/admin/auth/me');csrfToken=adminProfile.csrf_token;document.getElementById('admin-name').textContent=adminProfile.display_name+' · '+(adminProfile.role==='superadmin'?'超级管理员':'订单运营');reloadAll()}catch(e){message.textContent=e.message}}
+    initialize();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<view class="checkout-page {{themeClass}}">
+  <view class="screen-heading"><view><view class="eyebrow">CHECKOUT</view><view class="screen-title">确认订单</view></view></view>
+  <view wx:if="{{loading}}" class="empty-state"><view class="muted">正在核对价格与库存…</view></view>
+  <view wx:elif="{{error}}" class="empty-state"><view class="empty-title">暂时不能提交订单</view><view class="muted">{{error}}</view><button class="outline-button" bindtap="toShop">返回购物袋</button></view>
+  <block wx:else>
+    <view class="section-card">
+      <view class="section-title">收货地址</view>
+      <scroll-view wx:if="{{addresses.length && !showAddressForm}}" class="address-list" scroll-x enable-flex>
+        <button wx:for="{{addresses}}" wx:key="id" class="address-card {{selectedAddressId === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="selectAddress"><view>{{item.recipient_name}} · {{item.phone}}</view><text>{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</text></button>
+      </scroll-view>
+      <view wx:if="{{!showAddressForm}}" class="address-actions"><button class="text-button" bindtap="openAddressForm">新增地址</button><button class="text-button" bindtap="editSelectedAddress">修改</button><button class="text-button danger-text" bindtap="deleteSelectedAddress">删除</button><button class="text-button" bindtap="useWechatAddress">微信地址</button></view>
+      <view wx:if="{{showAddressForm}}" class="address-form">
+        <view class="form-grid"><input placeholder="收货人" data-field="recipient_name" value="{{addressForm.recipient_name}}" bindinput="inputAddress"/><input type="number" placeholder="联系电话" data-field="phone" value="{{addressForm.phone}}" bindinput="inputAddress"/></view>
+        <picker mode="region" value="{{region}}" bindchange="changeRegion"><view class="picker-field">{{regionText || '选择省 / 市 / 区'}}</view></picker>
+        <input placeholder="街道、门牌号等详细地址" data-field="detail" value="{{addressForm.detail}}" bindinput="inputAddress"/>
+        <view class="address-actions"><button class="outline-button" bindtap="useWechatAddress">从微信导入</button><button class="solid-button" bindtap="saveAddress">保存地址</button><button wx:if="{{addresses.length}}" class="text-button" bindtap="closeAddressForm">取消</button></view>
+      </view>
+    </view>
+    <view class="section-card"><view class="section-title">商品清单</view><view wx:for="{{items}}" wx:key="id" class="checkout-item"><image src="{{item.image}}" mode="aspectFill"/><view><view>{{item.name}}</view><text class="price-figure">¥{{item.priceText}} × {{item.quantity}}</text></view><text class="price-figure">¥{{item.subtotalText}}</text></view></view>
+    <view class="section-card"><view class="section-title">配送与备注</view><view class="summary-row"><text>配送方式</text><text>普通快递 · {{freeShippingText}}</text></view><view class="summary-row"><text>预计发货</text><text>{{shippingEta}}</text></view><textarea maxlength="200" placeholder="订单备注（选填）" value="{{remark}}" bindinput="inputRemark"/></view>
+    <view class="section-card totals"><view class="summary-row"><text>商品金额</text><text class="price-figure">¥{{subtotalText}}</text></view><view class="summary-row"><text>运费</text><text class="price-figure">{{shippingFen ? '¥' + shippingText : '包邮'}}</text></view><view class="summary-row total"><text>应付</text><text class="price-figure">¥{{totalText}}</text></view></view>
+    <checkbox-group bindchange="changeAgreement"><label class="agreement"><checkbox value="yes" checked="{{agreed}}" color="#a97743"/><text>我已阅读并同意</text><button class="text-button" bindtap="toPolicy">购买、配送与售后须知</button></label></checkbox-group>
+    <view class="security-note">实际价格和库存将在服务端再次核验。支付结果以微信支付服务端通知为准。</view>
+    <button class="pay-button" loading="{{submitting}}" disabled="{{submitting || !saleEnabled}}" bindtap="submitOrder">{{saleEnabled ? '微信支付 ¥' + totalText : '商城尚未开售'}}</button>
+  </block>
+</view>

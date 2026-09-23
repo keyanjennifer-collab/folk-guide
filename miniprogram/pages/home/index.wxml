@@ -137,7 +137,7 @@
   </view>
 
   <view class="gift">
-    <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥239 <text>参考价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
+    <view class="gift-copy"><view class="gift-kicker">五色齐备 · 一盒知时</view><view class="gift-title">五色知时线香套装</view><view class="gift-desc">青木、朱蜜、黄檀、白桂、墨沉</view><view class="gift-price price-figure">¥268 <text>预购价</text></view><button class="gift-button" bindtap="toGift">查看套装</button></view>
     <image class="gift-image" src="{{gift.image}}" mode="aspectFit"/>
   </view>
 

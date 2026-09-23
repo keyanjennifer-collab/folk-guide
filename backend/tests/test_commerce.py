@@ -44,10 +44,10 @@ def test_checkout_uses_server_price_and_idempotency_then_refunds():
         created = client.post("/api/orders", headers=owner, json=payload)
         assert created.status_code == 201, created.text
         order = created.json()
-        assert order["subtotal_fen"] == 11800
+        assert order["subtotal_fen"] == 13600
         assert order["shipping_fee_fen"] == 1000
-        assert order["total_fen"] == 12800
-        assert order["items"][0]["unit_price_fen"] == 5900
+        assert order["total_fen"] == 14600
+        assert order["items"][0]["unit_price_fen"] == 6800
 
         repeated = client.post("/api/orders", headers=owner, json=payload)
         assert repeated.status_code == 201

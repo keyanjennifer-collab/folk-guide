@@ -2,7 +2,7 @@ import { getCatalog } from "../../services/commerce";
 import { getTheme } from "../../services/theme";
 
 Page({
-  data: { themeClass: "theme-" + getTheme(), merchantName: "五色知时", customerService: "", shippingEta: "付款后3个工作日内发货" },
+  data: { themeClass: "theme-" + getTheme(), merchantName: "五色知时", customerService: "", shippingEta: "付款后两个月内发货" },
   async onLoad() {
     try {
       const catalog = await getCatalog();

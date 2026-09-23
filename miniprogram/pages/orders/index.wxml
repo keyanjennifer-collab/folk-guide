@@ -17,6 +17,7 @@
   <view wx:if="{{selected}}" class="sheet">
     <view class="sheet-head"><view class="sheet-title">订单详情</view><button class="sheet-close" bindtap="closeDetail" aria-label="关闭">×</button></view>
     <view class="detail-status">{{selected.statusLabel}}</view>
+    <view wx:if="{{selected.preorder}}" class="purchase-note">预购商品：{{selected.shippingEta || '付款后两个月内发货'}}。如需取消，请在发货前联系客服申请退款。</view>
     <view class="order-detail-row" wx:for="{{selected.items}}" wx:key="product_id"><text>{{item.name}}</text><text>× {{item.quantity}}</text></view>
     <view class="order-detail-row"><text>订单金额</text><text class="price-figure">¥{{selected.amount}}</text></view>
     <view class="order-detail-row"><text>商品 / 运费</text><text class="price-figure">¥{{selected.subtotal}} / ¥{{selected.shipping}}</text></view>

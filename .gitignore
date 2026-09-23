@@ -11,6 +11,7 @@ __pycache__/
 *.log
 *.pem
 *.key
+*.p12
 *.crt
 node_modules/
 miniprogram_npm/

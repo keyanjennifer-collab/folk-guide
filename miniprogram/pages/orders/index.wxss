@@ -29,3 +29,4 @@
 .orders-page.theme-day .card, .orders-page.theme-day [class*='panel'], .orders-page.theme-day [class*='card'], .orders-page.theme-day [class*='sheet'], .orders-page.theme-day [class*='dialog'] { color: #34342F; background: #E7E4DA; border-color: #B8B5AA; }
 .orders-page.theme-day .muted, .orders-page.theme-day .caption, .orders-page.theme-day .field-note { color: #68675F; }
 
+.purchase-note{margin:18rpx 0;padding:18rpx 20rpx;color:#d9c49e;background:#3a3731;border-radius:12rpx;font-size:26rpx;line-height:1.8}

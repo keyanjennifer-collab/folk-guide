@@ -2,11 +2,14 @@ import { request } from "./api";
 import { Order } from "./orders";
 
 export interface CatalogItem {
-  id: string; name: string; price_fen: number; category: "set" | "single";
+  id: string; name: string;
+  // 服务端金额单位是分，页面展示前必须除以 100。
+  price_fen: number; category: "set" | "single";
+  length_cm: number; weight_grams: number;
   available: number; active: boolean;
 }
 export interface Catalog {
-  sale_enabled: boolean; shipping_fee_fen: number; free_shipping_threshold_fen: number;
+  sale_enabled: boolean; sale_mode: "ready" | "preorder"; shipping_fee_fen: number; free_shipping_threshold_fen: number;
   merchant_name: string; customer_service: string; shipping_eta: string;
   items: CatalogItem[];
 }

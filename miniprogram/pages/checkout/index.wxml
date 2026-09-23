@@ -17,10 +17,10 @@
       </view>
     </view>
     <view class="section-card"><view class="section-title">商品清单</view><view wx:for="{{items}}" wx:key="id" class="checkout-item"><image src="{{item.image}}" mode="aspectFill"/><view><view>{{item.name}}</view><text class="price-figure">¥{{item.priceText}} × {{item.quantity}}</text></view><text class="price-figure">¥{{item.subtotalText}}</text></view></view>
-    <view class="section-card"><view class="section-title">配送与备注</view><view class="summary-row"><text>配送方式</text><text>普通快递 · {{freeShippingText}}</text></view><view class="summary-row"><text>预计发货</text><text>{{shippingEta}}</text></view><textarea maxlength="200" placeholder="订单备注（选填）" value="{{remark}}" bindinput="inputRemark"/></view>
+    <view class="section-card"><view class="section-title">配送与备注</view><view class="summary-row"><text>配送方式</text><text>普通快递 · {{freeShippingText}}</text></view><view class="summary-row"><text>{{saleMode === 'preorder' ? '预购发货' : '预计发货'}}</text><text>{{shippingEta}}</text></view><view wx:if="{{saleMode === 'preorder'}}" class="policy-note">这是预购商品，付款后两个月内发货；如需取消，请在发货前联系客服申请退款。</view><textarea maxlength="200" placeholder="订单备注（选填）" value="{{remark}}" bindinput="inputRemark"/></view>
     <view class="section-card totals"><view class="summary-row"><text>商品金额</text><text class="price-figure">¥{{subtotalText}}</text></view><view class="summary-row"><text>运费</text><text class="price-figure">{{shippingFen ? '¥' + shippingText : '包邮'}}</text></view><view class="summary-row total"><text>应付</text><text class="price-figure">¥{{totalText}}</text></view></view>
     <checkbox-group bindchange="changeAgreement"><label class="agreement"><checkbox value="yes" checked="{{agreed}}" color="#a97743"/><text>我已阅读并同意</text><button class="text-button" bindtap="toPolicy">购买、配送与售后须知</button></label></checkbox-group>
     <view class="security-note">实际价格和库存将在服务端再次核验。支付结果以微信支付服务端通知为准。</view>
-    <button class="pay-button" loading="{{submitting}}" disabled="{{submitting || !saleEnabled}}" bindtap="submitOrder">{{saleEnabled ? '微信支付 ¥' + totalText : '商城尚未开售'}}</button>
+    <button class="pay-button" loading="{{submitting}}" disabled="{{submitting || !saleEnabled}}" bindtap="submitOrder">{{saleEnabled ? (saleMode === 'preorder' ? '提交预购并支付 ¥' : '微信支付 ¥') + totalText : '商城尚未开售'}}</button>
   </block>
 </view>

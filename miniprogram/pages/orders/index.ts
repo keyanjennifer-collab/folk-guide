@@ -3,7 +3,7 @@ import { getApiErrorMessage, getToken } from "../../services/api";
 import { Order, ORDER_LABELS, getOrders } from "../../services/orders";
 import { PRODUCTS } from "../../data/products";
 import { cancelOrder, completeOrder, payOrder, refundOrder } from "../../services/commerce";
-type OrderView = Order & { statusLabel: string; amount: string; subtotal: string; shipping: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number };
+type OrderView = Order & { statusLabel: string; amount: string; subtotal: string; shipping: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number; preorder: boolean; shippingEta: string };
 let requestVersion = 0;
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
@@ -32,6 +32,8 @@ Page({
         ...item, statusLabel: ORDER_LABELS[item.status], amount: (item.total_fen / 100).toFixed(2), subtotal: (item.subtotal_fen / 100).toFixed(2), shipping: (item.shipping_fee_fen / 100).toFixed(2),
         dateLabel: item.created_at.slice(0, 10), thumbnail: PRODUCTS.find(p => p.id === item.items[0]?.product_id)?.image || PRODUCTS[0].image,
         itemLabel: item.items.map(p => p.name).join("、"), quantity: item.items.reduce((n, p) => n + p.quantity, 0),
+        preorder: item.items.some(p => p.sale_mode === "preorder"),
+        shippingEta: item.items.find(p => p.shipping_eta)?.shipping_eta || "",
       }));
       this.setData({ orders: [...previous, ...orders], hasMore: result.has_more });
     } catch (error) {

@@ -8,7 +8,7 @@ export interface Order {
   carrier: string | null; tracking_number: string | null;
   receiver_name: string; receiver_phone: string; receiver_address: string; remark: string | null;
   expires_at: string | null; paid_at: string | null; shipped_at: string | null; refunded_at: string | null;
-  items: { product_id: string; name: string; quantity: number; unit_price_fen: number; subtotal_fen: number }[];
+  items: { product_id: string; name: string; quantity: number; unit_price_fen: number; subtotal_fen: number; sale_mode?: "ready" | "preorder"; shipping_eta?: string }[];
 }
 export interface OrderList { items: Order[]; counts: Record<OrderStatus, number>; has_more: boolean; }
 export function getOrders(status = "all", offset = 0, limit = 20): Promise<OrderList> {

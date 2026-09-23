@@ -24,12 +24,16 @@ class Settings(BaseSettings):
     wechat_app_secret: str = ""
     # 商城总开关。生产环境只有完成微信支付配置后才允许开启。
     commerce_enabled: bool = False
+    # 新增库存记录时的初始可售数量；正式盘点后可在管理员后台调整。
+    commerce_initial_stock: int = 300
+    # ready 表示现货，preorder 表示预购；订单会把当时的模式写入商品快照。
+    commerce_sale_mode: str = "preorder"
     commerce_pending_minutes: int = 15
     commerce_shipping_fee_fen: int = 1000
     commerce_free_shipping_threshold_fen: int = 19900
     commerce_merchant_name: str = "五色知时"
     commerce_customer_service: str = ""
-    commerce_shipping_eta: str = "付款后3个工作日内发货"
+    commerce_shipping_eta: str = "付款后两个月内发货"
     # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
     wechat_pay_mode: str = "disabled"
     wechat_pay_mch_id: str = ""
@@ -113,6 +117,8 @@ def validate_runtime_settings(settings: Settings | None = None) -> None:
         return
 
     errors: list[str] = []
+    if runtime.commerce_sale_mode not in {"ready", "preorder"}:
+        errors.append("COMMERCE_SALE_MODE 必须为 ready 或 preorder")
     if runtime.testing:
         errors.append("TESTING 必须为 false")
     if runtime.auto_create_schema:

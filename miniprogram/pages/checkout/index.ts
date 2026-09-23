@@ -10,7 +10,7 @@ function key(): string { return `wx_${Date.now()}_${Math.random().toString(36).s
 Page({
   data: {
     themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
-    loading: true, submitting: false, error: "", saleEnabled: false,
+    loading: true, submitting: false, error: "", saleEnabled: false, saleMode: "preorder" as "ready" | "preorder",
     items: [] as CheckoutItem[], addresses: [] as ShippingAddress[], selectedAddressId: 0,
     selectedAddress: null as ShippingAddress | null, showAddressForm: false, editingAddressId: 0,
     addressForm: emptyAddress(), region: [] as string[], regionText: "", remark: "", agreed: false,
@@ -39,7 +39,7 @@ Page({
       const shippingFen = subtotalFen >= catalog.free_shipping_threshold_fen ? 0 : catalog.shipping_fee_fen;
       const selectedAddress = addresses.find(item => item.is_default) || addresses[0] || null;
       this.setData({
-        loading: false, saleEnabled: catalog.sale_enabled, items, addresses,
+        loading: false, saleEnabled: catalog.sale_enabled, saleMode: catalog.sale_mode, items, addresses,
         selectedAddress, selectedAddressId: selectedAddress?.id || 0, showAddressForm: !selectedAddress,
         subtotalFen, shippingFen, totalFen: subtotalFen + shippingFen,
         subtotalText: (subtotalFen / 100).toFixed(2), shippingText: (shippingFen / 100).toFixed(2),

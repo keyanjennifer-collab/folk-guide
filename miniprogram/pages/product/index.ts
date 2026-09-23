@@ -9,7 +9,9 @@ Page({
     images: [] as string[],
     added: false,
     saleEnabled: false,
+    saleMode: "preorder" as "ready" | "preorder",
     available: 0,
+    shippingEta: "付款后两个月内发货",
     // 礼盒内容直接来自商品目录，避免在模板中重复维护单品名称。
     setContents: PRODUCTS.filter(item => item.category === "single").map(item => item.name).join("、") + "。五款线香与对应矿石香插，承载一份应时心意。",
   },
@@ -26,7 +28,10 @@ Page({
       const catalog = await getCatalog();
       const live = catalog.items.find(item => item.id === product.id);
       if (!live) return;
-      this.setData({ product: { ...product, price: live.price_fen / 100 }, saleEnabled: catalog.sale_enabled && live.active, available: live.available });
+      this.setData({ product: { ...product, price: live.price_fen / 100,
+        lengthCm: live.length_cm || product.lengthCm, weightGrams: live.weight_grams || product.weightGrams },
+        saleEnabled: catalog.sale_enabled && live.active, saleMode: catalog.sale_mode,
+        available: live.available, shippingEta: catalog.shipping_eta });
     } catch (_) { this.setData({ saleEnabled: false, available: 0 }); }
   },
   changeQuantity(event: WechatMiniprogram.TouchEvent) {

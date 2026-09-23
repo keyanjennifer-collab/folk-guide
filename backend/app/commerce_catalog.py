@@ -11,19 +11,21 @@ from dataclasses import dataclass
 class CatalogProduct:
     id: str
     name: str
+    # 微信支付和订单表统一使用人民币“分”：268 元写成 26800，68 元写成 6800。
     price_fen: int
     category: str
+    length_cm: float
     weight_grams: int
     active: bool = True
 
 
 PRODUCTS: tuple[CatalogProduct, ...] = (
-    CatalogProduct("gift", "五色知时线香套装", 23900, "set", 1200),
-    CatalogProduct("green", "青木", 5900, "single", 260),
-    CatalogProduct("red", "朱蜜", 5900, "single", 260),
-    CatalogProduct("gold", "黄檀", 5900, "single", 260),
-    CatalogProduct("white", "白桂", 5900, "single", 260),
-    CatalogProduct("black", "墨沉", 5900, "single", 260),
+    CatalogProduct("gift", "五色知时线香套装", 26800, "set", 10.5, 75),
+    CatalogProduct("green", "青木", 6800, "single", 10.5, 15),
+    CatalogProduct("red", "朱蜜", 6800, "single", 10.5, 15),
+    CatalogProduct("gold", "黄檀", 6800, "single", 10.5, 15),
+    CatalogProduct("white", "白桂", 6800, "single", 10.5, 15),
+    CatalogProduct("black", "墨沉", 6800, "single", 10.5, 15),
 )
 
 PRODUCT_BY_ID = {product.id: product for product in PRODUCTS}

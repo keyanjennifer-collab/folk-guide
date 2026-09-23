@@ -34,12 +34,16 @@ class CatalogItemOutput(BaseModel):
     name: str
     price_fen: int
     category: str
+    length_cm: float
+    weight_grams: int
+    sale_mode: Literal["ready", "preorder"]
     available: int
     active: bool
 
 
 class CatalogOutput(BaseModel):
     sale_enabled: bool
+    sale_mode: Literal["ready", "preorder"]
     shipping_fee_fen: int
     free_shipping_threshold_fen: int
     merchant_name: str
@@ -102,6 +106,8 @@ class OrderItem(BaseModel):
     quantity: int = Field(ge=1)
     unit_price_fen: int = Field(ge=0)
     subtotal_fen: int = Field(ge=0)
+    sale_mode: Literal["ready", "preorder"] = "ready"
+    shipping_eta: str = ""
 
 
 class OrderOutput(BaseModel):
@@ -146,11 +152,16 @@ class RefundInput(BaseModel):
 
 
 def ensure_inventory_rows(db: Session) -> None:
-    """为代码目录中的新品补一条零库存记录；零库存可防止未盘点商品误售。"""
+    """为代码目录中的新品补库存记录；正式盘点后可在后台覆盖数量。"""
     existing = set(db.scalars(select(ProductInventory.product_id)).all())
+    settings = get_settings()
+    if settings.commerce_sale_mode not in {"ready", "preorder"}:
+        raise HTTPException(status_code=500, detail="商城销售模式配置无效")
+    # 测试环境必须从零库存开始，生产/本机新库按当前首批盘点数量初始化。
+    initial_stock = 0 if settings.testing else max(0, settings.commerce_initial_stock)
     for product in PRODUCTS:
         if product.id not in existing:
-            db.add(ProductInventory(product_id=product.id, available=0, reserved=0, sold=0, active=product.active))
+            db.add(ProductInventory(product_id=product.id, available=initial_stock, reserved=0, sold=0, active=product.active))
     if len(existing) != len(PRODUCTS):
         db.commit()
 
@@ -265,6 +276,7 @@ def catalog(db: Session = Depends(get_db)):
     settings = get_settings()
     return CatalogOutput(
         sale_enabled=settings.commerce_enabled,
+        sale_mode=settings.commerce_sale_mode,
         shipping_fee_fen=settings.commerce_shipping_fee_fen,
         free_shipping_threshold_fen=settings.commerce_free_shipping_threshold_fen,
         merchant_name=settings.commerce_merchant_name,
@@ -272,6 +284,8 @@ def catalog(db: Session = Depends(get_db)):
         shipping_eta=settings.commerce_shipping_eta,
         items=[CatalogItemOutput(
             id=product.id, name=product.name, price_fen=product.price_fen, category=product.category,
+            length_cm=product.length_cm, weight_grams=product.weight_grams,
+            sale_mode=settings.commerce_sale_mode,
             available=max(0, inventory[product.id].available),
             active=bool(product.active and inventory[product.id].active),
         ) for product in PRODUCTS],
@@ -361,6 +375,7 @@ def create_order(data: CheckoutInput, user: User = Depends(current_user), db: Se
         rows.append({
             "product_id": product.id, "name": product.name, "quantity": quantity,
             "unit_price_fen": product.price_fen, "subtotal_fen": product.price_fen * quantity,
+            "sale_mode": settings.commerce_sale_mode, "shipping_eta": settings.commerce_shipping_eta,
         })
     subtotal = sum(item["subtotal_fen"] for item in rows)
     shipping = 0 if subtotal >= settings.commerce_free_shipping_threshold_fen else settings.commerce_shipping_fee_fen

@@ -33,14 +33,29 @@ nano .env.production
 代码默认保持 `COMMERCE_ENABLED=false`，避免支付资料尚未配置时误收款。正式开售前：
 
 1. 在微信支付商户平台开通小程序支付，将小程序 AppID 与商户号绑定；
-2. 把商户 API 私钥保存为 `deploy/secrets/wechat_pay_private_key.pem`；
-3. 下载微信支付公钥并保存为 `deploy/secrets/wechat_pay_public_key.pem`；
-4. 在 `.env.production` 填写商户号、商户证书序列号、微信支付公钥 ID、APIv3 密钥和两个 HTTPS 通知地址；
+2. 把商户 API 私钥 `apiclient_key.pem` 保存为 `deploy/secrets/wechat_pay_private_key.pem`；
+3. 从微信商户平台下载微信支付平台公钥，保存为 `deploy/secrets/wechat_pay_public_key.pem`；
+4. 在 `.env.production` 填写商户号、`apiclient_cert.pem` 对应的商户证书序列号、微信支付公钥 ID、APIv3 密钥和两个 HTTPS 通知地址；
 5. 完成数据库迁移并通过测试后，最后把 `COMMERCE_ENABLED` 改为 `true`。
 
 `deploy/secrets/` 已只读挂载到 API 容器的 `/run/secrets/`。私钥、公钥、证书以及
 `.env.production` 都被 Git 忽略，不能上传到 GitHub。开售后订单后台地址为
 `https://api.wusezhishi.com/admin/orders`，未登录访问会跳转到管理员登录页。
+
+截图中的 `apiclient_key.pem` 是商户 API 私钥，当前代码会使用它签名请求；`apiclient_cert.pem`
+是商户证书，主要用于确认 `WECHAT_PAY_CERT_SERIAL`；`apiclient_cert.p12` 是同一套商户证书的
+打包备份，当前代码不直接读取它。三个文件都只放在服务器密钥目录，不能放进小程序、不能提交 Git，
+也不要把文件内容发到聊天中。当前代码还需要你在商户平台另外下载微信支付平台公钥，并填写
+`WECHAT_PAY_PUBLIC_KEY_ID`、`WECHAT_PAY_PUBLIC_KEY_PATH` 和 `WECHAT_PAY_API_V3_KEY`；这三个不是截图中的商户证书文件。
+
+在服务器上可用下面的命令读取商户证书序列号（只复制命令输出，不要上传证书）：
+
+```bash
+openssl x509 -in deploy/secrets/apiclient_cert.pem -noout -serial
+```
+
+把 `serial=` 后面的值填入 `WECHAT_PAY_CERT_SERIAL`。APIv3 密钥是在商户平台设置的
+32 字节密钥，不是 `apiclient_key.pem` 的内容，也不是 `.p12` 文件密码。
 
 生成随机值可在服务器执行（只显示在你的终端，不要发到聊天）：
 

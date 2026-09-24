@@ -47,10 +47,13 @@
     </view>
 
     <view wx:if="{{personalState === 'ready'}}" class="personal-lock-card personal-ready-card">
+      <view class="personal-card-rail"/>
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS · {{personalDate}}</view>
         <view class="personal-lock-title-row"><view class="personal-lock-title">我的五色</view><text class="personal-lock-status">已生成</text></view>
-        <text>首选 {{personalPrimaryColor}} · {{personalFocus}}</text>
+        <view class="personal-hero-swatches"><view wx:for="{{personalColors}}" wx:key="rank" class="personal-hero-swatch {{index === 0 ? 'active' : ''}}" style="background:{{item.swatches[0]}}"/></view>
+        <view class="personal-primary-line"><text>今日首选</text><view>{{personalPrimaryColor}}</view></view>
+        <text class="personal-focus">{{personalFocus}}</text>
         <view wx:if="{{personalOpen}}" class="personal-home-details">
           <view wx:for="{{personalColors}}" wx:key="rank" class="personal-home-row">
             <view class="personal-row-head">
@@ -101,7 +104,7 @@
           <view class="swatch-colors"><view wx:for="{{item.product.swatches}}" wx:for-item="swatch" wx:key="*this" class="guide-swatch" style="background:{{swatch}}"/></view>
           <view class="swatch-copy"><text>今日穿衣色</text><text>{{item.palette}}</text></view>
         </view>
-        <view class="guide-summary">
+        <view wx:if="{{item.expanded}}" class="guide-summary">
           <view class="guide-note guide-note-fit">
             <view class="guide-note-label">穿衣与搭配</view>
             <view class="guide-note-copy">{{item.advice}}</view>

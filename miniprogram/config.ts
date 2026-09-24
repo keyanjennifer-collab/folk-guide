@@ -11,6 +11,7 @@
  * 同时在微信公众平台的“开发管理 -> 开发设置”中配置 request 合法域名。
  */
 export const API_BASE_URL = "https://api.wusezhishi.com";
+//export const API_BASE_URL = "http://127.0.0.1:8000";
 /** 品牌字体由同一 API 域名提供，开发者工具失败时会回退到包内字体。 */
 export const FONT_ASSET_BASE_URL = `${API_BASE_URL}/font-assets`;
 /** 单次接口最长等待15秒，避免网络断开后页面长期停留在加载状态。 */

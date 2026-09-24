@@ -34,6 +34,8 @@ const POSTER_COLORS = {
   muted: "#9f9589",
 };
 
+const BRAND_LOGO_PATH = "/assets/brand/logo-ai.png";
+
 function roundedRect(
   context: CanvasContext,
   x: number,
@@ -116,13 +118,11 @@ function drawBackground(context: CanvasContext): void {
   context.restore();
 }
 
-function drawHeader(context: CanvasContext, data: PublicGuidePosterData): void {
-  context.fillStyle = POSTER_COLORS.gold;
-  context.font = "34px serif";
-  context.fillText("五色知时", 72, 84);
-  context.fillStyle = POSTER_COLORS.muted;
-  context.font = "20px sans-serif";
-  context.fillText("WUSE ZHISHI · DAILY GUIDANCE", 72, 116);
+function drawHeader(context: CanvasContext, data: PublicGuidePosterData, brandLogo: CanvasImage): void {
+  const logoWidth = 220;
+  const logoHeight = 159;
+  const logoX = PUBLIC_GUIDE_POSTER_WIDTH - 72 - logoWidth;
+  context.drawImage(brandLogo, logoX, 28, logoWidth, logoHeight);
 
   context.fillStyle = POSTER_COLORS.cream;
   context.font = "bold 72px serif";
@@ -153,9 +153,14 @@ function drawRankingItem(context: CanvasContext, item: PublicGuidePosterItem, y:
   context.stroke();
 
   const accent = item.swatches[0] || POSTER_COLORS.gold;
+  const accentWidth = 40;
   context.save();
-  roundedRect(context, x, y, 15, height, 8);
-  context.fillStyle = accent;
+  roundedRect(context, x, y, accentWidth, height, 8);
+  const accentGradient = context.createLinearGradient(x, y, x + accentWidth, y);
+  accentGradient.addColorStop(0, accent);
+  accentGradient.addColorStop(0.32, accent);
+  accentGradient.addColorStop(1, POSTER_COLORS.panel);
+  context.fillStyle = accentGradient;
   context.fill();
   context.restore();
 
@@ -188,7 +193,7 @@ function drawRankingItem(context: CanvasContext, item: PublicGuidePosterItem, y:
 }
 
 function drawFooter(context: CanvasContext, qrCode: CanvasImage): void {
-  const qrSize = 244;
+  const qrSize = 210;
   const qrX = PUBLIC_GUIDE_POSTER_WIDTH - 72 - qrSize;
   const qrY = PUBLIC_GUIDE_POSTER_HEIGHT - 72 - qrSize;
 
@@ -221,9 +226,12 @@ export async function drawPublicGuidePoster(
   canvas.width = PUBLIC_GUIDE_POSTER_WIDTH;
   canvas.height = PUBLIC_GUIDE_POSTER_HEIGHT;
   const context = canvas.getContext("2d");
+  const [brandLogo, qrCode] = await Promise.all([
+    loadCanvasImage(canvas, BRAND_LOGO_PATH),
+    loadCanvasImage(canvas, qrCodePath),
+  ]);
   drawBackground(context);
-  drawHeader(context, data);
+  drawHeader(context, data, brandLogo);
   data.items.forEach((item, index) => drawRankingItem(context, item, 430 + index * 178));
-  const qrCode = await loadCanvasImage(canvas, qrCodePath);
   drawFooter(context, qrCode);
 }

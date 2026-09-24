@@ -46,7 +46,7 @@
       </view>
     </view>
 
-    <view wx:if="{{personalState === 'ready'}}" class="personal-lock-card personal-ready-card">
+    <view wx:if="{{personalState === 'ready'}}" class="personal-lock-card personal-feature-card personal-ready-card">
       <view class="personal-card-rail"/>
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS · {{personalDate}}</view>
@@ -72,10 +72,12 @@
       </view>
       <button bindtap="togglePersonalColors">{{personalOpen ? '收起　−' : '查看　›'}}</button>
     </view>
-    <view wx:else class="personal-lock-card">
+    <view wx:else class="personal-lock-card personal-feature-card personal-gated-card">
+      <view class="personal-card-rail"/>
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
         <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : '请登录'}}</text></view>
+        <view class="personal-hero-swatches" aria-hidden="true"><view class="personal-hero-swatch personal-swatch-white active"/><view class="personal-hero-swatch personal-swatch-gold"/><view class="personal-hero-swatch personal-swatch-green"/><view class="personal-hero-swatch personal-swatch-red"/><view class="personal-hero-swatch personal-swatch-black"/></view>
         <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : '登录后即可查看结合本命与当日流日生成的个人五色。'}}</text>
       </view>
       <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案　›</button><button wx:else bindtap="toSettings">登录查看　›</button>

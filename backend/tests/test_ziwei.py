@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.ziwei_schemas import ZiweiBirthInput
+from app.ziwei_service import _hour_branch, generate_chart
 
 
 def login_headers(client: TestClient, code: str) -> dict[str, str]:
@@ -14,6 +16,37 @@ def person(label: str, name: str, date: str, time: str, gender: str) -> dict:
             "birth_location": "福建省泉州市"}
 
 
+def test_ziwei_four_pillars_share_the_chart_time_source():
+    base = {
+        "label": "时柱测试", "name": "测试", "birth_date": "1990-01-02",
+        "gender": "male", "birth_location": "福建省泉州市",
+    }
+    midnight = generate_chart(ZiweiBirthInput(**base, birth_time="00:30"))
+    morning = generate_chart(ZiweiBirthInput(**base, birth_time="08:00"))
+    afternoon = generate_chart(ZiweiBirthInput(**base, birth_time="14:30"))
+
+    assert [morning["lunarInfo"][key] for key in ("yearGanZhi", "monthGanZhi", "dayGanZhi")] == ["己巳", "丁丑", "丁卯"]
+    assert midnight["lunarInfo"]["timeGanZhi"] == "庚子"
+    assert morning["lunarInfo"]["timeGanZhi"] == "甲辰"
+    assert afternoon["lunarInfo"]["timeGanZhi"] == "丁未"
+    assert len({midnight["mingGongBranch"], morning["mingGongBranch"], afternoon["mingGongBranch"]}) == 3
+
+
+def test_ziwei_distinguishes_early_and_late_zi_hours():
+    assert _hour_branch("00:30") == 0
+    assert _hour_branch("22:59") == 11
+    assert _hour_branch("23:00") == 12
+    assert _hour_branch("23:59") == 12
+
+    chart = generate_chart(ZiweiBirthInput(
+        label="晚子时测试", name="测试", birth_date="1990-01-02", birth_time="23:30",
+        gender="male", birth_location="福建省泉州市",
+    ))
+    assert chart["birthInfo"]["hour"] == 12
+    assert chart["lunarInfo"]["dayGanZhi"] == "戊辰"
+    assert chart["lunarInfo"]["timeGanZhi"] == "壬子"
+
+
 def test_ziwei_chart_and_compatibility_are_saved_per_user():
     with TestClient(app) as client:
         owner = login_headers(client, "ziwei-owner")
@@ -22,7 +55,7 @@ def test_ziwei_chart_and_compatibility_are_saved_per_user():
         chart = client.post("/api/ziwei/charts", headers=owner, json=alice)
         assert chart.status_code == 200
         payload = chart.json()
-        assert payload["chart"]["calculationVersion"] == "iztro-2.5.8"
+        assert payload["chart"]["calculationVersion"] == "iztro-2.5.8-time-v2"
         assert len(payload["chart"]["palaces"]) == 12
         assert payload["chart"]["lunarInfo"]["yearGanZhi"]
 

@@ -24,6 +24,10 @@ function buildChart(input) {
   const astrolabe = astro.bySolar(`${year}-${month}-${day}`, hour, gender === "male" ? "男" : "女", true, "zh-CN");
   const solar = Solar.fromYmd(year, month, day);
   const lunar = solar.getLunar();
+  const [yearGanZhi, monthGanZhi, dayGanZhi, timeGanZhi] = astrolabe.chineseDate.split(" ");
+  if (![yearGanZhi, monthGanZhi, dayGanZhi, timeGanZhi].every(Boolean)) {
+    throw new Error("紫微排盘四柱结果格式异常");
+  }
   const currentAge = new Date().getFullYear() - year;
   const palaces = astrolabe.palaces.map((palace) => {
     const daXianAge = palace.decadal?.range ? [palace.decadal.range[0], palace.decadal.range[1]] : null;
@@ -43,12 +47,12 @@ function buildChart(input) {
   const ziweiPalace = palaces.find((palace) => palace.stars.some((star) => star.name === "紫微"));
 
   return {
-    calculationVersion: "iztro-2.5.8",
+    calculationVersion: "iztro-2.5.8-time-v2",
     birthInfo: { year, month, day, hour, gender, name, location },
     lunarInfo: {
       lunarYear: lunar.getYear(), lunarMonth: Math.abs(lunar.getMonth()), lunarDay: lunar.getDay(),
       isLeapMonth: lunar.getMonth() < 0, lunarText: lunar.toString(),
-      yearGanZhi: lunar.getYearInGanZhi(), monthGanZhi: lunar.getMonthInGanZhi(), dayGanZhi: lunar.getDayInGanZhi(), timeGanZhi: lunar.getTimeInGanZhi(),
+      yearGanZhi, monthGanZhi, dayGanZhi, timeGanZhi,
     },
     mingGongBranch: BRANCHES.indexOf(astrolabe.earthlyBranchOfSoulPalace),
     shenGongBranch: BRANCHES.indexOf(astrolabe.earthlyBranchOfBodyPalace),

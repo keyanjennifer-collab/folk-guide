@@ -31,9 +31,11 @@ def _node_binary() -> str:
 
 
 def _hour_branch(value: str) -> int:
-    """把钟表时间转为 iztro 的时辰索引：子=0、丑=1…亥=11。"""
+    """把钟表时间转为 iztro 的时辰索引：早子=0、丑=1…亥=11、晚子=12。"""
     hour = int(value[:2])
-    if hour in (23, 0):
+    if hour == 23:
+        return 12
+    if hour == 0:
         return 0
     return (hour + 1) // 2
 

@@ -16,6 +16,8 @@ from .time_service import utc_now_naive
 
 router = APIRouter()
 
+SUPPORTED_CITATION_KINDS = {"knowledge", "personal_daily", "web"}
+
 
 def owned_conversation(db: Session, user_id: int, conversation_id: int) -> AIConversation:
     row = db.scalar(select(AIConversation).where(
@@ -34,9 +36,18 @@ def owned_message(db: Session, user_id: int, message_id: int) -> AIConversationM
 
 
 def message_output(row: AIConversationMessage) -> dict:
+    try:
+        citations = json.loads(row.references_json)
+    except (TypeError, json.JSONDecodeError):
+        citations = []
+    # 旧版本可能保存过紫微引用；功能已移除，历史接口也不能继续暴露这些引用。
+    citations = [
+        item for item in citations
+        if isinstance(item, dict) and item.get("kind") in SUPPORTED_CITATION_KINDS
+    ]
     return {"id": row.id, "conversation_id": row.conversation_id,
             "question": row.question, "answer": row.answer, "category": row.category,
-            "citations": json.loads(row.references_json), "feedback": row.feedback,
+            "citations": citations, "feedback": row.feedback,
             "favorite": row.favorite, "safety_status": row.safety_status,
             "created_at": row.created_at}
 
@@ -58,7 +69,7 @@ def delete_messages(db: Session, user_id: int, conversation_id: int | None = Non
                       .where(*filters)).all()
     db.add_all([AIDeletedUsage(user_id=user_id, category=category, created_at=created_at)
                 for category, created_at in rows
-                if category not in {"high_risk", "profile_required"}])
+                if category not in {"high_risk", "removed_feature", "profile_required"}])
     db.execute(delete(AIConversationMessage).where(*filters))
 
 

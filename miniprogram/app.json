@@ -10,8 +10,7 @@
     { "root": "pages/explore", "pages": ["index"] },
     { "root": "pages/profile", "pages": ["index"] },
     { "root": "pages/orders", "pages": ["index"] },
-    { "root": "pages/checkout", "pages": ["index", "policy"] },
-    { "root": "pages/ziwei", "pages": ["index", "result", "compatibility-result"] }
+    { "root": "pages/checkout", "pages": ["index", "policy"] }
   ],
   "window": {
     "navigationBarTitleText": "今日五色",
@@ -41,7 +40,7 @@
       },
       {
         "pagePath": "pages/chat/index",
-        "text": "测一测",
+        "text": "文化问答",
         "iconPath": "assets/nav/ai.png",
         "selectedIconPath": "assets/nav/ai-active.png"
       },

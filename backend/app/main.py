@@ -48,8 +48,6 @@ from .schemas import (
 )
 from .services import answer_question, exchange_wechat_code, exchange_wechat_phone_code
 from .time_service import beijing_today
-from .ziwei_routes import router as ziwei_router
-from .ziwei_interpret_routes import router as ziwei_interpret_router
 
 
 @asynccontextmanager
@@ -180,8 +178,6 @@ app.include_router(daily_update_router)
 app.include_router(order_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
-app.include_router(ziwei_router)
-app.include_router(ziwei_interpret_router)
 
 
 @app.get("/health", tags=["系统状态"], summary="检查后端服务是否正常")
@@ -413,6 +409,7 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
     db.query(ShippingAddress).filter(ShippingAddress.user_id == user.id).delete()
     db.query(Order).filter(Order.user_id == user.id).delete()
+    # 清理历史版本留下的紫微数据；新版本已不再提供对应接口或模型能力。
     db.query(ZiweiCompatibilityRecord).filter(ZiweiCompatibilityRecord.user_id == user.id).delete()
     db.query(ZiweiChartRecord).filter(ZiweiChartRecord.user_id == user.id).delete()
     db.delete(user)

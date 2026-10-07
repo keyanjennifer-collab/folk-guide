@@ -4,13 +4,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN useradd --create-home --uid 10001 appuser
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 appuser
 WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/app/ziwei_runtime/package*.json ./ziwei_runtime/
+RUN cd ziwei_runtime && npm ci --omit=dev
 COPY alembic.ini .
 COPY alembic ./alembic
 COPY backend/app ./app
+RUN cp -a ziwei_runtime/node_modules ./app/ziwei_runtime/node_modules \
+    && rm -rf ziwei_runtime
 RUN mkdir -p /app/storage/knowledge \
     && chown -R appuser:appuser /app
 

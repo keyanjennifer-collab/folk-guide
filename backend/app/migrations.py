@@ -37,6 +37,11 @@ SQLITE_KNOWLEDGE_CHUNK_COLUMNS = {
     "ocr_confidence": "FLOAT",
 }
 
+SQLITE_ZIWEI_CHART_COLUMNS = {
+    "calendar_type": "VARCHAR(16) NOT NULL DEFAULT 'solar'",
+    "is_leap_month": "BOOLEAN NOT NULL DEFAULT 0",
+}
+
 SQLITE_DAILY_GUIDANCE_COLUMNS = {
     "algorithm_version": "VARCHAR(64)",
     "final_scores_json": "TEXT",
@@ -105,6 +110,11 @@ def migrate_development_schema(engine: Engine) -> None:
             for name, definition in SQLITE_PROFILE_COLUMNS.items():
                 if name not in existing:
                     connection.execute(text(f"ALTER TABLE birth_profiles ADD COLUMN {name} {definition}"))
+        if "ziwei_chart_records" in tables:
+            existing = {column["name"] for column in inspector.get_columns("ziwei_chart_records")}
+            for name, definition in SQLITE_ZIWEI_CHART_COLUMNS.items():
+                if name not in existing:
+                    connection.execute(text(f"ALTER TABLE ziwei_chart_records ADD COLUMN {name} {definition}"))
         if "daily_guidance" in tables:
             existing = {column["name"] for column in inspector.get_columns("daily_guidance")}
             for name, definition in SQLITE_DAILY_GUIDANCE_COLUMNS.items():

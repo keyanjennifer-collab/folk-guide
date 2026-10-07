@@ -153,6 +153,11 @@ Page({
   toProfile() {
     wx.navigateTo({ url: "/pages/profile/index" });
   },
+  toZiwei(event?: WechatMiniprogram.TouchEvent) {
+    const mode = event?.currentTarget.dataset.mode === "compatibility" ? "compatibility" : "chart";
+    wx.navigateTo({ url: `/pages/ziwei/index?mode=${mode}` });
+  },
+
   toggleQa() {
     this.setData({ qaOpen: !this.data.qaOpen, historyOpen: false });
     wx.nextTick(() => wx.pageScrollTo({ selector: "#cultureQa", duration: 200 }));

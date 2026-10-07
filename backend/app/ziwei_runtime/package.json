@@ -1,0 +1,9 @@
+{
+  "name": "folk-guide-ziwei-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "iztro": "2.5.8",
+    "lunar-javascript": "1.7.3"
+  }
+}

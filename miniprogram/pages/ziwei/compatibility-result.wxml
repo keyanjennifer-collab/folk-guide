@@ -1,0 +1,14 @@
+<view class="ziwei-page {{themeClass}}">
+  <view class="result-hero"><view class="eyebrow">ZIWEI · CHART COMPATIBILITY</view><view class="title">{{compatibilityResult ? compatibilityResult.result.title : '合盘结果'}}</view><view class="subtitle">保存后的合盘会一直保留，之后可以从历史记录重新打开。</view></view>
+  <view wx:if="{{loading}}" class="loading">正在读取合盘记录…</view>
+  <view wx:elif="{{compatibilityResult}}" class="card result">
+    <view class="result-actions"><button class="danger-action" bindtap="deleteCompatibility">删除这份合盘</button></view>
+    <view class="person-summary"><view><text>第一位</text><view>{{compatibilityResult.person_a.name || '未署名'}}</view></view><view><text>第二位</text><view>{{compatibilityResult.person_b.name || '未署名'}}</view></view><view><text>关系主题</text><view>{{relationLabel}}</view></view></view>
+    <view class="basis">{{compatibilityResult.result.basis}}</view>
+    <view wx:for="{{compatibilityResult.result.observations}}" wx:key="*this" class="observation">{{item}}</view>
+    <view class="palace-title">建议优先讨论</view><view class="topic-row"><text wx:for="{{compatibilityResult.result.discussion_topics}}" wx:key="*this">{{item}}</text></view>
+    <view class="note">{{compatibilityResult.result.disclaimer}}</view>
+    <view wx:if="{{compatibilityAnalysisLoading}}" class="remote-loading">正在生成双盘详细解读…</view>
+    <view wx:if="{{compatibilityAnalysis}}" class="remote-analysis"><view class="remote-title">AI 合盘详细解读</view><text class="remote-copy">{{compatibilityAnalysis}}</text></view>
+  </view>
+</view>

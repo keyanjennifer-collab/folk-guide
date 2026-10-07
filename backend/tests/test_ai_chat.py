@@ -9,10 +9,10 @@ import pytest
 from app.config import get_settings
 from app.database import SessionLocal
 from app.ai_rate_limit import reset_ai_rate_limit_for_tests
-from app.ai_service import question_requests_personal_context
+from app.ai_service import question_requests_personal_context, question_requests_ziwei_context
 from app.llm_provider import get_answer_provider, set_answer_provider
 from app.main import app
-from app.models import AIConversationMessage, User
+from app.models import User
 from app.time_service import utc_now_naive
 from test_knowledge import ADMIN_HEADERS, cleanup_hash, upload
 from app.web_search_service import get_web_search_provider, set_web_search_provider
@@ -29,7 +29,7 @@ class ReadyDirectProvider:
         self.answer_text = answer_text
 
     def generate(
-        self, question, contexts, *, use_knowledge_base=True, personal_context=None,
+        self, question, contexts, *, use_knowledge_base=True, personal_context=None, ziwei_context=None,
         web_results=None, conversation_history=None
     ):
         self.calls.append({
@@ -37,6 +37,7 @@ class ReadyDirectProvider:
             "contexts": contexts,
             "use_knowledge_base": use_knowledge_base,
             "personal_context": personal_context,
+            "ziwei_context": ziwei_context,
             "web_results": web_results,
             "conversation_history": conversation_history,
         })
@@ -118,6 +119,20 @@ def test_general_culture_questions_do_not_read_personal_context(question: str):
     assert question_requests_personal_context(question) is False
 
 
+@pytest.mark.parametrize("question", [
+    "根据我保存的紫微命盘，命宫的主星怎么理解？",
+    "我的合盘对合作沟通有什么参考？",
+    "这次合盘适合怎么看生意协作？",
+])
+def test_ziwei_question_classifier_reads_saved_results(question: str):
+    assert question_requests_ziwei_context(question) is True
+
+
+@pytest.mark.parametrize("question", ["紫微斗数是什么？", "命宫是什么意思？", "十二宫有哪些？"])
+def test_general_ziwei_questions_do_not_read_saved_results(question: str):
+    assert question_requests_ziwei_context(question) is False
+
+
 def test_new_user_quota_chat_history_feedback_and_safety(direct_provider):
     with TestClient(app) as client:
         headers = login(client, "formal-ai-user")
@@ -161,52 +176,6 @@ def test_new_user_quota_chat_history_feedback_and_safety(direct_provider):
         )
         assert feedback.status_code == 200
         assert feedback.json()["feedback"] == "helpful"
-
-
-def test_removed_ziwei_feature_is_blocked_without_consuming_quota(direct_provider):
-    with TestClient(app) as client:
-        headers = login(client, "removed-ziwei-feature-user")
-        before = client.get("/api/ai/quota", headers=headers).json()["normal_remaining"]
-        answered = client.post(
-            "/api/ai/chat", headers=headers,
-            json={"question": "我的紫微命盘和合盘怎么解读？"},
-        )
-        assert answered.status_code == 200
-        result = answered.json()
-        assert result["category"] == "removed_feature"
-        assert result["blocked"] is True
-        assert result["model_name"] == "safety-rule-v1"
-        assert result["answer"] == "个人命盘与合盘功能已从本小程序移除。"
-        assert result["remaining_today"] == before
-        assert direct_provider.calls == []
-
-
-def test_legacy_ziwei_citations_are_hidden_from_history_and_model_context(direct_provider):
-    with TestClient(app) as client:
-        headers = login(client, "legacy-ziwei-history-user")
-        first = client.post(
-            "/api/ai/chat", headers=headers,
-            json={"question": "五行五色怎样对应？"},
-        )
-        assert first.status_code == 200
-        with SessionLocal() as db:
-            row = db.get(AIConversationMessage, first.json()["message_id"])
-            row.references_json = json.dumps([{
-                "kind": "ziwei_chart", "document_id": None, "chunk_id": None,
-                "title": "已保存紫微命盘", "heading": None,
-                "source_name": "旧版计算结果",
-            }], ensure_ascii=False)
-            db.commit()
-
-        history = client.get("/api/ai/history", headers=headers)
-        assert history.status_code == 200
-        assert history.json()[0]["citations"] == []
-        second = client.post(
-            "/api/ai/chat", headers=headers,
-            json={"question": "什么是二十四节气？", "conversation_id": first.json()["conversation_id"]},
-        )
-        assert second.status_code == 200
-        assert direct_provider.calls[-1]["conversation_history"] in (None, [])
 
 
 def test_model_output_is_filtered_before_storage_and_response():
@@ -351,6 +320,59 @@ def test_personal_question_uses_same_daily_result_without_raw_profile(direct_pro
             "input_fingerprint", "entitlement_plan",
         ):
             assert forbidden not in serialized
+
+
+def test_ziwei_question_uses_saved_summaries_without_raw_birth_data(direct_provider):
+    """问到本人命盘或合盘时，只注入本账号保存的计算摘要。"""
+    with TestClient(app) as client:
+        owner = login(client, "ziwei-ai-context-owner")
+        other = login(client, "ziwei-ai-context-other")
+        first = {
+            "label": "我的命盘", "name": "测试用户", "birth_date": "1990-01-02",
+            "birth_time": "08:00", "gender": "male", "birth_location": "福建省泉州市晋江市详细地址",
+        }
+        second = {
+            "label": "合作伙伴", "name": "另一位", "birth_date": "1992-05-20",
+            "birth_time": "14:30", "gender": "female", "birth_location": "浙江省杭州市西湖区详细地址",
+        }
+        assert client.post("/api/ziwei/charts", headers=owner, json=first).status_code == 200
+        assert client.post("/api/ziwei/compatibilities", headers=owner, json={
+            "relation_type": "business", "person_a": first, "person_b": second,
+        }).status_code == 200
+        assert client.post("/api/ziwei/charts", headers=other, json={
+            **first, "label": "他人的命盘", "birth_date": "1988-08-08",
+        }).status_code == 200
+
+        answered = client.post(
+            "/api/ai/chat", headers=owner,
+            json={"question": "我的合盘对生意合作有什么参考？"},
+        )
+        assert answered.status_code == 200
+        ziwei_context = direct_provider.calls[-1]["ziwei_context"]
+        assert len(ziwei_context["charts"]) == 1
+        assert len(ziwei_context["compatibilities"]) == 1
+        assert ziwei_context["compatibilities"][0]["relation_type"] == "business"
+        assert ziwei_context["charts"][0]["palaces"]
+        assert {item["kind"] for item in answered.json()["citations"]} == {
+            "ziwei_chart", "ziwei_compatibility",
+        }
+
+        serialized = json.dumps(ziwei_context, ensure_ascii=False)
+        for forbidden in (
+            "birth_date", "birth_time", "birth_location", "birthInfo", "lunarInfo",
+            "测试用户", "另一位", "详细地址", "person_a", "person_b",
+        ):
+            assert forbidden not in serialized
+
+        other_answer = client.post(
+            "/api/ai/chat", headers=other,
+            json={"question": "根据我保存的紫微命盘，命宫主星怎么理解？"},
+        )
+        assert other_answer.status_code == 200
+        other_context = direct_provider.calls[-1]["ziwei_context"]
+        assert len(other_context["charts"]) == 1
+        assert other_context["charts"][0]["reference"] == "命盘 1"
+        assert other_context["compatibilities"] == []
 
 
 def test_personal_question_without_profile_guides_user_and_does_not_consume(direct_provider):

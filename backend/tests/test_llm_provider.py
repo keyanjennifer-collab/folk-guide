@@ -178,12 +178,38 @@ def test_personal_context_can_answer_when_knowledge_mode_has_no_chunks():
     assert called is True
 
 
+def test_ziwei_context_can_answer_without_approved_knowledge_chunks():
+    """已保存的脱敏起盘摘要本身是可信上下文，不应被空知识库拦截。"""
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "命宫可作结构化观察。"}}]})
+
+    provider = OpenAICompatibleAnswerProvider(
+        api_key="test-key", base_url="https://model.example/v1", model="test-model", max_retries=0,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    result = provider.generate("我的紫微命盘怎么理解？", [], ziwei_context={
+        "charts": [{"reference": "命盘 1", "ming_gong_branch": 3, "palaces": []}],
+        "compatibilities": [],
+    })
+    assert result == "命宫可作结构化观察。"
+    system_prompt = captured["messages"][0]["content"]
+    user_prompt = captured["messages"][1]["content"]
+    assert "不得反推出、索要或暴露生日、出生时间、地址" in system_prompt
+    assert "[已保存紫微结果｜后端白名单摘要]" in user_prompt
+    assert '"ming_gong_branch":3' in user_prompt
+    assert "birth_date" not in user_prompt
+
+
 @pytest.mark.parametrize(("question", "expected"), [
     ("《周易》主要讲什么", "《周易》"),
     ("《五行大义》怎样解释五色", "《五行大义》"),
     ("《增删卜易》的世应是什么", "《增删卜易》"),
     ("《渊海子平》的十神概念", "《渊海子平》"),
     ("《奇门遁甲统宗》的八门", "《奇门遁甲统宗》"),
+    ("《紫微斗数全书》的命宫", "《紫微斗数全书》"),
     ("《协纪辨方书》与时序", "《协纪辨方书》"),
     ("《三命通会》的格局", "《三命通会》"),
     ("《滴天髓》如何谈日主", "《滴天髓》"),

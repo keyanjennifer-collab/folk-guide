@@ -143,13 +143,12 @@ async function main() {
   assert.equal(isPublicRankingQuestion('五色在传统文化中有什么含义'),false);
   const chatWxml=fs.readFileSync(path.join(root,'pages/chat/index.wxml'),'utf8');
   const chatWxss=fs.readFileSync(path.join(root,'pages/chat/index.wxss'),'utf8');
-  assert(!/紫微|紫薇|命盘|合盘|测算/.test(chatWxml),'culture page removes personal divination flows');
-  assert(chatWxml.includes('时序文化问答') && chatWxml.includes('传统文化问答'),'culture page presents the educational Q&A entry');
-  assert(!/周易|易经|典籍阅读|从你感兴趣的开始/.test(chatWxml),'culture page keeps the curated question groups');
-  assert(chatWxss.includes('font-size: 48rpx') && !chatWxss.includes('font-size: 62rpx'),'culture hero stays compact');
-  assert.equal(app.tabBar.list[2].text,'文化问答');
+  assert(chatWxml.includes('紫微起盘') && chatWxml.includes('紫微合盘'),'test page presents both Ziwei chart paths');
+  assert(!/周易|易经|典籍阅读|从你感兴趣的开始/.test(chatWxml),'test page removes the classical reading prompts');
+  assert(chatWxss.includes('font-size: 48rpx') && !chatWxss.includes('font-size: 62rpx'),'Ziwei hero stays compact');
+  assert.equal(app.tabBar.list[2].text,'测一测');
   const customTabSource=fs.readFileSync(path.join(root,'custom-tab-bar/index.ts'),'utf8');
-  assert(customTabSource.includes('label: "文化问答"'),'custom tab uses the culture Q&A label');
+  assert(customTabSource.includes('label: "测一测"'),'custom tab uses the new test label');
   publicResult={guide_date:'2026-09-09',weekday:'星期三',lunar_date:'七月廿八',solar_term:'白露',day_ganzhi:'丙戌',
     items:[['白色系','金','白桂'],['黄色系','土','黄檀'],['绿色系','木','青木'],['红色系','火','朱蜜'],['黑色系','水','墨沉']].map((row,i)=>({rank:i+1,color:row[0],element:row[1],smoothness:['得生助旺','同气相和','克制求进','生泄耗气','受制势弱'][i],suitable:['整理'],resistance:'留意节奏',advice:'适量配色',product_code:row[2],incense_name:row[2],scent:'香气描述'})),
     share_title:'今日五色',share_summary:'今日公开资料',push_summary:'今日五色已更新',rule_version:'daily-rule-v1'};
@@ -196,7 +195,7 @@ async function main() {
   assert.equal(orders.data.loggedIn,false);
   const settings=instance('pages/settings/index.ts');
   const settingsWxml=fs.readFileSync(path.join(root,'pages/settings/index.wxml'),'utf8');
-  assert(settingsWxml.includes('传统文化问答') && !settingsWxml.includes('紫微'),'account page uses the culture label');
+  assert(settingsWxml.includes('我的测一测') && !settingsWxml.includes('我的时序文化'),'account page uses the test label');
   settings.showHelp();
   assert.equal(settings.data.infoDialog.title,'使用帮助');
   assert(settings.data.infoDialog.sections.length>=5,'help explains all major areas in detail');
@@ -204,6 +203,6 @@ async function main() {
   assert.equal(settings.data.infoDialog.title,'关于我们');
   settings.closeInfo();
   assert.equal(settings.data.infoDialog,null);
-  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; culture Q&A; scent matching; quiz sources; guest orders');
+  console.log('PASS: 4 tabs; 6 SKUs/assets; cart bounds; automatic rich daily guide; unlocked personal colors; Ziwei test hub; scent matching; quiz sources; guest orders');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,0 +1,5 @@
+@import "./result.wxss";
+.person-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12rpx; margin-top: 18rpx; }
+.person-summary>view { padding: 16rpx; background: #3d3b38; border-radius: 12rpx; }
+.person-summary text { display: block; color: #aaa194; font-size: 23rpx; }
+.person-summary view { margin-top: 5rpx; color: #eee1d0; font-size: 25rpx; }

@@ -3,7 +3,7 @@
 import { request } from "./api";
 
 export interface AICitation {
-  kind: "knowledge" | "personal_daily" | "web";
+  kind: "knowledge" | "personal_daily" | "ziwei_chart" | "ziwei_compatibility" | "web";
   document_id: number | null;
   chunk_id: number | null;
   title: string;
@@ -89,6 +89,10 @@ export function citationLabel(citation: AICitation): string {
   if (citation.kind === "personal_daily") {
     const date = citation.heading ? ` · ${citation.heading}` : "";
     return `${citation.title}${date}｜${citation.source_name}`;
+  }
+  if (citation.kind === "ziwei_chart" || citation.kind === "ziwei_compatibility") {
+    const detail = citation.heading ? ` · ${citation.heading}` : "";
+    return `${citation.title}${detail}｜${citation.source_name}`;
   }
   if (citation.kind === "web") {
     const date = citation.heading ? ` · ${citation.heading}` : "";

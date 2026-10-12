@@ -4,6 +4,7 @@ import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone, r
 import { getAIQuota } from "../../services/ai";
 import { getCurrentProfile, isProfileMissing } from "../../services/profile";
 import { getOrders } from "../../services/orders";
+import { contactAfterSales, prepareAfterSalesContact } from "../../services/after-sales";
 let loadVersion = 0;
 const EMPTY_COUNTS = { pending: "—", paid: "—", shipped: "—", after_sale: "—" };
 type InfoDialog = { eyebrow: string; title: string; intro: string; sections: { title: string; body: string }[] };
@@ -24,7 +25,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
       { title: "账号信息", body: "微信登录用于识别你的账号并同步订单、档案与问答记录。手机号不会自动读取，只有在你点击授权后才会绑定。" },
       { title: "本人档案", body: "你填写的档案用于生成个人五色等功能，可随时进入“本人档案”修改或删除。传统文化内容仅供学习与生活参考。" },
       { title: "订单与收货信息", body: "购物袋保存在当前设备；收货人、电话和地址在你提交后保存于账号，仅用于计价、配送、售后和依法留存。退出登录不会删除已经提交的订单；注销账号时，交易、退款和开票所需记录将按法律要求保留或脱敏处理。" },
-      { title: "你的选择", body: "你可以不绑定微信手机号，也可以在本人档案中管理已填写内容。交易与售后相关问题可通过结算页“购买、配送与售后须知”中公示的客服方式提出。商城预购商品的发货时间、取消和退款规则以提交订单时展示的版本为准。" },
+      { title: "你的选择", body: "你可以不绑定微信手机号，也可以在本人档案中管理已填写内容。交易与售后相关问题可通过“我的”或订单详情中的“售后客服”提出。商品的发货时间、取消和退款规则以提交订单时展示的版本为准。" },
       { title: "内容说明", body: "五色寓意、香气札记和AI生成内容用于传统文化学习、审美体验与日常参考，不承诺医疗、运势、收益或其他确定性效果。" },
     ],
   },
@@ -47,7 +48,7 @@ Page({
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
   },
-  onShow() { const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl, showProfileHint: !!p.nickname && !wx.getStorageSync("profile_edit_hint_shown") }); void this.loadAccount(); },
+  onShow() { void prepareAfterSalesContact(); const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); (this as any).getTabBar?.()?.setData({ selected: 3 }); const p = getLocalUserProfile(); this.setData({ nickname: p.nickname, avatarUrl: p.avatarUrl, showProfileHint: !!p.nickname && !wx.getStorageSync("profile_edit_hint_shown") }); void this.loadAccount(); },
   onHide() { loadVersion++; this.setData({ dashboardLoading: false }); },
   onPullDownRefresh() { void this.loadAccount().finally(() => wx.stopPullDownRefresh()); },
   resetAccount() {
@@ -125,6 +126,7 @@ Page({
   },
   logout() { wx.showModal({ title: "退出登录", content: "确定退出当前微信账号吗？", confirmText: "退出", cancelText: "取消", success: (result) => { if (!result.confirm) return; loadVersion++; logoutLocalAccount(); this.resetAccount(); this.setData({ dashboardLoading: false, editingProfile: false }); wx.showToast({ title: "已退出登录", icon: "success" }); } }); },
   showHelp() { this.setData({ infoDialog: INFO_DIALOGS.help }); },
+  contactSupport() { contactAfterSales(); },
   showPrivacy() { this.setData({ infoDialog: INFO_DIALOGS.privacy }); },
   showAbout() { this.setData({ infoDialog: INFO_DIALOGS.about }); },
   closeInfo() { this.setData({ infoDialog: null }); },

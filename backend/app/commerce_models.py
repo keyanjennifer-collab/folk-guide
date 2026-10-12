@@ -108,6 +108,8 @@ class Order(Base):
     wx_transaction_id: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     payment_prepay_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     refund_number: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    # 已发货退款须由运营确认实物可重新销售；旧订单兼容原有回库行为。
+    refund_restock: Mapped[bool] = mapped_column(Boolean, default=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     shipped_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

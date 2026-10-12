@@ -62,6 +62,7 @@ SQLITE_ORDER_COLUMNS = {
     "wx_transaction_id": "VARCHAR(64)",
     "payment_prepay_id": "VARCHAR(128)",
     "refund_number": "VARCHAR(64)",
+    "refund_restock": "BOOLEAN NOT NULL DEFAULT 1",
     "expires_at": "DATETIME",
     "paid_at": "DATETIME",
     "shipped_at": "DATETIME",
@@ -83,6 +84,10 @@ def migrate_development_schema(engine: Engine) -> None:
     inspector = inspect(engine)
     tables = inspector.get_table_names()
     with engine.begin() as connection:
+        if "products" in tables:
+            existing = {column["name"] for column in inspector.get_columns("products")}
+            if "cost_fen" not in existing:
+                connection.execute(text("ALTER TABLE products ADD COLUMN cost_fen INTEGER NOT NULL DEFAULT 0"))
         if "ai_conversations" in tables:
             existing = {column["name"] for column in inspector.get_columns("ai_conversations")}
             if "archived" not in existing:

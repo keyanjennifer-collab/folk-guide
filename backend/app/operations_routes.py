@@ -22,7 +22,7 @@ from .admin_auth import (
 )
 from .commerce_models import Order, ProductInventory
 from .database import get_db
-from .order_routes import ensure_inventory_rows, expire_pending_orders, output
+from .order_routes import _change_stock, _items, _restock_refund, _success_time, ensure_inventory_rows, expire_pending_orders, output
 from .commerce_catalog import load_products
 from .wechat_pay import WechatPayError, create_refund
 
@@ -64,11 +64,13 @@ def _order_cost_fen(order: Order, cost_map: dict[str, int]) -> int:
         items = json.loads(order.items_json or "[]")
     except (TypeError, ValueError):
         return 0
+    if order.cancelled_at is not None or (order.status == "refunded" and order.refund_restock):
+        return 0
     total = 0
     for item in items:
         pid = item.get("product_id", "")
         qty = int(item.get("quantity", 0))
-        total += cost_map.get(pid, 0) * qty
+        total += int(item.get("unit_cost_fen", cost_map.get(pid, 0))) * qty
     return total
 
 
@@ -110,6 +112,7 @@ class FinanceOutput(BaseModel):
     # 订单维度
     paid_order_count: int         # 已付款订单数（含退款）
     refunded_order_count: int     # 退款订单数
+    cost_warning: str             # 成本未录入/历史快照缺失时明确提示估算口径
     # 商品维度明细
     products: list[ProductFinance]
 
@@ -118,10 +121,14 @@ class FinanceOutput(BaseModel):
 def finance(_: AdminIdentity = Depends(require_admin_identity), db: Session = Depends(get_db)):
     ensure_inventory_rows(db)
     expire_pending_orders(db)
+    return calculate_finance(db)
+
+
+def calculate_finance(db: Session) -> FinanceOutput:
 
     # 所有已产生资金往来的订单：已付款、发货、完成、售后、退款。
     settled_statuses = ("paid", "shipped", "completed", "after_sale", "refunded")
-    orders = db.scalars(select(Order).where(Order.status.in_(settled_statuses))).all()
+    orders = db.scalars(select(Order).where(Order.status.in_(settled_statuses), Order.paid_at.is_not(None))).all()
     cost_map = {p.id: p.cost_fen for p in load_products(db)}
     product_map = {p.id: p for p in load_products(db)}
 
@@ -131,30 +138,37 @@ def finance(_: AdminIdentity = Depends(require_admin_identity), db: Session = De
     total_cost = 0
     paid_count = 0
     refunded_count = 0
+    missing_cost = False
+    historical_cost = False
 
     # 按商品聚合。
     agg: dict[str, dict[str, Any]] = {}
 
     for order in orders:
         paid_count += 1
+        gross_sales += order.total_fen
         if order.status == "refunded":
             refunded_count += 1
             refund += order.total_fen
-            # 退款订单不计入净销售与成本。
-            continue
-        gross_sales += order.total_fen
-        shipping_income += order.shipping_fee_fen
+        else:
+            shipping_income += order.shipping_fee_fen
         cost = _order_cost_fen(order, cost_map)
         total_cost += cost
         for item in _order_item_rows(order):
             pid = item.get("product_id", "")
             qty = int(item.get("quantity", 0))
             unit_price = int(item.get("unit_price_fen", 0))
-            unit_cost = cost_map.get(pid, 0)
+            unit_cost = int(item.get("unit_cost_fen", cost_map.get(pid, 0)))
+            cost_applies = order.cancelled_at is None and not (order.status == "refunded" and order.refund_restock)
+            if cost_applies:
+                missing_cost = missing_cost or unit_cost == 0
+                historical_cost = historical_cost or "unit_cost_fen" not in item
             bucket = agg.setdefault(pid, {"sold_qty": 0, "sales_fen": 0, "cost_fen": 0})
-            bucket["sold_qty"] += qty
-            bucket["sales_fen"] += unit_price * qty
-            bucket["cost_fen"] += unit_cost * qty
+            if order.status != "refunded":
+                bucket["sold_qty"] += qty
+                bucket["sales_fen"] += unit_price * qty
+            if cost_applies:
+                bucket["cost_fen"] += unit_cost * qty
 
     net_sales = gross_sales - refund
     gross_profit = net_sales - total_cost
@@ -183,6 +197,10 @@ def finance(_: AdminIdentity = Depends(require_admin_identity), db: Session = De
         net_profit_fen=gross_profit,
         paid_order_count=paid_count,
         refunded_order_count=refunded_count,
+        cost_warning="；".join(filter(None, [
+            "部分订单的商品成本为0，毛利仅供参考" if missing_cost else "",
+            "历史订单缺少成本快照，按当前成本估算" if historical_cost else "",
+        ])),
         products=products,
     )
 
@@ -194,8 +212,12 @@ def dashboard(_: AdminIdentity = Depends(require_admin_identity), db: Session = 
 
     start, end = _beijing_today_range()
     today_orders = db.scalars(select(Order).where(Order.created_at >= start, Order.created_at < end)).all()
-    paid_orders = [o for o in today_orders if o.status in ("paid", "shipped", "completed", "after_sale", "refunded")]
-    today_sales = sum(o.total_fen for o in paid_orders)
+    # 按资金发生时间计入北京时间当日：跨天下单不影响收款归属，退款仅扣一次。
+    received = db.scalar(select(func.coalesce(func.sum(Order.total_fen), 0)).where(
+        Order.paid_at >= start, Order.paid_at < end))
+    returned = db.scalar(select(func.coalesce(func.sum(Order.total_fen), 0)).where(
+        Order.refunded_at >= start, Order.refunded_at < end))
+    today_sales = received - returned
 
     status_counts: dict[str, int] = {name: 0 for name in ORDER_STATUSES}
     status_counts.update(dict(db.execute(
@@ -205,14 +227,7 @@ def dashboard(_: AdminIdentity = Depends(require_admin_identity), db: Session = 
     pending_ship = status_counts.get("paid", 0)
     after_sale = status_counts.get("after_sale", 0)
 
-    # 累计销售额与成本（只统计已付款且未退款的订单）。
-    settled_statuses = ("paid", "shipped", "completed", "after_sale")
-    settled_orders = db.scalars(select(Order).where(Order.status.in_(settled_statuses))).all()
-    total_sales = sum(o.total_fen for o in settled_orders)
-    cost_map = {p.id: p.cost_fen for p in load_products(db)}
-    total_cost = sum(_order_cost_fen(o, cost_map) for o in settled_orders)
-    total_profit = total_sales - total_cost
-    profit_rate = round(total_profit / total_sales * 100, 2) if total_sales > 0 else 0.0
+    financials = calculate_finance(db)
 
     # 低库存：可售数量 <= 20 的商品（只统计已上架的）。
     inventory = {row.product_id: row for row in db.scalars(select(ProductInventory)).all()}
@@ -240,10 +255,10 @@ def dashboard(_: AdminIdentity = Depends(require_admin_identity), db: Session = 
         pending_ship_count=pending_ship,
         after_sale_count=after_sale,
         status_counts=status_counts,
-        total_sales_fen=total_sales,
-        total_cost_fen=total_cost,
-        total_profit_fen=total_profit,
-        profit_rate=profit_rate,
+        total_sales_fen=financials.net_sales_fen,
+        total_cost_fen=financials.total_cost_fen,
+        total_profit_fen=financials.gross_profit_fen,
+        profit_rate=financials.gross_profit_rate,
         low_stock=low_stock,
         top_products=top_products,
     )
@@ -280,15 +295,15 @@ def export_orders_csv(
         ))
     if date_from:
         try:
-            query = query.where(Order.created_at >= datetime.strptime(date_from, "%Y-%m-%d"))
+            query = query.where(Order.created_at >= datetime.strptime(date_from, "%Y-%m-%d") - timedelta(hours=8))
         except ValueError:
             raise HTTPException(400, "date_from 格式应为 YYYY-MM-DD")
     if date_to:
         try:
-            end = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+            end = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1, hours=-8)
         except ValueError:
             raise HTTPException(400, "date_to 格式应为 YYYY-MM-DD")
-        query = query.where(Order.created_at <= end)
+        query = query.where(Order.created_at < end)
     orders = db.scalars(query).all()
     cost_map = {p.id: p.cost_fen for p in load_products(db)}
 
@@ -303,13 +318,15 @@ def export_orders_csv(
         items = order.items_json and __import__("json").loads(order.items_json) or []
         item_names = "、".join(f"{it.get('name', '')}" for it in items)
         item_qty = "、".join(str(it.get("quantity", "")) for it in items)
-        cost = _order_cost_fen(order, cost_map)
-        profit = order.total_fen - cost
+        settled = order.paid_at is not None
+        cost = _order_cost_fen(order, cost_map) if settled else 0
+        net_sales = order.total_fen if settled and order.status != "refunded" else 0
+        profit = net_sales - cost
         writer.writerow([
             order.number, STATUS_TEXT.get(order.status, order.status),
-            order.created_at.strftime("%Y-%m-%d %H:%M") if order.created_at else "",
-            order.paid_at.strftime("%Y-%m-%d %H:%M") if order.paid_at else "",
-            order.shipped_at.strftime("%Y-%m-%d %H:%M") if order.shipped_at else "",
+            (order.created_at + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M") if order.created_at else "",
+            (order.paid_at + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M") if order.paid_at else "",
+            (order.shipped_at + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M") if order.shipped_at else "",
             item_names, item_qty,
             f"{order.subtotal_fen / 100:.2f}", f"{order.shipping_fee_fen / 100:.2f}",
             f"{order.total_fen / 100:.2f}",
@@ -388,6 +405,7 @@ def batch_ship(
 
 class AdminRefundInput(BaseModel):
     reason: str = Field(default="商家同意退款", min_length=2, max_length=80)
+    restock: bool = False
 
     @field_validator("reason")
     @classmethod
@@ -408,10 +426,13 @@ def admin_refund(
     order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
     if not order:
         raise HTTPException(404, "订单不存在")
-    if order.status not in ("paid", "after_sale"):
-        raise HTTPException(409, "只有已付款或售后中的订单可以退款")
+    if order.status not in ("paid", "shipped", "completed", "after_sale") or order.paid_at is None:
+        raise HTTPException(409, "只有已付款、已发货、已完成或售后中的订单可以退款")
     if order.refunded_at:
         raise HTTPException(409, "订单已退款")
+    # 退款请求在途时固定回库决定；网关重试复用同一退款单号。
+    if not order.refund_number:
+        order.refund_restock = order.shipped_at is None or data.restock
     refund_number = order.refund_number or f"RF{order.number[2:]}"[:64]
     try:
         result = create_refund(order.number, refund_number, order.total_fen, data.reason)
@@ -419,19 +440,38 @@ def admin_refund(
         db.rollback()
         raise HTTPException(502, str(exc)) from exc
     order.refund_number = refund_number
-    if result.get("mock") and result.get("status") == "SUCCESS":
-        # 回补已售库存（与用户自助退款逻辑一致，依赖库存表 sold 计数）。
-        from .order_routes import _restock_refund
+    if result.get("status") == "SUCCESS":
         _restock_refund(db, order)
         order.status = "refunded"
-        order.refunded_at = datetime.utcnow()
+        order.refunded_at = _success_time(result)
     else:
         order.status = "after_sale"
     audit_admin_action(
         db, identity, action="order_refund", target_type="order", target_id=order.id,
-        detail={"order_number": order.number, "refund_number": refund_number, "reason": data.reason},
+        detail={"order_number": order.number, "refund_number": refund_number, "reason": data.reason,
+                "restock": order.refund_restock},
         request=request,
     )
+    db.commit()
+    return output(order)
+
+
+@router.post("/api/admin/orders/{order_id}/restock", summary="已退款退货验收后重新入库")
+def restock_return(order_id: int, request: Request,
+                   identity: AdminIdentity = Depends(require_admin_write), db: Session = Depends(get_db)):
+    ensure_admin_role(identity, "superadmin")
+    order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
+    if not order:
+        raise HTTPException(404, "订单不存在")
+    if order.status != "refunded" or order.shipped_at is None or order.cancelled_at is not None:
+        raise HTTPException(409, "只有已发货且已退款订单可以验收入库")
+    if order.refund_restock:
+        raise HTTPException(409, "该订单已经回补库存，请勿重复入库")
+    for item in _items(order):
+        _change_stock(db, item["product_id"], available=int(item["quantity"]))
+    order.refund_restock = True
+    audit_admin_action(db, identity, action="order_return_restock", target_type="order", target_id=order.id,
+                       detail={"order_number": order.number}, request=request)
     db.commit()
     return output(order)
 

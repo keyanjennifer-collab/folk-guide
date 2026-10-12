@@ -18,9 +18,9 @@ Page({
     images: [] as string[],
     added: false,
     saleEnabled: false,
-    saleMode: "preorder" as "ready" | "preorder",
+    saleMode: "ready" as "ready" | "preorder",
     available: 0,
-    shippingEta: "付款后两个月内发货",
+    shippingEta: "付款后48小时内发货",
     // 礼盒内容直接来自商品目录，避免在模板中重复维护单品名称。
     setContents: PRODUCTS.filter(item => item.category === "single").map(item => item.name).join("、") + "。五款线香与对应矿石香插，承载一份应时心意。",
   },

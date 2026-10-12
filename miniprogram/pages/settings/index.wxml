@@ -21,6 +21,7 @@
     <button class="menu-row" bindtap="toProfile"><text>本人档案</text><view class="menu-value">{{hasProfile ? '查看与修改' : '去完善'}} <text>›</text></view></button>
     <view wx:if="{{isLoggedIn && !phoneBound && wechatPhoneAvailable}}" class="menu-row"><text>绑定手机号</text><button class="text-button" open-type="getPhoneNumber" bindgetphonenumber="bindPhone">去绑定 ›</button></view>
     <button class="menu-row" bindtap="showHelp"><text>使用帮助</text><view class="menu-value">›</view></button>
+    <button class="menu-row" bindtap="contactSupport"><text>售后客服</text><view class="menu-value">联系微信客服 <text>›</text></view></button>
     <button class="menu-row" bindtap="showPrivacy"><text>账号与隐私</text><view class="menu-value">›</view></button>
     <button class="menu-row" bindtap="showAbout"><text>关于我们</text><view class="menu-value">›</view></button>
   </view>

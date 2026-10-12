@@ -22,6 +22,7 @@ from .admin_order_routes import router as admin_order_router
 from .product_admin_routes import router as product_admin_router
 from .operations_routes import router as operations_router
 from .admin_user_routes import router as admin_user_router
+from .after_sales_routes import router as after_sales_router
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -187,6 +188,7 @@ app.include_router(knowledge_router)
 app.include_router(ai_router)
 app.include_router(daily_update_router)
 app.include_router(order_router)
+app.include_router(after_sales_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
 app.include_router(product_admin_router)
@@ -416,6 +418,10 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     当前原型立即物理删除。TODO（上线前）：增加二次确认、审计记录、订单法定留存策略，
     并让已签发JWT通过token_version或撤销列表立即失效。
     """
+    # 直接删除订单会让财务销售额消失，也会破坏待支付库存和迟到通知的退款处理。
+    # 有交易记录的账号转人工办理注销与留存/脱敏，不允许此接口物理删除订单。
+    if db.scalar(select(Order.id).where(Order.user_id == user.id).limit(1)) is not None:
+        raise HTTPException(409, "账号存在交易记录，请联系售后客服办理注销，订单与财务记录需要保留")
     # 必须先删没有配置数据库级联的子表，否则PostgreSQL启用外键后会拒绝删除用户。
     db.query(AIConversationMessage).filter(AIConversationMessage.user_id == user.id).delete()
     db.query(AIConversation).filter(AIConversation.user_id == user.id).delete()
@@ -424,7 +430,6 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(ChatMessage).filter(ChatMessage.user_id == user.id).delete()
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
     db.query(ShippingAddress).filter(ShippingAddress.user_id == user.id).delete()
-    db.query(Order).filter(Order.user_id == user.id).delete()
     db.query(ZiweiCompatibilityRecord).filter(ZiweiCompatibilityRecord.user_id == user.id).delete()
     db.query(ZiweiChartRecord).filter(ZiweiChartRecord.user_id == user.id).delete()
     db.delete(user)

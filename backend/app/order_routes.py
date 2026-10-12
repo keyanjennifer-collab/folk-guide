@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import re
@@ -245,9 +245,13 @@ def _settle_order_stock(db: Session, order: Order) -> None:
 
 
 def _restock_refund(db: Session, order: Order) -> None:
+    # 取消后迟到付款没有转成已售库存，不能重复退库存。
+    if order.cancelled_at is not None:
+        return
     for item in _items(order):
         quantity = int(item["quantity"])
-        _change_stock(db, item["product_id"], available=quantity, sold=-quantity, require_sold=quantity)
+        _change_stock(db, item["product_id"], available=quantity if order.refund_restock else 0,
+                      sold=-quantity, require_sold=quantity)
 
 
 def expire_pending_orders(db: Session, user_id: int | None = None) -> int:
@@ -274,6 +278,19 @@ def _order_number() -> str:
 
 def _refund_number(order: Order) -> str:
     return f"RF{order.number[2:]}"[:64]
+
+
+def _success_time(resource: dict[str, Any]) -> datetime:
+    """优先采用微信实际成功时间，避免延迟通知把收款记到次日。"""
+    if not resource.get("success_time"):
+        return datetime.utcnow()
+    try:
+        value = datetime.fromisoformat(str(resource["success_time"]).replace("Z", "+00:00"))
+        if value.tzinfo is None:
+            raise ValueError("missing timezone")
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    except ValueError as exc:
+        raise WechatPayError("微信成功时间格式无效") from exc
 
 
 def _owned_order(db: Session, order_id: int, user_id: int) -> Order:
@@ -388,7 +405,7 @@ def create_order(data: CheckoutInput, user: User = Depends(current_user), db: Se
             raise HTTPException(422, "单款商品一次最多购买99件")
     inventory = {row.product_id: row for row in db.scalars(select(ProductInventory)).all()}
     rows: list[dict[str, Any]] = []
-    for product_id, quantity in quantities.items():
+    for product_id, quantity in sorted(quantities.items()):
         product = product_or_none(db, product_id)
         stock = inventory.get(product_id)
         if not product or not product.active or not stock or not stock.active:
@@ -396,6 +413,7 @@ def create_order(data: CheckoutInput, user: User = Depends(current_user), db: Se
         rows.append({
             "product_id": product.id, "name": product.name, "quantity": quantity,
             "unit_price_fen": product.price_fen, "subtotal_fen": product.price_fen * quantity,
+            "unit_cost_fen": product.cost_fen,
             "sale_mode": settings.commerce_sale_mode, "shipping_eta": settings.commerce_shipping_eta,
         })
     subtotal = sum(item["subtotal_fen"] for item in rows)
@@ -475,7 +493,10 @@ def mock_pay_order(order_id: int, user: User = Depends(current_user), db: Sessio
     settings = get_settings()
     if settings.environment == "production" or settings.wechat_pay_mode != "mock":
         raise HTTPException(404, "接口不存在")
-    order = _owned_order(db, order_id, user.id)
+    expire_pending_orders(db, user.id)
+    order = db.scalar(select(Order).where(Order.id == order_id, Order.user_id == user.id).with_for_update())
+    if not order:
+        raise HTTPException(404, "订单不存在")
     if order.status == "pending":
         _settle_order_stock(db, order)
         order.status = "paid"
@@ -519,10 +540,11 @@ def refund_order(order_id: int, data: RefundInput, user: User = Depends(current_
     except WechatPayError as exc:
         raise HTTPException(502, str(exc)) from exc
     order.refund_number = refund_number
-    if result.get("mock") and result.get("status") == "SUCCESS":
+    order.refund_restock = True
+    if result.get("status") == "SUCCESS":
         _restock_refund(db, order)
         order.status = "refunded"
-        order.refunded_at = datetime.utcnow()
+        order.refunded_at = _success_time(result)
     else:
         order.status = "after_sale"
     db.commit()
@@ -531,7 +553,9 @@ def refund_order(order_id: int, data: RefundInput, user: User = Depends(current_
 
 @router.post("/api/orders/{order_id}/complete", response_model=OrderOutput, summary="确认收货")
 def complete_order(order_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    order = _owned_order(db, order_id, user.id)
+    order = db.scalar(select(Order).where(Order.id == order_id, Order.user_id == user.id).with_for_update())
+    if not order:
+        raise HTTPException(404, "订单不存在")
     if order.status != "shipped":
         raise HTTPException(409, "只有已发货订单可以确认收货")
     order.status = "completed"
@@ -584,10 +608,10 @@ async def wechat_payment_notify(request: Request, db: Session = Depends(get_db))
             if order.status == "pending":
                 _settle_order_stock(db, order)
                 order.status = "paid"
-                order.paid_at = datetime.utcnow()
+                order.paid_at = _success_time(resource)
             elif order.status == "cancelled":
                 order.status = "after_sale"
-                order.paid_at = datetime.utcnow()
+                order.paid_at = _success_time(resource)
                 order.refund_number = order.refund_number or _refund_number(order)
                 # 取消与支付极端并发时，立即发起原路退款；若网关失败则返回失败让微信重试。
                 create_refund(order.number, order.refund_number, order.total_fen, "订单取消后支付，自动退款")
@@ -595,18 +619,24 @@ async def wechat_payment_notify(request: Request, db: Session = Depends(get_db))
         elif event_type == "REFUND.SUCCESS":
             if resource.get("refund_status") != "SUCCESS" or str(resource.get("out_refund_no") or "") != order.refund_number:
                 raise WechatPayError("退款状态或退款单号不匹配")
+            amount = resource.get("amount") or {}
+            if amount.get("total") != order.total_fen or amount.get("refund") != order.total_fen:
+                raise WechatPayError("退款金额不匹配")
             if order.status == "after_sale":
                 # 过期取消后极少数迟到支付没有占用已售库存，退款时不能重复回补。
                 if order.cancelled_at is None:
                     _restock_refund(db, order)
                 order.status = "refunded"
-                order.refunded_at = datetime.utcnow()
+                order.refunded_at = _success_time(resource)
         record.processed_at = datetime.utcnow()
         db.commit()
         return {"code": "SUCCESS", "message": "成功"}
     except IntegrityError:
         db.rollback()
-        return {"code": "SUCCESS", "message": "成功"}
+        # 只有已处理的同一事件才算成功；交易号等其它唯一约束冲突须重试/排查。
+        if db.scalar(select(PaymentEvent).where(PaymentEvent.event_id == str(event.get("id") or ""))):
+            return {"code": "SUCCESS", "message": "成功"}
+        raise HTTPException(409, "支付记录冲突，请核对交易记录")
     except WechatPayError as exc:
         db.rollback()
         raise HTTPException(400, str(exc)) from exc

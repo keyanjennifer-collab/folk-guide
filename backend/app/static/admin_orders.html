@@ -273,7 +273,7 @@
         <div id="finance"></div>
         <div class="panel">
           <h2>商品成本设置</h2>
-          <p class="hint" style="margin-top:0">在这里填写每件商品的进货成本（元），填好后上方利润和毛利率才会准确。仅超级管理员可改。</p>
+          <p class="hint" style="margin-top:0">请在售卖前填写每件商品的成本（元）。新订单保存下单时成本，之后修改成本不影响这些历史订单。仅超级管理员可改。</p>
           <div id="cost-editor"></div>
         </div>
       </section>
@@ -322,7 +322,7 @@
             <input id="as-q" placeholder="搜索售后单：订单号 / 收件人 / 手机号" style="flex:1;min-width:200px">
             <button class="btn-sm" onclick="loadAftersale()">查询</button>
             <button class="btn-ghost btn-sm" onclick="document.getElementById('as-q').value='';loadAftersale()">重置</button>
-            <span class="hint">售后中与已退款的订单，可发起原路退款。</span>
+            <span class="hint">客服沟通后，可在“全部订单”按订单号发起退款。已发货退款不会自动回库，退货验收后再点击入库。</span>
           </div>
         </div>
         <div id="aftersale"></div>
@@ -412,7 +412,7 @@
     function moneyNum(fen){return ((fen||0)/100).toFixed(2)}
     function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
     function assetUrl(fn){return fn?(fn.startsWith('http')?fn:'/product-assets/'+fn):''}
-    function fmtTime(t){if(!t)return '—';const d=new Date(t);return isNaN(d)?String(t):d.toLocaleString('zh-CN',{hour12:false})}
+    function fmtTime(t){if(!t)return '—';const raw=String(t);const d=new Date(/(?:Z|[+-]\d{2}:\d{2})$/i.test(raw)?raw:raw+'Z');return isNaN(d)?raw:d.toLocaleString('zh-CN',{hour12:false,timeZone:'Asia/Shanghai'})}
     const STATUS_TEXT={pending:'待付款',paid:'待发货',shipped:'已发货',completed:'已完成',after_sale:'售后中',refunded:'已退款',cancelled:'已取消'};
 
     document.querySelectorAll('.nav-item').forEach(btn=>{
@@ -446,14 +446,16 @@
       const payTime=x.paid_at?('<div class="order-meta"><span>支付时间 <b>'+fmtTime(x.paid_at)+'</b></span></div>'):'';
       const shipInfo=(x.tracking_number?('<div class="order-meta"><span>物流 <b>'+esc(x.carrier||'')+' '+esc(x.tracking_number)+'</b></span></div>'):'');
       const shipInput=(opts.showShip?('<div class="ship-row"><input id="carrier-'+Number(x.id)+'" placeholder="快递公司（如顺丰）"><input id="tracking-'+Number(x.id)+'" placeholder="运单号"><button class="btn-sm" onclick="ship('+Number(x.id)+')">确认发货</button></div>'):'');
-      const refundBtn=(opts.showRefund?('<div class="ship-row"><button class="btn-danger btn-sm" onclick="refundOrder('+Number(x.id)+')">原路退款</button></div>'):'');
+      const canRefund=adminProfile.role==='superadmin'&&x.paid_at&&['paid','shipped','completed','after_sale'].includes(x.status);
+      const refundBtn=(canRefund?('<div class="ship-row"><button class="btn-danger btn-sm" onclick="refundOrder('+Number(x.id)+')">'+(x.refund_number?'重试 / 查询退款':'原路退款')+'</button></div>'):'');
+      const restockBtn=(adminProfile.role==='superadmin'&&x.status==='refunded'&&x.shipped_at&&!x.refund_restock?('<div class="ship-row"><button class="btn-sm" onclick="restockReturn('+Number(x.id)+')">退货验收后入库</button><span class="hint">仅完整退回且可再次销售时操作</span></div>'):'');
       const logisticsEdit=(opts.showLogisticsEdit?('<div class="ship-row"><input id="log-carrier-'+Number(x.id)+'" value="'+esc(x.carrier||'')+'" placeholder="快递公司"><input id="log-tracking-'+Number(x.id)+'" value="'+esc(x.tracking_number||'')+'" placeholder="运单号"><button class="btn-sm" onclick="updateLogistics('+Number(x.id)+')">更新</button></div>'):'');
-      const meta=payInfo+payTime+shipInfo;
+      const meta=payInfo+payTime+shipInfo+(x.refund_number?'<div class="order-meta"><span>退款单号 <b>'+esc(x.refund_number)+'</b></span></div>':'');
       return '<div class="order">'
         +'<div class="order-top"><span class="order-no">'+esc(x.number)+'</span><span class="order-amount">'+money(x.total_fen)+'</span></div>'
         +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div class="order-items">'+items+'</div><span class="status '+esc(x.status)+'">'+(STATUS_TEXT[x.status]||x.status)+'</span></div>'
         +'<div class="order-recv">'+esc(x.receiver_name)+' '+esc(x.receiver_phone)+' · '+esc(x.receiver_address)+'</div>'
-        +shipInput+refundBtn+logisticsEdit
+        +shipInput+refundBtn+restockBtn+logisticsEdit
         +(meta?meta:'<div class="order-meta"><span>下单时间 <b>'+fmtTime(x.created_at)+'</b></span></div>')
         +'</div>';
     }
@@ -517,7 +519,7 @@
       const carrier=document.getElementById('log-carrier-'+id).value.trim();
       const tracking=document.getElementById('log-tracking-'+id).value.trim();
       if(!carrier||!tracking){toast('请填写快递公司和运单号',true);return;}
-      try{await api('/api/admin/orders/'+id+'/ship',{method:'POST',body:JSON.stringify({carrier,tracking_number:tracking})});toast('运单已更新');loadLogistics()}catch(e){toast(e.message,true)}
+      try{await api('/api/admin/orders/'+id+'/logistics',{method:'PUT',body:JSON.stringify({carrier,tracking_number:tracking})});toast('运单已更新');loadLogistics()}catch(e){toast(e.message,true)}
     }
     function exportOrders(){
       const params=new URLSearchParams();
@@ -535,9 +537,15 @@
       }).catch(e=>toast(e.message,true));
     }
     async function refundOrder(id){
-      if(!confirm('确认对该订单发起原路退款？此操作不可撤销。'))return;
-      const reason=prompt('退款原因（可选）','商家同意退款')||'商家同意退款';
-      try{await api('/api/admin/orders/'+id+'/refund',{method:'POST',body:JSON.stringify({reason})});toast('退款已发起');loadAftersale();loadFinance();loadDashboard()}catch(e){toast(e.message,true)}
+      if(!confirm('确认发起整单原路退款？已发货商品不会自动回库，收到退货并验收后请单独入库。'))return;
+      const entered=prompt('退款原因','商家同意退款');
+      if(entered===null)return;
+      const reason=entered.trim()||'商家同意退款';
+      try{await api('/api/admin/orders/'+id+'/refund',{method:'POST',body:JSON.stringify({reason,restock:false})});toast('退款已发起');loadOrders();loadShip();loadAftersale();loadFinance();loadDashboard();loadInventory()}catch(e){toast(e.message,true)}
+    }
+    async function restockReturn(id){
+      if(!confirm('确认本订单商品已全部退回、验收合格且可再次销售？确认后会增加可售库存。'))return;
+      try{await api('/api/admin/orders/'+id+'/restock',{method:'POST'});toast('退货已入库');loadOrders();loadAftersale();loadFinance();loadDashboard();loadInventory()}catch(e){toast(e.message,true)}
     }
     // 财务页：商品成本填写
     async function loadCosts(){
@@ -569,10 +577,10 @@
         const money=(fen)=>(fen/100).toFixed(2);
         const cards=[
           ['今日订单',d.today_order_count,'单'],
-          ['今日销售额','¥'+money(d.today_sales_fen),''],
+          ['今日净收款','¥'+money(d.today_sales_fen),'北京时间今日收款 − 今日退款'],
           ['待发货',d.pending_ship_count,'单'],
-          ['累计销售额','¥'+money(d.total_sales_fen),''],
-          ['累计利润','¥'+money(d.total_profit_fen),'毛利率 '+d.profit_rate+'%']
+          ['累计净营收','¥'+money(d.total_sales_fen),'已收款 − 已退款'],
+          ['累计毛利','¥'+money(d.total_profit_fen),'未扣快递支出、手续费及税费']
         ];
         const statusRows=['pending','paid','shipped','completed','after_sale','refunded','cancelled'].map(s=>({
           k:s,n:d.status_counts[s]||0
@@ -589,6 +597,7 @@
         const f=await api('/api/admin/finance');
         const money=(fen)=>(fen/100).toFixed(2);
         const cards=[
+          ['累计收款','¥'+money(f.gross_sales_fen),'含已退款订单'],
           ['净营收','¥'+money(f.net_sales_fen),''],
           ['退款','¥'+money(f.refund_fen),f.refunded_order_count+' 单'],
           ['商品成本','¥'+money(f.total_cost_fen),''],
@@ -599,14 +608,15 @@
         const rows=f.products.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+p.sold_qty+'</td><td>¥'+money(p.sales_fen)+'</td><td>¥'+money(p.cost_fen)+'</td><td style="font-weight:600;color:var(--gold-soft)">¥'+money(p.profit_fen)+'</td><td>'+(p.profit_rate>=0?p.profit_rate:'—')+'%</td></tr>').join('');
         document.getElementById('finance').innerHTML=
           '<div class="row" style="margin-bottom:18px">'+cards.map(c=>'<div class="panel" style="flex:1;min-width:140px;margin:0;text-align:center"><div style="font-size:12px;color:var(--text-faint);margin-bottom:8px">'+c[0]+'</div><div style="font-size:24px;font-weight:700;color:var(--gold-soft)">'+c[1]+'</div><div style="font-size:11px;color:var(--text-faint)">'+c[2]+'</div></div>').join('')+'</div>'
-          +'<div class="panel"><h2>各商品利润明细</h2><table><tr><th>商品</th><th>销量</th><th>销售额</th><th>成本</th><th>毛利</th><th>毛利率</th></tr>'+rows+'</table></div>'
+          +'<div class="panel"><p class="hint">收款与退款均以服务端支付结果为准。毛利 = 净营收 − 商品成本，含运费收入，尚未扣除快递支出、支付手续费及税费。已发货退款未入库的商品保留成本；新订单采用下单时成本快照。</p>'+(f.cost_warning?'<p class="hint" style="color:var(--red)">'+esc(f.cost_warning)+'</p>':'')+'</div>'
+          +'<div class="panel"><h2>各商品利润明细</h2><table><tr><th>商品</th><th>净销量</th><th>商品净销售额</th><th>成本</th><th>毛利</th><th>毛利率</th></tr>'+rows+'</table></div>'
           +'<div class="panel"><h2>汇总</h2><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">已付款订单数</span><span>'+f.paid_order_count+' 单</span></div><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">退款订单数</span><span>'+f.refunded_order_count+' 单</span></div><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">毛利（净营收 − 商品成本）</span><span style="font-weight:700;color:var(--gold-soft)">¥'+money(f.gross_profit_fen)+'</span></div></div>';
       }catch(e){toast(e.message,true)}
     }
     async function loadAudit(){
       try{
         const rows=await api('/api/admin/audit-logs');
-        const actionText={inventory_update:'库存更新',order_ship:'订单发货',order_refund:'订单退款',product_update:'商品修改',product_image:'商品图片',product_gallery:'商品图库',product_cost_update:'修改成本',admin_create:'创建管理员',admin_update:'修改管理员',admin_password_reset:'重置密码',admin_self_password_change:'修改本人密码'};
+        const actionText={inventory_update:'库存更新',order_ship:'订单发货',order_refund:'订单退款',order_return_restock:'退货验收入库',order_logistics_update:'修改运单',product_update:'商品修改',product_image:'商品图片',product_gallery:'商品图库',product_cost_update:'修改成本',admin_create:'创建管理员',admin_update:'修改管理员',admin_password_reset:'重置密码',admin_self_password_change:'修改本人密码'};
         document.getElementById('audit').innerHTML=rows.length?('<table><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>详情</th><th>IP</th></tr>'+rows.map(r=>{
           let detail='';try{const d=r.detail;detail=d?Object.entries(d).map(([k,v])=>k+':'+(typeof v==='object'?JSON.stringify(v):v)).join(' '):''}catch(_){}
           return '<tr><td style="white-space:nowrap">'+fmtTime(r.created_at)+'</td><td>'+esc(r.operator)+'</td><td>'+(actionText[r.action]||r.action)+'</td><td>'+esc(r.target_type)+' '+(r.target_id?('#'+esc(r.target_id)):'')+'</td><td style="color:var(--text-faint);font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(detail)+'</td><td style="color:var(--text-faint)">'+esc(r.ip_address||'')+'</td></tr>';

@@ -38,7 +38,7 @@ def test_orders_are_owner_scoped_and_read_only():
         # 创建订单接口只接受商品、地址和幂等键；客户端不能直接提交 paid 状态。
         assert client.post("/api/orders", headers=alice, json={"status": "paid"}).status_code == 422
         assert client.get("/api/orders?status=pending", headers=alice).json()["items"][0]["status"] == "pending"
-        assert client.delete("/api/account", headers=alice).status_code == 204
+        assert client.delete("/api/account", headers=alice).status_code == 409
         with SessionLocal() as db:
-            assert db.query(Order).filter(Order.user_id == alice_id).count() == 0
+            assert db.query(Order).filter(Order.user_id == alice_id).count() == 2
             assert db.query(Order).filter(Order.user_id == bob_id).count() == 1

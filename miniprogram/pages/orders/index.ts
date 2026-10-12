@@ -3,6 +3,7 @@ import { getApiErrorMessage, getToken } from "../../services/api";
 import { Order, ORDER_LABELS, getOrders } from "../../services/orders";
 import { PRODUCTS } from "../../data/products";
 import { cancelOrder, completeOrder, payOrder, refundOrder } from "../../services/commerce";
+import { contactAfterSales, prepareAfterSalesContact } from "../../services/after-sales";
 type OrderView = Order & { statusLabel: string; amount: string; subtotal: string; shipping: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number; preorder: boolean; shippingEta: string };
 let requestVersion = 0;
 Page({
@@ -15,7 +16,7 @@ Page({
   onLoad(options: Record<string, string>) {
     if (options.status && this.data.tabs.some(item => item.id === options.status)) this.setData({ status: options.status });
   },
-  onShow() { const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); this.setData({ loggedIn: !!getToken(), selected: null, orders: [] }); void this.loadOrders(); },
+  onShow() { void prepareAfterSalesContact(); const theme = getTheme(); this.setData({ theme, themeClass: `theme-${theme}` }); this.setData({ loggedIn: !!getToken(), selected: null, orders: [] }); void this.loadOrders(); },
   onHide() { requestVersion++; this.setData({ loading: false, selected: null, orders: [] }); },
   onUnload() { requestVersion++; },
   onPullDownRefresh() { void this.loadOrders().finally(() => wx.stopPullDownRefresh()); },
@@ -48,6 +49,7 @@ Page({
   closeDetail() { this.setData({ selected: null }); },
   copyTracking() { if (this.data.selected?.tracking_number) wx.setClipboardData({ data: this.data.selected.tracking_number }); },
   copyNumber() { if (this.data.selected) wx.setClipboardData({ data: this.data.selected.number }); },
+  contactSupport() { contactAfterSales(this.data.selected?.number); },
   async paySelected() {
     const order = this.data.selected; if (!order || this.data.actionLoading) return;
     this.setData({ actionLoading: true });

@@ -25,7 +25,7 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
         "id", "user_id", "number", "status", "total_fen", "items_json",
         "carrier", "tracking_number", "created_at", "idempotency_key", "subtotal_fen",
         "shipping_fee_fen", "receiver_name", "receiver_phone", "receiver_address",
-        "expires_at", "paid_at", "shipped_at", "refunded_at",
+        "expires_at", "paid_at", "shipped_at", "refunded_at", "refund_restock",
     }.issubset({column["name"] for column in inspect(engine).get_columns("orders")})
     assert {"product_inventory", "shipping_addresses", "payment_events", "products"}.issubset(
         inspect(engine).get_table_names()
@@ -38,7 +38,7 @@ def test_order_migration_upgrade_and_rollback(tmp_path):
         inspect(engine).get_table_names()
     )
     with engine.connect() as conn:
-        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0013_product_cost"
+        assert conn.execute(text("select version_num from alembic_version")).scalar() == "0014_refund_restock"
     engine.dispose()
     migrate("downgrade", "0001_initial_schema")
     engine = create_engine(database_url)

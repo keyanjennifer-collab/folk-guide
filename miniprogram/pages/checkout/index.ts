@@ -10,7 +10,7 @@ function key(): string { return `wx_${Date.now()}_${Math.random().toString(36).s
 Page({
   data: {
     themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
-    loading: true, submitting: false, error: "", saleEnabled: false, saleMode: "preorder" as "ready" | "preorder",
+    loading: true, submitting: false, error: "", saleEnabled: false, saleMode: "ready" as "ready" | "preorder",
     items: [] as CheckoutItem[], addresses: [] as ShippingAddress[], selectedAddressId: 0,
     selectedAddress: null as ShippingAddress | null, showAddressForm: false, editingAddressId: 0,
     addressForm: emptyAddress(), region: [] as string[], regionText: "", remark: "", agreed: false,
@@ -132,14 +132,14 @@ Page({
       removeCartItems(this.data.items.map(item => item.id));
       try {
         await payOrder(order.id);
-        wx.showToast({ title: "支付成功", icon: "success" });
+        wx.showToast({ title: "支付已提交，请查看订单", icon: "none" });
       } catch (paymentError) {
         const raw = String((paymentError as { errMsg?: unknown })?.errMsg || (paymentError as Error)?.message || "");
         wx.showToast({ title: raw.includes("cancel") ? "订单已创建，可稍后支付" : "支付未完成，请在订单中重试", icon: "none", duration: 2600 });
       }
       setTimeout(() => wx.redirectTo({ url: "/pages/orders/index?status=all" }), 700);
     } catch (_) {
-      this.setData({ idempotencyKey: key() });
+      // 网络失败可能发生在服务器已建单之后；保留幂等键，重试不会重复锁库存。
     } finally { this.setData({ submitting: false }); }
   },
 });

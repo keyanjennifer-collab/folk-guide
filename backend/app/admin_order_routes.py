@@ -1,6 +1,6 @@
 """第一期开售后台：库存、订单查询和人工发货。"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -38,6 +38,17 @@ class InventoryOutput(BaseModel):
     active: bool
 
 
+class AdminOrderOutput(OrderOutput):
+    wx_transaction_id: str | None = None
+    refund_number: str | None = None
+    refund_restock: bool = True
+
+
+def admin_order_output(order: Order) -> AdminOrderOutput:
+    return AdminOrderOutput(**output(order).model_dump(), wx_transaction_id=order.wx_transaction_id,
+                            refund_number=order.refund_number, refund_restock=order.refund_restock)
+
+
 class InventoryUpdate(BaseModel):
     available: int = Field(ge=0, le=1_000_000)
     active: bool = True
@@ -64,6 +75,7 @@ def admin_orders_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/api/admin/inventory", response_model=list[InventoryOutput], summary="查询商品库存")
 def list_inventory(_: AdminIdentity = Depends(require_admin_identity), db: Session = Depends(get_db)):
     ensure_inventory_rows(db)
+    expire_pending_orders(db)
     rows = {row.product_id: row for row in db.scalars(select(ProductInventory)).all()}
     return [InventoryOutput(
         product_id=product.id, name=product.name, price_fen=product.price_fen,
@@ -109,7 +121,7 @@ def update_inventory(
     )
 
 
-@router.get("/api/admin/orders", response_model=list[OrderOutput], summary="查询订单")
+@router.get("/api/admin/orders", response_model=list[AdminOrderOutput], summary="查询订单")
 def list_admin_orders(
     status: str | None = Query(default=None),
     q: str | None = Query(default=None, max_length=64, description="关键词：订单号/收件人/手机号/运单号/微信交易号/备注"),
@@ -138,7 +150,7 @@ def list_admin_orders(
             ))
     if date_from:
         try:
-            start = datetime.strptime(date_from, "%Y-%m-%d")
+            start = datetime.strptime(date_from, "%Y-%m-%d") - timedelta(hours=8)
         except ValueError:
             raise HTTPException(400, "date_from 格式应为 YYYY-MM-DD")
         query = query.where(Order.created_at >= start)
@@ -147,9 +159,25 @@ def list_admin_orders(
             end_day = datetime.strptime(date_to, "%Y-%m-%d")
         except ValueError:
             raise HTTPException(400, "date_to 格式应为 YYYY-MM-DD")
-        end = end_day.replace(hour=23, minute=59, second=59)
-        query = query.where(Order.created_at <= end)
-    return [output(order) for order in db.scalars(query).all()]
+        end = end_day + timedelta(days=1, hours=-8)
+        query = query.where(Order.created_at < end)
+    return [admin_order_output(order) for order in db.scalars(query).all()]
+
+
+@router.put("/api/admin/orders/{order_id}/logistics", response_model=OrderOutput, summary="修改已发货订单运单")
+def update_logistics(order_id: int, data: ShipmentInput, request: Request,
+                     identity: AdminIdentity = Depends(require_admin_write), db: Session = Depends(get_db)):
+    ensure_admin_role(identity, "superadmin")
+    order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
+    if not order:
+        raise HTTPException(404, "订单不存在")
+    if order.status not in ("shipped", "completed"):
+        raise HTTPException(409, "只有已发货或已完成订单可以修改运单")
+    order.carrier, order.tracking_number = data.carrier, data.tracking_number
+    audit_admin_action(db, identity, action="order_logistics_update", target_type="order", target_id=order.id,
+                       detail={"carrier": data.carrier, "tracking_number": data.tracking_number}, request=request)
+    db.commit()
+    return output(order)
 
 
 @router.post("/api/admin/orders/{order_id}/ship", response_model=OrderOutput, summary="录入运单并确认发货")

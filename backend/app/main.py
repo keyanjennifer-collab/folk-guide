@@ -19,6 +19,9 @@ from .ai_routes import router as ai_router
 from .ai_service import quota_for_user
 from .admin_auth_routes import router as admin_auth_router
 from .admin_order_routes import router as admin_order_router
+from .product_admin_routes import router as product_admin_router
+from .operations_routes import router as operations_router
+from .admin_user_routes import router as admin_user_router
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -149,9 +152,15 @@ app = FastAPI(
     openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
 )
+def _product_assets_directory() -> Path:
+    """商品图片目录：上传接口与静态挂载共用同一路径，避免两处不一致。"""
+    configured = settings.product_assets_dir
+    return Path(configured) if configured else Path(__file__).with_name("static") / "products"
+
+
 app.mount(
     "/product-assets",
-    StaticFiles(directory=Path(__file__).with_name("static") / "products"),
+    StaticFiles(directory=_product_assets_directory()),
     name="product-assets",
 )
 app.mount(
@@ -180,6 +189,9 @@ app.include_router(daily_update_router)
 app.include_router(order_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
+app.include_router(product_admin_router)
+app.include_router(operations_router)
+app.include_router(admin_user_router)
 app.include_router(ziwei_router)
 app.include_router(ziwei_interpret_router)
 

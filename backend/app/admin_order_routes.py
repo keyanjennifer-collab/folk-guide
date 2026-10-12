@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .admin_auth import (
@@ -18,7 +18,7 @@ from .admin_auth import (
     resolve_admin_session,
 )
 from .admin_auth_routes import admin_page_response
-from .commerce_catalog import PRODUCTS, product_or_none
+from .commerce_catalog import load_products, product_or_none
 from .commerce_models import Order, ProductInventory
 from .database import get_db
 from .order_routes import OrderOutput, ensure_inventory_rows, expire_pending_orders, output
@@ -69,7 +69,7 @@ def list_inventory(_: AdminIdentity = Depends(require_admin_identity), db: Sessi
         product_id=product.id, name=product.name, price_fen=product.price_fen,
         available=rows[product.id].available, reserved=rows[product.id].reserved,
         sold=rows[product.id].sold, active=rows[product.id].active,
-    ) for product in PRODUCTS]
+    ) for product in load_products(db)]
 
 
 @router.put("/api/admin/inventory/{product_id}", response_model=InventoryOutput, summary="设置可售库存和上下架状态")
@@ -82,10 +82,10 @@ def update_inventory(
 ):
     """运营人员设置净可售数量；不会覆盖已经锁定或已售出的数量。"""
     ensure_admin_role(identity, "superadmin")
-    product = product_or_none(product_id)
+    ensure_inventory_rows(db)
+    product = product_or_none(db, product_id)
     if not product:
         raise HTTPException(404, "商品不存在")
-    ensure_inventory_rows(db)
     inventory = db.get(ProductInventory, product_id)
     if not inventory:
         raise HTTPException(404, "库存记录不存在")
@@ -111,13 +111,44 @@ def update_inventory(
 
 @router.get("/api/admin/orders", response_model=list[OrderOutput], summary="查询订单")
 def list_admin_orders(
-    status: str | None = Query(default=None), limit: int = Query(default=100, ge=1, le=500),
+    status: str | None = Query(default=None),
+    q: str | None = Query(default=None, max_length=64, description="关键词：订单号/收件人/手机号/运单号/微信交易号/备注"),
+    date_from: str | None = Query(default=None, description="下单起始日期 YYYY-MM-DD（含）"),
+    date_to: str | None = Query(default=None, description="下单结束日期 YYYY-MM-DD（含）"),
+    limit: int = Query(default=100, ge=1, le=500),
     _: AdminIdentity = Depends(require_admin_identity), db: Session = Depends(get_db),
 ):
     expire_pending_orders(db)
     query = select(Order).order_by(Order.created_at.desc(), Order.id.desc()).limit(limit)
     if status:
         query = query.where(Order.status == status)
+    if q:
+        keyword = q.strip()
+        if keyword:
+            like = f"%{keyword}%"
+            query = query.where(or_(
+                Order.number.ilike(like),
+                Order.receiver_name.ilike(like),
+                Order.receiver_phone.ilike(like),
+                Order.receiver_address.ilike(like),
+                Order.tracking_number.ilike(like),
+                Order.wx_transaction_id.ilike(like),
+                Order.refund_number.ilike(like),
+                Order.remark.ilike(like),
+            ))
+    if date_from:
+        try:
+            start = datetime.strptime(date_from, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(400, "date_from 格式应为 YYYY-MM-DD")
+        query = query.where(Order.created_at >= start)
+    if date_to:
+        try:
+            end_day = datetime.strptime(date_to, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(400, "date_to 格式应为 YYYY-MM-DD")
+        end = end_day.replace(hour=23, minute=59, second=59)
+        query = query.where(Order.created_at <= end)
     return [output(order) for order in db.scalars(query).all()]
 
 

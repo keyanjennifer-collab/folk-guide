@@ -16,7 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .auth import current_user
-from .commerce_catalog import PRODUCTS, product_or_none
+from .commerce_catalog import load_products, product_or_none, seed_products
 from .commerce_models import Order, PaymentEvent, ProductInventory, ShippingAddress
 from .config import get_settings
 from .database import get_db
@@ -39,6 +39,19 @@ class CatalogItemOutput(BaseModel):
     sale_mode: Literal["ready", "preorder"]
     available: int
     active: bool
+    # 图片与详情文案，供小程序商品页动态渲染；修改无需重新提审。
+    color: str = ""
+    element: str = ""
+    beast: str = ""
+    mood: str = ""
+    scent: str = ""
+    story: str = ""
+    meaning: str = ""
+    image: str = ""
+    emblem: str = ""
+    gallery: list[str] = []
+    swatches: list[str] = []
+    detail: dict = {}
 
 
 class CatalogOutput(BaseModel):
@@ -152,17 +165,20 @@ class RefundInput(BaseModel):
 
 
 def ensure_inventory_rows(db: Session) -> None:
-    """为代码目录中的新品补库存记录；正式盘点后可在后台覆盖数量。"""
+    """为数据库目录中的商品补库存记录；正式盘点后可在后台覆盖数量。"""
+    # 商品主数据表为空时先写入首批目录，保证测试与生产首次启动都有商品可售。
+    seed_products(db)
+    products = load_products(db)
     existing = set(db.scalars(select(ProductInventory.product_id)).all())
     settings = get_settings()
     if settings.commerce_sale_mode not in {"ready", "preorder"}:
         raise HTTPException(status_code=500, detail="商城销售模式配置无效")
     # 测试环境必须从零库存开始，生产/本机新库按当前首批盘点数量初始化。
     initial_stock = 0 if settings.testing else max(0, settings.commerce_initial_stock)
-    for product in PRODUCTS:
+    for product in products:
         if product.id not in existing:
             db.add(ProductInventory(product_id=product.id, available=initial_stock, reserved=0, sold=0, active=product.active))
-    if len(existing) != len(PRODUCTS):
+    if len(existing) != len(products):
         db.commit()
 
 
@@ -269,6 +285,7 @@ def _owned_order(db: Session, order_id: int, user_id: int) -> Order:
 
 @router.get("/api/catalog", response_model=CatalogOutput, summary="读取正式商品价格与库存")
 def catalog(db: Session = Depends(get_db)):
+    seed_products(db)
     ensure_inventory_rows(db)
     # 商品页本身也会触发过期订单释放，避免无人查看旧订单时库存长期被锁住。
     expire_pending_orders(db)
@@ -288,7 +305,11 @@ def catalog(db: Session = Depends(get_db)):
             sale_mode=settings.commerce_sale_mode,
             available=max(0, inventory[product.id].available),
             active=bool(product.active and inventory[product.id].active),
-        ) for product in PRODUCTS],
+            color=product.color, element=product.element, beast=product.beast,
+            mood=product.mood, scent=product.scent, story=product.story, meaning=product.meaning,
+            image=product.image, emblem=product.emblem,
+            gallery=list(product.gallery), swatches=list(product.swatches), detail=product.detail,
+        ) for product in load_products(db)],
     )
 
 
@@ -368,7 +389,7 @@ def create_order(data: CheckoutInput, user: User = Depends(current_user), db: Se
     inventory = {row.product_id: row for row in db.scalars(select(ProductInventory)).all()}
     rows: list[dict[str, Any]] = []
     for product_id, quantity in quantities.items():
-        product = product_or_none(product_id)
+        product = product_or_none(db, product_id)
         stock = inventory.get(product_id)
         if not product or not product.active or not stock or not stock.active:
             raise HTTPException(409, "购物袋中有商品已经下架")

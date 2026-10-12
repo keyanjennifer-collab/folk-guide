@@ -3,35 +3,832 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>五色知时 · 订单发货</title>
+  <title>五色知时 · 管理后台</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;background:#f2f3ef;color:#29352f;font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif}header{padding:24px 5%;background:#29493a;color:#fff}.header-row{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0}.wrap{max-width:1180px;margin:20px auto;padding:0 20px}.panel{margin-bottom:18px;padding:20px;background:#fff;border-radius:14px;box-shadow:0 6px 24px #26352e0d}.toolbar,.row,.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}input,select{padding:10px;border:1px solid #dbe2dd;border-radius:8px;font:inherit}input{min-width:220px}button{padding:9px 14px;border:0;border-radius:8px;background:#385f4d;color:#fff;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#e6ece8;color:#385f4d}.header-button{background:#ffffff22;border:1px solid #ffffff55}.muted{color:#718078}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{padding:14px;border:1px solid #dfe5e1;border-radius:10px}.order{padding:16px 0;border-bottom:1px solid #e5e8e6}.order:last-child{border:0}.title{font-weight:700}.status{padding:3px 8px;border-radius:12px;background:#edf3ef}.ship{margin-top:10px}@media(max-width:760px){.grid{grid-template-columns:1fr}.toolbar>*{width:100%}input{min-width:0}}
+    :root{
+      --bg:#f6f4ef; --bg-soft:#fbfaf7; --panel:#ffffff; --panel-2:#faf8f4;
+      --line:#e5e0d5; --line-soft:#ece8de;
+      --text:#2f2c26; --text-dim:#6b6659; --text-faint:#9a948a;
+      --gold:#b8863b; --gold-soft:#96692a; --gold-bg:rgba(184,134,59,.12);
+      --wood:#6a7a56; --wood-soft:#4c5a3d; --wood-bg:rgba(106,122,86,.13);
+      --red:#bf4f45; --green:#5e7f47; --blue:#4a7aa8; --amber:#b07f2e;
+      --radius:14px; --radius-sm:9px;
+      --shadow:0 4px 18px rgba(90,80,60,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{
+      background:radial-gradient(1200px 700px at 78% -10%, #fdfcf9 0%, var(--bg) 55%);
+      color:var(--text);font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    .layout{display:flex;min-height:100vh}
+    /* 侧栏 */
+    aside{
+      width:230px;flex-shrink:0;display:flex;flex-direction:column;
+      background:linear-gradient(180deg,#fbfaf7,#f4f1ea);
+      border-right:1px solid var(--line);padding:26px 18px;
+    }
+    .brand{display:flex;align-items:center;gap:11px;padding:0 8px 24px;border-bottom:1px solid var(--line);margin-bottom:20px}
+    .brand-mark{
+      width:38px;height:38px;border-radius:11px;flex-shrink:0;
+      background:linear-gradient(135deg,var(--gold),#8a6a34);
+      display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;
+      box-shadow:0 6px 18px rgba(184,134,59,.28);
+    }
+    .brand-name{font-size:15px;font-weight:700;letter-spacing:.5px}
+    .brand-sub{font-size:11px;color:var(--text-faint);letter-spacing:2px}
+    .nav-label{font-size:10px;color:var(--text-faint);letter-spacing:2.5px;padding:0 10px;margin:14px 0 8px;text-transform:uppercase}
+    .nav-item{
+      display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+      padding:11px 12px;margin-bottom:3px;border:0;border-radius:10px;
+      background:transparent;color:var(--text-dim);font:inherit;font-size:13.5px;cursor:pointer;
+      transition:background .18s,color .18s,transform .08s;
+    }
+    .nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:.75}
+    .nav-item:hover{background:var(--panel);color:var(--text)}
+    .nav-item.active{background:var(--gold-bg);color:var(--gold-soft);font-weight:600}
+    .nav-item.active svg{opacity:1}
+    .nav-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+    .user-chip{display:flex;align-items:center;gap:10px;padding:8px 8px}
+    .avatar{width:32px;height:32px;border-radius:50%;background:var(--wood-bg);color:var(--wood-soft);display:grid;place-items:center;font-weight:700;font-size:13px}
+    .user-meta{min-width:0}
+    .user-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-role{font-size:10.5px;color:var(--text-faint)}
+    .logout{width:100%;margin-top:10px;padding:9px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--text-dim);font:inherit;font-size:12.5px;cursor:pointer;transition:.18s}
+    .logout:hover{border-color:#c8645b;color:var(--red);background:rgba(191,79,69,.06)}
+    /* 主区 */
+    main{flex:1;padding:32px 40px;min-width:0}
+    header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px}
+    h1{font-size:24px;margin:0;font-weight:700;letter-spacing:.5px}
+    .head-sub{color:var(--text-faint);font-size:12.5px;margin-top:6px;letter-spacing:.3px}
+    .head-right{display:flex;align-items:center;gap:12px}
+    .msg-pill{
+      max-width:360px;padding:8px 14px;border-radius:20px;font-size:12.5px;
+      background:var(--wood-bg);color:var(--wood-soft);opacity:0;transition:opacity .25s;
+    }
+    .msg-pill.show{opacity:1}
+    .msg-pill.err{background:rgba(191,79,69,.1);color:var(--red)}
+    /* 面板 */
+    .panel{
+      background:linear-gradient(180deg,var(--panel),var(--bg-soft));
+      border:1px solid var(--line);border-radius:var(--radius);
+      padding:22px;margin-bottom:18px;box-shadow:var(--shadow);
+    }
+    .panel h2{font-size:15px;margin:0 0 16px;font-weight:650;display:flex;align-items:center;gap:9px}
+    .panel h2::before{content:"";width:3px;height:16px;border-radius:2px;background:linear-gradient(var(--gold),#8a6a34)}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .hint{color:var(--text-faint);font-size:12px;line-height:1.6}
+    /* 控件 */
+    input,select,textarea{
+      padding:10px 13px;border:1px solid var(--line);border-radius:var(--radius-sm);
+      font:inherit;background:var(--bg-soft);color:var(--text);outline:none;transition:border .18s,box-shadow .18s;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg)}
+    input::placeholder{color:var(--text-faint)}
+    input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold);cursor:pointer}
+    textarea{min-height:76px;resize:vertical;width:100%}
+    button{
+      padding:10px 16px;border:0;border-radius:var(--radius-sm);cursor:pointer;font:inherit;font-weight:600;
+      background:linear-gradient(135deg,var(--gold),#a3762f);color:#fff;
+      transition:transform .08s,filter .18s,opacity .18s;
+    }
+    button:hover{filter:brightness(1.06)}
+    button:active{transform:translateY(1px)}
+    button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+    .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text-dim);font-weight:500}
+    .btn-ghost:hover{border-color:var(--gold);color:var(--gold-soft)}
+    .btn-danger{background:transparent;border:1px solid #d8b0ab;color:var(--red);font-weight:500}
+    .btn-danger:hover{background:rgba(191,79,69,.08)}
+    .btn-sm{padding:6px 12px;font-size:12.5px;border-radius:8px}
+    .field{margin-bottom:15px}
+    .field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.3px}
+    .row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+    .row .field{flex:1;min-width:150px}
+    /* 订单 */
+    .order{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:18px;margin-bottom:12px}
+    .order:hover{border-color:var(--line)}
+    .order-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+    .order-no{font-weight:650;font-size:14px}
+    .order-amount{font-size:17px;font-weight:700;color:var(--gold-soft);white-space:nowrap}
+    .order-items{color:var(--text-dim);font-size:13px;margin-bottom:8px}
+    .order-recv{font-size:12.5px;color:var(--text-faint);margin-bottom:8px}
+    .order-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-faint);margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+    .order-meta b{color:var(--text-dim);font-weight:500}
+    .ship-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .ship-row input{flex:1;min-width:130px;padding:8px 11px;font-size:12.5px}
+    /* 状态徽标 */
+    .status{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.3px}
+    .status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+    .status.pending{background:rgba(176,127,46,.12);color:var(--amber)}
+    .status.paid{background:rgba(74,122,168,.12);color:var(--blue)}
+    .status.shipped{background:rgba(94,127,71,.12);color:var(--green)}
+    .status.completed{background:rgba(184,134,59,.12);color:var(--gold-soft)}
+    .status.after_sale{background:rgba(191,79,69,.12);color:var(--red)}
+    .status.refunded{background:rgba(154,148,138,.16);color:var(--text-dim)}
+    .status.cancelled{background:rgba(154,148,138,.16);color:var(--text-dim)}
+    .empty{padding:34px;text-align:center;color:var(--text-faint)}
+    .empty svg{width:40px;height:40px;opacity:.3;margin-bottom:10px}
+    /* 商品 */
+    .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+    .prod-card{
+      background:var(--panel-2);border:1px solid var(--line-soft);border-radius:var(--radius);
+      overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s;cursor:default;
+    }
+    .prod-card:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 14px 34px rgba(120,100,60,.14)}
+    .prod-img{position:relative;height:160px;background:var(--bg-soft);overflow:hidden}
+    .prod-img img{width:100%;height:100%;object-fit:cover;display:block}
+    .prod-img .swatch{position:absolute;left:12px;bottom:12px;display:flex;gap:5px}
+    .prod-img .swatch i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.6)}
+    .prod-body{padding:15px}
+    .prod-name{font-weight:650;font-size:14.5px;margin-bottom:3px}
+    .prod-sub{font-size:12px;color:var(--text-faint);margin-bottom:11px}
+    .prod-price{font-size:15px;font-weight:700;color:var(--gold-soft)}
+    .prod-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .prod-cost{font-size:11.5px;color:var(--text-dim);margin-top:6px}
+    .onoff{font-size:11.5px;padding:2px 10px;border-radius:20px;font-weight:600}
+    .onoff.on{background:var(--wood-bg);color:var(--wood-soft)}
+    .onoff.off{background:rgba(109,117,108,.16);color:var(--text-faint)}
+    /* 库存卡片 */
+    .stock-card{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:18px}
+    .stock-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .stock-name{font-weight:650}
+    .stock-nums{display:flex;gap:0;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+    .stock-nums>div{flex:1;text-align:center;padding:11px 6px}
+    .stock-nums>div+div{border-left:1px solid var(--line)}
+    .stock-nums .num{font-size:18px;font-weight:700;display:block}
+    .stock-nums .cap{font-size:10.5px;color:var(--text-faint);letter-spacing:1px}
+    .stock-edit{display:flex;gap:8px;margin-top:14px;align-items:center}
+    .stock-edit input{width:88px;flex:none}
+    .stock-edit label{font-size:12.5px;color:var(--text-dim);display:flex;align-items:center;gap:6px;margin-left:auto;cursor:pointer}
+    /* 编辑器 */
+    .editor{background:var(--panel-2);border:1px solid var(--gold-bg);border-color:var(--line);border-radius:var(--radius);padding:24px}
+    .editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+    .editor-grid .full{grid-column:1/-1}
+    .img-box{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+    .img-box .cur{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+    .img-upload{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+    .gallery{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .gallery img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+    .editor-actions{display:flex;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    /* 整齐表格 */
+    .tbl{width:100%;border-collapse:collapse;font-size:13px}
+    .tbl th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--text-dim);font-size:12px;letter-spacing:.5px;white-space:nowrap}
+    .tbl td{padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+    .tbl tr:last-child td{border-bottom:0}
+    .tbl input{padding:8px 11px;font-size:13px}
+    @media(max-width:820px){
+      .layout{flex-direction:column}
+      aside{width:100%;flex-direction:row;align-items:center;overflow-x:auto;padding:14px}
+      .brand,.nav-foot{display:none}
+      main{padding:20px}
+      .editor-grid{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-row">
-      <div><h1>五色知时 · 订单与发货</h1><div>管理员账号安全登录｜关键操作留有审计记录</div></div>
-      <div class="row"><span id="admin-name"></span><button class="header-button" onclick="logout()">退出登录</button></div>
-    </div>
-  </header>
-  <main class="wrap">
-    <section class="panel"><div class="toolbar"><select id="status" onchange="loadOrders()"><option value="">全部订单</option><option value="paid">待发货</option><option value="shipped">已发货</option><option value="after_sale">售后中</option></select><button class="secondary" onclick="reloadAll()">刷新</button></div><p id="message" class="muted"></p></section>
-    <section class="panel"><h2>商品库存</h2><p id="inventory-note" class="muted"></p><div id="inventory" class="grid"></div></section>
-    <section class="panel"><h2>订单</h2><div id="orders"></div></section>
-  </main>
+  <div class="layout">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark">五</div>
+        <div><div class="brand-name">五色知时</div><div class="brand-sub">管理后台</div></div>
+      </div>
+      <div class="nav-label">运营</div>
+      <button class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-6"/></svg>
+        经营看板
+      </button>
+      <button class="nav-item" data-tab="finance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M12 15h.01"/></svg>
+        财务利润
+      </button>
+      <button class="nav-item" data-tab="orders">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2h12l3 5v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M3 7h18M9 12a3 3 0 0 0 6 0"/></svg>
+        全部订单
+      </button>
+      <button class="nav-item" data-tab="ship">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 8h9l4 4v7H5z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg>
+        待发货
+      </button>
+      <button class="nav-item" data-tab="aftersale">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        售后/退货
+      </button>
+      <button class="nav-item" data-tab="logistics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/></svg>
+        物流管理
+      </button>
+      <button class="nav-item" data-tab="products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>
+        商品管理
+      </button>
+      <button class="nav-item" data-tab="inventory">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16"/><path d="M3.3 7 12 12l8.7-5M7.5 4.2 16.5 9.4"/></svg>
+        库存上下架
+      </button>
+      <div class="nav-label">系统</div>
+      <button class="nav-item" data-tab="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        操作审计
+      </button>
+      <button class="nav-item" data-tab="admins">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        管理员
+      </button>
+      <div class="nav-foot">
+        <div class="user-chip">
+          <div class="avatar" id="avatar">—</div>
+          <div class="user-meta">
+            <div class="user-name" id="admin-name">加载中…</div>
+            <div class="user-role" id="admin-role"></div>
+          </div>
+        </div>
+        <button class="logout" onclick="logout()">退出登录</button>
+      </div>
+    </aside>
+
+    <main>
+      <header>
+        <div>
+          <h1 id="page-title">经营看板</h1>
+          <div class="head-sub" id="head-sub">今日经营概况与关键指标</div>
+        </div>
+        <div class="head-right"><span id="message" class="msg-pill"></span></div>
+      </header>
+
+      <!-- 经营看板 -->
+      <section class="tab-panel active" id="tab-dashboard">
+        <div class="panel">
+          <div class="toolbar"><button class="btn-ghost btn-sm" onclick="loadDashboard()">刷新数据</button></div>
+        </div>
+        <div id="dashboard"></div>
+      </section>
+
+      <!-- 财务利润 -->
+      <section class="tab-panel" id="tab-finance">
+        <div class="panel">
+          <div class="toolbar"><button class="btn-ghost btn-sm" onclick="loadFinance()">刷新财务数据</button><span class="hint">按订单实收统计，退款已自动冲销。</span></div>
+        </div>
+        <div id="finance"></div>
+        <div class="panel">
+          <h2>商品成本设置</h2>
+          <p class="hint" style="margin-top:0">在这里填写每件商品的进货成本（元），填好后上方利润和毛利率才会准确。仅超级管理员可改。</p>
+          <div id="cost-editor"></div>
+        </div>
+      </section>
+
+      <!-- 全部订单 -->
+      <section class="tab-panel" id="tab-orders">
+        <div class="panel">
+          <div class="toolbar">
+            <select id="status" onchange="loadOrders()">
+              <option value="">全部订单</option>
+              <option value="pending">待付款</option>
+              <option value="paid">待发货</option>
+              <option value="shipped">已发货</option>
+              <option value="completed">已完成</option>
+              <option value="after_sale">售后中</option>
+              <option value="refunded">已退款</option>
+              <option value="cancelled">已取消</option>
+            </select>
+            <input id="q" placeholder="订单号 / 收件人 / 手机号 / 运单号" style="flex:1;min-width:180px">
+            <input id="date-from" type="date" title="下单起始日期">
+            <span class="hint">至</span>
+            <input id="date-to" type="date" title="下单结束日期">
+            <button class="btn-sm" onclick="loadOrders()">查询</button>
+            <button class="btn-ghost btn-sm" onclick="resetOrderSearch()">重置</button>
+            <button class="btn-ghost btn-sm" onclick="exportOrders()">导出 CSV</button>
+          </div>
+        </div>
+        <div id="orders"></div>
+      </section>
+
+      <!-- 待发货 -->
+      <section class="tab-panel" id="tab-ship">
+        <div class="panel">
+          <div class="toolbar">
+            <button class="btn-ghost btn-sm" onclick="loadShip()">刷新</button>
+            <span class="hint">待发货订单，录入快递公司与运单号后确认发货。</span>
+          </div>
+        </div>
+        <div id="ship"></div>
+      </section>
+
+      <!-- 售后/退货 -->
+      <section class="tab-panel" id="tab-aftersale">
+        <div class="panel">
+          <div class="toolbar">
+            <input id="as-q" placeholder="搜索售后单：订单号 / 收件人 / 手机号" style="flex:1;min-width:200px">
+            <button class="btn-sm" onclick="loadAftersale()">查询</button>
+            <button class="btn-ghost btn-sm" onclick="document.getElementById('as-q').value='';loadAftersale()">重置</button>
+            <span class="hint">售后中与已退款的订单，可发起原路退款。</span>
+          </div>
+        </div>
+        <div id="aftersale"></div>
+      </section>
+
+      <!-- 物流管理 -->
+      <section class="tab-panel" id="tab-logistics">
+        <div class="panel">
+          <div class="toolbar">
+            <button class="btn-ghost btn-sm" onclick="loadLogistics()">刷新</button>
+            <span class="hint">已发货订单的物流信息，可修改运单号。</span>
+          </div>
+        </div>
+        <div id="logistics"></div>
+      </section>
+
+      <!-- 商品 -->
+      <section class="tab-panel" id="tab-products">
+        <div class="panel">
+          <div class="toolbar">
+            <button class="btn-ghost btn-sm" onclick="loadProducts()">刷新商品</button>
+            <span class="hint">修改名称、价格、文案或图片后，小程序即时生效，无需重新提审。</span>
+          </div>
+        </div>
+        <div id="products"></div>
+        <div id="product-editor" style="display:none"></div>
+      </section>
+
+      <!-- 库存 -->
+      <section class="tab-panel" id="tab-inventory">
+        <div class="panel">
+          <h2>商品库存与上下架</h2>
+          <p id="inventory-note" class="hint"></p>
+        </div>
+        <div id="inventory" class="prod-grid"></div>
+      </section>
+
+      <!-- 操作审计 -->
+      <section class="tab-panel" id="tab-audit">
+        <div class="panel">
+          <div class="toolbar">
+            <button class="btn-ghost btn-sm" onclick="loadAudit()">刷新</button>
+            <span class="hint">记录管理员的关键操作，便于追溯。</span>
+          </div>
+        </div>
+        <div id="audit"></div>
+      </section>
+
+      <!-- 管理员管理 -->
+      <section class="tab-panel" id="tab-admins">
+        <div class="panel">
+          <div class="toolbar">
+            <button class="btn-ghost btn-sm" onclick="loadAdmins()">刷新</button>
+            <button class="btn-sm" onclick="openAdminCreate()">+ 新增管理员</button>
+            <button class="btn-ghost btn-sm" onclick="openChangePassword()">修改我的密码</button>
+            <span class="hint">仅超级管理员可管理子账号。</span>
+          </div>
+        </div>
+        <div id="admins"></div>
+        <div id="admin-editor" style="display:none"></div>
+      </section>
+    </main>
+  </div>
+
   <script>
-    const message=document.getElementById('message');let csrfToken='',adminProfile=null;
-    async function api(path,options={}){const method=(options.method||'GET').toUpperCase(),headers={...(options.headers||{})};if(options.body)headers['content-type']='application/json';if(!['GET','HEAD'].includes(method))headers['X-CSRF-Token']=csrfToken;const response=await fetch(path,{...options,method,headers,credentials:'same-origin'});if(response.status===401){location.replace('/admin/login');throw new Error('登录已失效')}const data=response.status===204?null:await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||'请求失败');return data}
+    const message=document.getElementById('message');
+    let csrfToken='',adminProfile=null;
+
+    function toast(t,isErr=false){const m=message;m.textContent=t;m.className='msg-pill show'+(isErr?' err':'');clearTimeout(m._t);m._t=setTimeout(()=>m.className='msg-pill',2600)}
+    async function api(path,options={}){
+      const method=(options.method||'GET').toUpperCase(),headers={...(options.headers||{})};
+      if(!options.body)headers['content-type']='application/json';
+      if(options.body instanceof FormData)delete headers['content-type'];
+      if(!['GET','HEAD'].includes(method))headers['X-CSRF-Token']=csrfToken;
+      let response;
+      try{
+        response=await fetch(path,{...options,method,headers,credentials:'same-origin'});
+      }catch(err){
+        throw new Error('网络连接失败，请检查服务是否在运行');
+      }
+      if(response.status===401){location.replace('/admin/login');throw new Error('登录已失效')}
+      const data=response.status===204?null:await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.detail||'请求失败');
+      return data;
+    }
     function money(fen){return '¥'+(fen/100).toFixed(2)}
-    function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
-    async function loadInventory(){try{const rows=await api('/api/admin/inventory'),canEdit=adminProfile.role==='superadmin';document.getElementById('inventory-note').textContent=canEdit?'超级管理员可修改库存和上下架状态。':'当前账号为订单运营，仅可查看库存。';document.getElementById('inventory').innerHTML=rows.map(x=>`<div class="card"><div class="title">${esc(x.name)} · ${money(x.price_fen)}</div><p>可售 ${Number(x.available)}｜锁定 ${Number(x.reserved)}｜已售 ${Number(x.sold)}</p>${canEdit?`<div class="row"><input id="stock-${esc(x.product_id)}" type="number" min="0" value="${Number(x.available)}" style="min-width:100px;width:110px"><label><input id="active-${esc(x.product_id)}" type="checkbox" ${x.active?'checked':''} style="min-width:auto"> 上架</label><button onclick="saveStock('${esc(x.product_id)}')">保存</button></div>`:`<div class="muted">${x.active?'已上架':'已下架'}</div>`}</div>`).join('')}catch(e){message.textContent=e.message}}
-    async function saveStock(id){try{await api('/api/admin/inventory/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({available:Number(document.getElementById('stock-'+id).value),active:document.getElementById('active-'+id).checked})});message.textContent='库存已保存';loadInventory()}catch(e){message.textContent=e.message}}
-    async function loadOrders(){try{const value=document.getElementById('status').value;const rows=await api('/api/admin/orders'+(value?'?status='+encodeURIComponent(value):''));document.getElementById('orders').innerHTML=rows.length?rows.map(x=>`<div class="order"><div class="row"><span class="title">${esc(x.number)}</span><span class="status">${esc(x.status)}</span><span>${money(x.total_fen)}</span><span>${esc(x.receiver_name)} ${esc(x.receiver_phone)}</span></div><div>${x.items.map(i=>esc(i.name)+' × '+Number(i.quantity)).join('、')}</div><div class="muted">${esc(x.receiver_address)}</div>${x.status==='paid'?`<div class="row ship"><input id="carrier-${Number(x.id)}" placeholder="快递公司"><input id="tracking-${Number(x.id)}" placeholder="运单号"><button onclick="ship(${Number(x.id)})">确认发货</button></div>`:(x.tracking_number?`<div>物流：${esc(x.carrier||'')} ${esc(x.tracking_number)}</div>`:'')}</div>`).join(''):'<p class="muted">暂无订单</p>'}catch(e){message.textContent=e.message}}
-    async function ship(id){try{await api('/api/admin/orders/'+id+'/ship',{method:'POST',body:JSON.stringify({carrier:document.getElementById('carrier-'+id).value,tracking_number:document.getElementById('tracking-'+id).value})});message.textContent='已确认发货';loadOrders()}catch(e){message.textContent=e.message}}
+    function moneyNum(fen){return ((fen||0)/100).toFixed(2)}
+    function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+    function assetUrl(fn){return fn?(fn.startsWith('http')?fn:'/product-assets/'+fn):''}
+    function fmtTime(t){if(!t)return '—';const d=new Date(t);return isNaN(d)?String(t):d.toLocaleString('zh-CN',{hour12:false})}
+    const STATUS_TEXT={pending:'待付款',paid:'待发货',shipped:'已发货',completed:'已完成',after_sale:'售后中',refunded:'已退款',cancelled:'已取消'};
+
+    document.querySelectorAll('.nav-item').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        document.getElementById('page-title').textContent=btn.textContent.trim();
+        const subs={dashboard:'今日经营概况与关键指标',finance:'营收、成本、毛利与商品利润',orders:'查看全部订单',ship:'录入运单并确认发货',aftersale:'处理退款与售后',logistics:'查看与修改运单信息',products:'编辑商品信息与视觉物料',inventory:'管理可售数量与上下架状态',audit:'追溯管理员关键操作',admins:'管理后台账号与权限'};
+        document.getElementById('head-sub').textContent=subs[btn.dataset.tab];
+        if(btn.dataset.tab==='dashboard')loadDashboard();
+        if(btn.dataset.tab==='finance'){loadFinance();loadCosts()}
+        if(btn.dataset.tab==='orders')loadOrders();
+        if(btn.dataset.tab==='ship')loadShip();
+        if(btn.dataset.tab==='aftersale')loadAftersale();
+        if(btn.dataset.tab==='logistics')loadLogistics();
+        if(btn.dataset.tab==='products')loadProducts();
+        if(btn.dataset.tab==='inventory')loadInventory();
+        if(btn.dataset.tab==='audit')loadAudit();
+        if(btn.dataset.tab==='admins')loadAdmins();
+      });
+    });
+
+    const emptyIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
+    // 通用订单卡片渲染；opts.showShip / opts.showRefund / opts.showLogistics 控制按钮。
+    function renderOrder(x, opts={}){
+      const items=(x.items||[]).map(i=>esc(i.name)+' <span style="color:var(--text-faint)">× '+Number(i.quantity)+'</span>').join('　');
+      const payInfo=x.wx_transaction_id?('<div class="order-meta"><span>微信交易号 <b>'+esc(x.wx_transaction_id)+'</b></span></div>'):'';
+      const payTime=x.paid_at?('<div class="order-meta"><span>支付时间 <b>'+fmtTime(x.paid_at)+'</b></span></div>'):'';
+      const shipInfo=(x.tracking_number?('<div class="order-meta"><span>物流 <b>'+esc(x.carrier||'')+' '+esc(x.tracking_number)+'</b></span></div>'):'');
+      const shipInput=(opts.showShip?('<div class="ship-row"><input id="carrier-'+Number(x.id)+'" placeholder="快递公司（如顺丰）"><input id="tracking-'+Number(x.id)+'" placeholder="运单号"><button class="btn-sm" onclick="ship('+Number(x.id)+')">确认发货</button></div>'):'');
+      const refundBtn=(opts.showRefund?('<div class="ship-row"><button class="btn-danger btn-sm" onclick="refundOrder('+Number(x.id)+')">原路退款</button></div>'):'');
+      const logisticsEdit=(opts.showLogisticsEdit?('<div class="ship-row"><input id="log-carrier-'+Number(x.id)+'" value="'+esc(x.carrier||'')+'" placeholder="快递公司"><input id="log-tracking-'+Number(x.id)+'" value="'+esc(x.tracking_number||'')+'" placeholder="运单号"><button class="btn-sm" onclick="updateLogistics('+Number(x.id)+')">更新</button></div>'):'');
+      const meta=payInfo+payTime+shipInfo;
+      return '<div class="order">'
+        +'<div class="order-top"><span class="order-no">'+esc(x.number)+'</span><span class="order-amount">'+money(x.total_fen)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div class="order-items">'+items+'</div><span class="status '+esc(x.status)+'">'+(STATUS_TEXT[x.status]||x.status)+'</span></div>'
+        +'<div class="order-recv">'+esc(x.receiver_name)+' '+esc(x.receiver_phone)+' · '+esc(x.receiver_address)+'</div>'
+        +shipInput+refundBtn+logisticsEdit
+        +(meta?meta:'<div class="order-meta"><span>下单时间 <b>'+fmtTime(x.created_at)+'</b></span></div>')
+        +'</div>';
+    }
+    function emptyState(el,text){el.innerHTML='<div class="panel empty">'+emptyIcon+'<div>'+(text||'暂无数据')+'</div></div>'}
+
+    async function loadOrders(){
+      try{
+        const params=new URLSearchParams();
+        const value=document.getElementById('status').value;
+        if(value)params.set('status',value);
+        const q=document.getElementById('q').value.trim();
+        if(q)params.set('q',q);
+        const df=document.getElementById('date-from').value;
+        if(df)params.set('date_from',df);
+        const dt=document.getElementById('date-to').value;
+        if(dt)params.set('date_to',dt);
+        const rows=await api('/api/admin/orders?'+params.toString());
+        document.getElementById('orders').innerHTML=rows.length?rows.map(x=>renderOrder(x)).join(''):'';
+        if(!rows.length)emptyState(document.getElementById('orders'),'没有符合条件的订单');
+      }catch(e){toast(e.message,true)}
+    }
+    function resetOrderSearch(){
+      document.getElementById('q').value='';
+      document.getElementById('date-from').value='';
+      document.getElementById('date-to').value='';
+      document.getElementById('status').value='';
+      loadOrders();
+    }
+    async function loadShip(){
+      try{
+        const rows=await api('/api/admin/orders?status=paid');
+        document.getElementById('ship').innerHTML=rows.length?rows.map(x=>renderOrder(x,{showShip:true})).join(''):'';
+        if(!rows.length)emptyState(document.getElementById('ship'),'暂无待发货订单');
+      }catch(e){toast(e.message,true)}
+    }
+    async function loadAftersale(){
+      try{
+        const q=document.getElementById('as-q').value.trim();
+        const qs=q?'&q='+encodeURIComponent(q):'';
+        const rows=await api('/api/admin/orders?status=after_sale'+qs);
+        const refunded=await api('/api/admin/orders?status=refunded'+qs);
+        const all=rows.concat(refunded);
+        document.getElementById('aftersale').innerHTML=all.length?all.map(x=>renderOrder(x,{showRefund:x.status==='after_sale'&&adminProfile.role==='superadmin'})).join(''):'';
+        if(!all.length)emptyState(document.getElementById('aftersale'),'没有符合条件的售后单');
+      }catch(e){toast(e.message,true)}
+    }
+    async function loadLogistics(){
+      try{
+        const rows=await api('/api/admin/orders?status=shipped');
+        document.getElementById('logistics').innerHTML=rows.length?rows.map(x=>renderOrder(x,{showLogisticsEdit:adminProfile.role==='superadmin'})).join(''):'';
+        if(!rows.length)emptyState(document.getElementById('logistics'),'暂无已发货订单');
+      }catch(e){toast(e.message,true)}
+    }
+    async function ship(id){
+      const carrier=document.getElementById('carrier-'+id).value.trim();
+      const tracking=document.getElementById('tracking-'+id).value.trim();
+      if(!carrier||!tracking){toast('请填写快递公司和运单号',true);return;}
+      try{await api('/api/admin/orders/'+id+'/ship',{method:'POST',body:JSON.stringify({carrier,tracking_number:tracking})});toast('已确认发货');loadShip();loadDashboard()}catch(e){toast(e.message,true)}
+    }
+    async function updateLogistics(id){
+      const carrier=document.getElementById('log-carrier-'+id).value.trim();
+      const tracking=document.getElementById('log-tracking-'+id).value.trim();
+      if(!carrier||!tracking){toast('请填写快递公司和运单号',true);return;}
+      try{await api('/api/admin/orders/'+id+'/ship',{method:'POST',body:JSON.stringify({carrier,tracking_number:tracking})});toast('运单已更新');loadLogistics()}catch(e){toast(e.message,true)}
+    }
+    function exportOrders(){
+      const params=new URLSearchParams();
+      const value=document.getElementById('status').value;
+      if(value)params.set('status',value);
+      const q=document.getElementById('q').value.trim();
+      if(q)params.set('q',q);
+      const df=document.getElementById('date-from').value;
+      if(df)params.set('date_from',df);
+      const dt=document.getElementById('date-to').value;
+      if(dt)params.set('date_to',dt);
+      const url='/api/admin/orders/export.csv'+(params.toString()?'?'+params.toString():'');
+      fetch(url,{credentials:'same-origin'}).then(r=>{if(!r.ok)throw new Error('导出失败');return r.blob()}).then(blob=>{
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='orders.csv';a.click();URL.revokeObjectURL(a.href);
+      }).catch(e=>toast(e.message,true));
+    }
+    async function refundOrder(id){
+      if(!confirm('确认对该订单发起原路退款？此操作不可撤销。'))return;
+      const reason=prompt('退款原因（可选）','商家同意退款')||'商家同意退款';
+      try{await api('/api/admin/orders/'+id+'/refund',{method:'POST',body:JSON.stringify({reason})});toast('退款已发起');loadAftersale();loadFinance();loadDashboard()}catch(e){toast(e.message,true)}
+    }
+    // 财务页：商品成本填写
+    async function loadCosts(){
+      const el=document.getElementById('cost-editor');
+      if(!el)return;
+      if(adminProfile.role!=='superadmin'){el.innerHTML='<p class="hint">仅超级管理员可修改成本价。</p>';return}
+      try{
+        const items=await api('/api/admin/products');
+        el.innerHTML='<table class="tbl"><thead><tr><th>商品</th><th>售价</th><th style="width:160px">成本（元）</th><th style="width:90px"></th></tr></thead><tbody>'
+          +items.map(p=>(
+            '<tr><td>'+esc(p.name)+'</td><td>'+money(p.price_fen)+'</td>'
+            +'<td><input id="cost-'+esc(p.id)+'" type="number" step="0.01" min="0" value="'+moneyNum(p.cost_fen)+'" style="width:120px"></td>'
+            +'<td><button class="btn-sm" onclick="saveCost(\''+esc(p.id)+'\')">保存</button></td></tr>'
+          )).join('')+'</tbody></table>';
+      }catch(e){el.innerHTML='<p class="hint">成本加载失败：'+esc(e.message)+'</p>'}
+    }
+    async function saveCost(id){
+      const raw=document.getElementById('cost-'+id).value;
+      const yuan=Number(raw);
+      if(isNaN(yuan)||yuan<0){toast('请填写正确的成本金额',true);return}
+      try{
+        await api('/api/admin/products/'+encodeURIComponent(id)+'/cost',{method:'PUT',body:JSON.stringify({cost_fen:Math.round(yuan*100)})});
+        toast('成本已保存');loadFinance();
+      }catch(e){toast(e.message,true)}
+    }
+    async function loadDashboard(){
+      try{
+        const d=await api('/api/admin/dashboard');
+        const money=(fen)=>(fen/100).toFixed(2);
+        const cards=[
+          ['今日订单',d.today_order_count,'单'],
+          ['今日销售额','¥'+money(d.today_sales_fen),''],
+          ['待发货',d.pending_ship_count,'单'],
+          ['累计销售额','¥'+money(d.total_sales_fen),''],
+          ['累计利润','¥'+money(d.total_profit_fen),'毛利率 '+d.profit_rate+'%']
+        ];
+        const statusRows=['pending','paid','shipped','completed','after_sale','refunded','cancelled'].map(s=>({
+          k:s,n:d.status_counts[s]||0
+        }));
+        const lowStock=d.low_stock.length?('<div class="panel"><h2>低库存预警</h2>'+(d.low_stock.map(x=>'<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>'+esc(x.name)+'</span><span style="color:var(--red);font-weight:600">仅剩 '+x.available+' 件</span></div>').join(''))+'</div>'):'';
+        const top=d.top_products.length?('<div class="panel"><h2>热销排行</h2>'+(d.top_products.map((x,i)=>'<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span><span style="color:var(--gold-soft);font-weight:700;margin-right:10px">'+(i+1)+'</span>'+esc(x.name)+'</span><span style="color:var(--text-dim)">已售 '+x.sold+'</span></div>').join(''))+'</div>'):'';
+        document.getElementById('dashboard').innerHTML=
+          '<div class="row" style="margin-bottom:18px">'+cards.map(c=>'<div class="panel" style="flex:1;min-width:140px;margin:0;text-align:center"><div style="font-size:12px;color:var(--text-faint);margin-bottom:8px">'+c[0]+'</div><div style="font-size:26px;font-weight:700;color:var(--gold-soft)">'+c[1]+'</div><div style="font-size:11px;color:var(--text-faint)">'+c[2]+'</div></div>').join('')+'</div>'
+          +'<div class="row" style="align-items:stretch"><div class="panel" style="flex:1"><h2>订单状态分布</h2>'+statusRows.map(s=>'<div class="row" style="justify-content:space-between;padding:6px 0"><span style="color:var(--text-dim)">'+(STATUS_TEXT[s.k]||s.k)+'</span><span style="font-weight:600">'+s.n+'</span></div>').join('')+'</div><div style="flex:1">'+lowStock+top+'</div></div>';
+      }catch(e){toast(e.message,true)}
+    }
+    async function loadFinance(){
+      try{
+        const f=await api('/api/admin/finance');
+        const money=(fen)=>(fen/100).toFixed(2);
+        const cards=[
+          ['净营收','¥'+money(f.net_sales_fen),''],
+          ['退款','¥'+money(f.refund_fen),f.refunded_order_count+' 单'],
+          ['商品成本','¥'+money(f.total_cost_fen),''],
+          ['毛利','¥'+money(f.gross_profit_fen),''],
+          ['毛利率',f.gross_profit_rate+'%',''],
+          ['运费收入','¥'+money(f.shipping_income_fen),'']
+        ];
+        const rows=f.products.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+p.sold_qty+'</td><td>¥'+money(p.sales_fen)+'</td><td>¥'+money(p.cost_fen)+'</td><td style="font-weight:600;color:var(--gold-soft)">¥'+money(p.profit_fen)+'</td><td>'+(p.profit_rate>=0?p.profit_rate:'—')+'%</td></tr>').join('');
+        document.getElementById('finance').innerHTML=
+          '<div class="row" style="margin-bottom:18px">'+cards.map(c=>'<div class="panel" style="flex:1;min-width:140px;margin:0;text-align:center"><div style="font-size:12px;color:var(--text-faint);margin-bottom:8px">'+c[0]+'</div><div style="font-size:24px;font-weight:700;color:var(--gold-soft)">'+c[1]+'</div><div style="font-size:11px;color:var(--text-faint)">'+c[2]+'</div></div>').join('')+'</div>'
+          +'<div class="panel"><h2>各商品利润明细</h2><table><tr><th>商品</th><th>销量</th><th>销售额</th><th>成本</th><th>毛利</th><th>毛利率</th></tr>'+rows+'</table></div>'
+          +'<div class="panel"><h2>汇总</h2><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">已付款订单数</span><span>'+f.paid_order_count+' 单</span></div><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">退款订单数</span><span>'+f.refunded_order_count+' 单</span></div><div class="row" style="justify-content:space-between"><span style="color:var(--text-dim)">毛利（净营收 − 商品成本）</span><span style="font-weight:700;color:var(--gold-soft)">¥'+money(f.gross_profit_fen)+'</span></div></div>';
+      }catch(e){toast(e.message,true)}
+    }
+    async function loadAudit(){
+      try{
+        const rows=await api('/api/admin/audit-logs');
+        const actionText={inventory_update:'库存更新',order_ship:'订单发货',order_refund:'订单退款',product_update:'商品修改',product_image:'商品图片',product_gallery:'商品图库',product_cost_update:'修改成本',admin_create:'创建管理员',admin_update:'修改管理员',admin_password_reset:'重置密码',admin_self_password_change:'修改本人密码'};
+        document.getElementById('audit').innerHTML=rows.length?('<table><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>详情</th><th>IP</th></tr>'+rows.map(r=>{
+          let detail='';try{const d=r.detail;detail=d?Object.entries(d).map(([k,v])=>k+':'+(typeof v==='object'?JSON.stringify(v):v)).join(' '):''}catch(_){}
+          return '<tr><td style="white-space:nowrap">'+fmtTime(r.created_at)+'</td><td>'+esc(r.operator)+'</td><td>'+(actionText[r.action]||r.action)+'</td><td>'+esc(r.target_type)+' '+(r.target_id?('#'+esc(r.target_id)):'')+'</td><td style="color:var(--text-faint);font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(detail)+'</td><td style="color:var(--text-faint)">'+esc(r.ip_address||'')+'</td></tr>';
+        }).join('')+'</table>'):('<div class="panel empty">'+emptyIcon+'<div>暂无审计记录</div></div>');
+      }catch(e){toast(e.message,true)}
+    }
+
+    // ---- 管理员管理 ----
+    let adminCache=[];
+    async function loadAdmins(){
+      try{
+        adminCache=await api('/api/admin/users');
+        const canEdit=adminProfile.role==='superadmin';
+        document.getElementById('admins').innerHTML=adminCache.length?('<table><tr><th>账号</th><th>显示名</th><th>角色</th><th>状态</th><th>最近登录</th><th>操作</th></tr>'+adminCache.map(u=>(
+          '<tr><td style="font-weight:600">'+esc(u.username)+'</td><td>'+esc(u.display_name)+'</td><td>'+(u.role==='superadmin'?'超级管理员':'运营')+'</td><td><span class="status '+(u.active?'shipped':'cancelled')+'">'+(u.active?'启用':'停用')+'</span></td><td style="color:var(--text-faint)">'+fmtTime(u.last_login_at)+'</td>'
+          +(canEdit?'<td><button class="btn-ghost btn-sm" onclick="openAdminEdit('+u.id+')">编辑</button> <button class="btn-ghost btn-sm" onclick="openAdminResetPwd('+u.id+')">改密</button></td>':'<td><span class="hint">只读</span></td>')
+          +'</tr>'
+        )).join('')+'</table>'):'<p class="hint">暂无管理员</p>';
+      }catch(e){toast(e.message,true)}
+    }
+    function openAdminCreate(){
+      const ed=document.getElementById('admin-editor');
+      ed.innerHTML='<div class="editor"><h2 style="margin:0 0 20px">新增管理员</h2>'
+        +'<div class="editor-grid">'
+        +'<div class="field"><label>登录账号（小写字母数字）</label><input id="ad-username" placeholder="如 kefu01"></div>'
+        +'<div class="field"><label>显示名</label><input id="ad-name" placeholder="如 客服小王"></div>'
+        +'<div class="field"><label>密码（至少8位，含字母+数字）</label><input id="ad-password" type="password"></div>'
+        +'<div class="field"><label>角色</label><select id="ad-role"><option value="operator">运营（可看订单/商品，不可退款改库存）</option><option value="superadmin">超级管理员</option></select></div>'
+        +'</div><div class="editor-actions"><button onclick="saveAdminCreate()">创建</button><button class="btn-ghost" onclick="closeAdminEditor()">取消</button></div></div>';
+      ed.style.display='block';ed.scrollIntoView({behavior:'smooth'});
+    }
+    function openAdminEdit(id){
+      const u=adminCache.find(x=>x.id===id);if(!u)return;
+      const ed=document.getElementById('admin-editor');
+      ed.innerHTML='<div class="editor"><h2 style="margin:0 0 20px">编辑 · '+esc(u.username)+'</h2>'
+        +'<div class="editor-grid">'
+        +'<div class="field"><label>显示名</label><input id="ad-name" value="'+esc(u.display_name)+'"></div>'
+        +'<div class="field"><label>角色</label><select id="ad-role"><option value="operator"'+(u.role==='operator'?' selected':'')+'>运营</option><option value="superadmin"'+(u.role==='superadmin'?' selected':'')+'>超级管理员</option></select></div>'
+        +'<div class="field"><label>状态</label><div style="display:flex;align-items:center;height:38px"><input id="ad-active" type="checkbox" '+(u.active?'checked':'')+'><span style="margin-left:8px;font-size:12.5px;color:var(--text-dim)">启用</span></div></div>'
+        +'</div><div class="editor-actions"><button onclick="saveAdminEdit('+u.id+')">保存</button><button class="btn-ghost" onclick="closeAdminEditor()">取消</button></div></div>';
+      ed.style.display='block';ed.scrollIntoView({behavior:'smooth'});
+    }
+    function openAdminResetPwd(id){
+      const u=adminCache.find(x=>x.id===id);if(!u)return;
+      const ed=document.getElementById('admin-editor');
+      ed.innerHTML='<div class="editor"><h2 style="margin:0 0 20px">重置密码 · '+esc(u.username)+'</h2>'
+        +'<div class="field"><label>新密码（至少8位，含字母+数字）</label><input id="ad-password" type="password"></div>'
+        +'<div class="editor-actions"><button onclick="saveAdminResetPwd('+u.id+')">重置</button><button class="btn-ghost" onclick="closeAdminEditor()">取消</button></div></div>';
+      ed.style.display='block';ed.scrollIntoView({behavior:'smooth'});
+    }
+    function closeAdminEditor(){document.getElementById('admin-editor').style.display='none'}
+    async function saveAdminCreate(){
+      try{
+        const data={username:document.getElementById('ad-username').value.trim(),display_name:document.getElementById('ad-name').value.trim(),password:document.getElementById('ad-password').value,role:document.getElementById('ad-role').value};
+        if(!data.username||!data.display_name||!data.password){toast('请填写完整',true);return;}
+        await api('/api/admin/users',{method:'POST',body:JSON.stringify(data)});
+        toast('管理员已创建');closeAdminEditor();loadAdmins();
+      }catch(e){toast(e.message,true)}
+    }
+    async function saveAdminEdit(id){
+      try{
+        const data={display_name:document.getElementById('ad-name').value.trim(),role:document.getElementById('ad-role').value,active:document.getElementById('ad-active').checked};
+        await api('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify(data)});
+        toast('已保存');closeAdminEditor();loadAdmins();
+      }catch(e){toast(e.message,true)}
+    }
+    async function saveAdminResetPwd(id){
+      try{
+        const password=document.getElementById('ad-password').value;
+        if(!password){toast('请输入新密码',true);return;}
+        await api('/api/admin/users/'+id+'/password',{method:'PUT',body:JSON.stringify({password})});
+        toast('密码已重置');closeAdminEditor();
+      }catch(e){toast(e.message,true)}
+    }
+    function openChangePassword(){
+      const ed=document.getElementById('admin-editor');
+      ed.innerHTML='<div class="editor"><h2 style="margin:0 0 20px">修改我的密码</h2>'
+        +'<div class="field"><label>新密码（至少8位，含字母+数字）</label><input id="ad-password" type="password"></div>'
+        +'<div class="editor-actions"><button onclick="saveMyPassword()">确认修改</button><button class="btn-ghost" onclick="closeAdminEditor()">取消</button></div></div>';
+      ed.style.display='block';ed.scrollIntoView({behavior:'smooth'});
+    }
+    async function saveMyPassword(){
+      try{
+        const password=document.getElementById('ad-password').value;
+        if(!password){toast('请输入新密码',true);return;}
+        await api('/api/admin/me/password',{method:'PUT',body:JSON.stringify({password})});
+        toast('密码已修改，请重新登录');closeAdminEditor();
+        setTimeout(()=>logout(),1500);
+      }catch(e){toast(e.message,true)}
+    }
+
+    const SWATCH_THEME={gift:['#60734e','#9c3b36','#b8893c','#e1d8c9','#303735'],green:['#8c9e78','#627354','#344a37'],red:['#bb5c52','#953b36','#672927'],gold:['#ddb266','#b6812e','#776141'],white:['#f2eee5','#dcd0bf','#aaa69e'],black:['#161b1a','#343a38','#616b67']};
+    function swatchDots(id){const c=SWATCH_THEME[id]||[];return c.map(s=>'<i style="background:'+s+'"></i>').join('')}
+
+    let productCache=[];
+    async function loadProducts(){
+      try{
+        productCache=await api('/api/admin/products');
+        const canEdit=adminProfile.role==='superadmin';
+        document.getElementById('products').innerHTML=productCache.length?('<div class="prod-grid">'+productCache.map(p=>(
+          '<div class="prod-card">'
+          +'<div class="prod-img"><img src="'+esc(assetUrl(p.image))+'"><div class="swatch">'+swatchDots(p.id)+'</div></div>'
+          +'<div class="prod-body">'
+          +'<div class="prod-name">'+esc(p.name)+'</div>'
+          +'<div class="prod-sub">'+(p.element||'')+' · '+(p.beast||'')+' · '+(p.category==='set'?'套装':'单品')+'</div>'
+          +'<div class="prod-foot"><span class="prod-price">'+money(p.price_fen)+'</span><span class="onoff '+(p.active?'on':'off')+'">'+(p.active?'已上架':'已下架')+'</span></div>'
+          +'<div class="prod-cost">成本 ¥'+moneyNum(p.cost_fen||0)+'</div>'
+          +(canEdit?'<div style="margin-top:12px"><button class="btn-ghost btn-sm" style="width:100%" onclick="openEditor(\''+esc(p.id)+'\')">编辑商品</button></div>':'')
+          +'</div></div>'
+        )).join('')+'</div>'):('<div class="panel empty">'+emptyIcon+'<div>暂无商品</div></div>');
+      }catch(e){toast(e.message,true)}
+    }
+
+    function openEditor(id){
+      const p=productCache.find(x=>x.id===id);if(!p)return;
+      const editor=document.getElementById('product-editor');
+      const gallery=(p.gallery||[]).map(g=>'<img src="'+esc(assetUrl(g))+'" title="'+esc(g)+'">').join('');
+      editor.innerHTML='<div class="editor"><h2 style="margin:0 0 20px">编辑 · '+esc(p.name)+'</h2><div class="editor-grid">'
+        +'<div class="field"><label>商品名称</label><input id="p-name" value="'+esc(p.name)+'"></div>'
+        +'<div class="field"><label>售价（元）</label><input id="p-price" type="number" step="0.01" value="'+moneyNum(p.price_fen)+'"></div>'
+        +'<div class="field"><label>成本价（元，用于利润统计，仅后台可见）</label><input id="p-cost" type="number" step="0.01" value="'+moneyNum(p.cost_fen||0)+'"></div>'
+        +'<div class="field"><label>分类</label><select id="p-category"><option value="single"'+(p.category==='single'?' selected':'')+'>单品</option><option value="set"'+(p.category==='set'?' selected':'')+'>套装</option></select></div>'
+        +'<div class="field"><label>上架状态</label><div style="display:flex;align-items:center;height:38px"><input id="p-active" type="checkbox" '+(p.active?'checked':'')+'><span style="margin-left:8px;font-size:12.5px;color:var(--text-dim)">勾选后小程序可见</span></div></div>'
+        +'<div class="field"><label>长度 (cm)</label><input id="p-length" type="number" step="0.1" value="'+Number(p.length_cm)+'"></div>'
+        +'<div class="field"><label>重量 (g)</label><input id="p-weight" type="number" value="'+Number(p.weight_grams)+'"></div>'
+        +'<div class="field"><label>排序（数字越小越靠前）</label><input id="p-sort" type="number" value="'+Number(p.sort_order)+'"></div>'
+        +'<div class="field"><label>颜色</label><input id="p-color" value="'+esc(p.color)+'"></div>'
+        +'<div class="field"><label>五行</label><input id="p-element" value="'+esc(p.element)+'"></div>'
+        +'<div class="field"><label>图腾 / 神兽</label><input id="p-beast" value="'+esc(p.beast)+'"></div>'
+        +'<div class="field full"><label>一句话情绪</label><input id="p-mood" value="'+esc(p.mood)+'"></div>'
+        +'<div class="field full"><label>香气札记</label><input id="p-scent" value="'+esc(p.scent)+'"></div>'
+        +'<div class="field full"><label>香气故事</label><textarea id="p-story">'+esc(p.story)+'</textarea></div>'
+        +'<div class="field full"><label>寓意</label><textarea id="p-meaning">'+esc(p.meaning)+'</textarea></div>'
+        +'<div class="field full"><label>主图</label><div class="img-box"><img class="cur" src="'+esc(assetUrl(p.image))+'"><div class="img-upload"><input type="file" id="p-image-file" accept="image/*"><button class="btn-sm" onclick="uploadImage(\''+esc(p.id)+'\')">上传新主图</button></div></div></div>'
+        +'<div class="field full"><label>详情图库</label><div class="gallery">'+gallery+'</div><div class="img-upload"><input type="file" id="p-gallery-file" accept="image/*"><button class="btn-sm" onclick="uploadGallery(\''+esc(p.id)+'\')">添加详情图</button></div></div>'
+        +'</div>'
+        +'<div class="editor-actions"><button onclick="saveProduct(\''+esc(p.id)+'\')">保存修改</button><button class="btn-ghost" onclick="closeEditor()">取消</button></div></div>';
+      editor.style.display='block';
+      editor.scrollIntoView({behavior:'smooth'});
+    }
+    function closeEditor(){document.getElementById('product-editor').style.display='none'}
+    function collectProduct(){
+      return {
+        name:document.getElementById('p-name').value.trim(),
+        price_fen:Math.round(Number(document.getElementById('p-price').value)*100),
+        cost_fen:Math.round(Number(document.getElementById('p-cost').value)*100)||0,
+        category:document.getElementById('p-category').value,
+        active:document.getElementById('p-active').checked,
+        length_cm:Number(document.getElementById('p-length').value),
+        weight_grams:Number(document.getElementById('p-weight').value),
+        sort_order:Number(document.getElementById('p-sort').value),
+        color:document.getElementById('p-color').value.trim(),
+        element:document.getElementById('p-element').value.trim(),
+        beast:document.getElementById('p-beast').value.trim(),
+        mood:document.getElementById('p-mood').value.trim(),
+        scent:document.getElementById('p-scent').value.trim(),
+        story:document.getElementById('p-story').value.trim(),
+        meaning:document.getElementById('p-meaning').value.trim(),
+        image:'',emblem:'',gallery:[],swatches:[]
+      };
+    }
+    async function saveProduct(id){
+      try{
+        const p=productCache.find(x=>x.id===id);
+        const data=collectProduct();
+        data.image=p.image;data.emblem=p.emblem;data.gallery=p.gallery||[];data.swatches=p.swatches||[];
+        await api('/api/admin/products/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify(data)});
+        toast('商品已保存');closeEditor();loadProducts();
+      }catch(e){toast(e.message,true)}
+    }
+    async function uploadImage(id){
+      const input=document.getElementById('p-image-file');
+      if(!input.files.length){toast('请选择图片',true);return}
+      try{
+        const fd=new FormData();fd.append('file',input.files[0]);
+        await api('/api/admin/products/'+encodeURIComponent(id)+'/image',{method:'POST',body:fd});
+        toast('主图已上传');loadProducts();
+      }catch(e){toast(e.message,true)}
+    }
+    async function uploadGallery(id){
+      const input=document.getElementById('p-gallery-file');
+      if(!input.files.length){toast('请选择图片',true);return}
+      try{
+        const fd=new FormData();fd.append('file',input.files[0]);
+        await api('/api/admin/products/'+encodeURIComponent(id)+'/gallery',{method:'POST',body:fd});
+        toast('详情图已添加');loadProducts();
+      }catch(e){toast(e.message,true)}
+    }
+
+    async function loadInventory(){
+      try{
+        const rows=await api('/api/admin/inventory');
+        const canEdit=adminProfile.role==='superadmin';
+        document.getElementById('inventory-note').textContent=canEdit?'超级管理员可修改库存与上下架状态，修改后小程序即时生效。':'当前账号为订单运营，仅可查看库存。';
+        document.getElementById('inventory').innerHTML=rows.map(x=>(
+          '<div class="stock-card">'
+          +'<div class="stock-head"><span class="stock-name">'+esc(x.name)+'</span><span class="status '+(x.active?'shipped':'cancelled')+'">'+(x.active?'在售':'下架')+'</span></div>'
+          +'<div class="stock-nums"><div><span class="num" style="color:var(--wood-soft)">'+Number(x.available)+'</span><span class="cap">可售</span></div><div><span class="num">'+Number(x.reserved)+'</span><span class="cap">锁定</span></div><div><span class="num">'+Number(x.sold)+'</span><span class="cap">已售</span></div></div>'
+          +(canEdit?('<div class="stock-edit"><input id="stock-'+esc(x.product_id)+'" type="number" min="0" value="'+Number(x.available)+'"><label><input id="active-'+esc(x.product_id)+'" type="checkbox" '+(x.active?'checked':'')+'> 上架</label><button class="btn-sm" onclick="saveStock(\''+esc(x.product_id)+'\')">保存</button></div>'):'')
+          +'</div>'
+        )).join('');
+      }catch(e){toast(e.message,true)}
+    }
+    async function saveStock(id){
+      try{
+        await api('/api/admin/inventory/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify({available:Number(document.getElementById('stock-'+id).value),active:document.getElementById('active-'+id).checked})});
+        toast('库存已保存');loadInventory();
+      }catch(e){toast(e.message,true)}
+    }
+
     async function logout(){try{await api('/api/admin/auth/logout',{method:'POST'})}finally{location.replace('/admin/login')}}
-    function reloadAll(){message.textContent='';loadInventory();loadOrders()}
-    async function initialize(){try{adminProfile=await api('/api/admin/auth/me');csrfToken=adminProfile.csrf_token;document.getElementById('admin-name').textContent=adminProfile.display_name+' · '+(adminProfile.role==='superadmin'?'超级管理员':'订单运营');reloadAll()}catch(e){message.textContent=e.message}}
+    async function initialize(){
+      try{
+        adminProfile=await api('/api/admin/auth/me');
+        csrfToken=adminProfile.csrf_token;
+        const role=adminProfile.role==='superadmin'?'超级管理员':'订单运营';
+        document.getElementById('admin-name').textContent=adminProfile.display_name;
+        document.getElementById('admin-role').textContent=role;
+        document.getElementById('avatar').textContent=(adminProfile.display_name||'管').slice(0,1);
+        loadDashboard();
+      }catch(e){toast(e.message,true)}
+    }
     initialize();
   </script>
 </body>

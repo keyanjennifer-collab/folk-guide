@@ -30,3 +30,6 @@ preview/qa/
 project.miniapp.json
 miniprogram/app.miniapp.json
 i18n/
+# 微信支付商户平台证书与私钥，严禁进入版本库
+微信支付商户平台证书/
+*微信支付商户平台证书*/

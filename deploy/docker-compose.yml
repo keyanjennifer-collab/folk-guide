@@ -31,6 +31,7 @@ services:
         condition: service_healthy
     volumes:
       - knowledge_data:/app/storage/knowledge
+      - product_assets:/app/app/static/products
       - ./secrets:/run/secrets:ro
     expose:
       - "8000"
@@ -73,6 +74,7 @@ services:
 volumes:
   postgres_data:
   knowledge_data:
+  product_assets:
   caddy_data:
   caddy_config:
 

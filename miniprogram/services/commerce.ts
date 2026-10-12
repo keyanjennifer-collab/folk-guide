@@ -7,6 +7,11 @@ export interface CatalogItem {
   price_fen: number; category: "set" | "single";
   length_cm: number; weight_grams: number;
   available: number; active: boolean;
+  // 图片与详情文案（后台可编辑，动态下发；缺失时前端回退到本地兜底文案）。
+  color?: string; element?: string; beast?: string; mood?: string;
+  scent?: string; story?: string; meaning?: string;
+  image?: string; emblem?: string; gallery?: string[]; swatches?: string[];
+  detail?: Record<string, unknown>;
 }
 export interface Catalog {
   sale_enabled: boolean; sale_mode: "ready" | "preorder"; shipping_fee_fen: number; free_shipping_threshold_fen: number;

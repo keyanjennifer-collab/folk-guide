@@ -51,8 +51,8 @@ def validate_admin_username(username: str) -> str:
 
 
 def validate_admin_password(password: str, username: str = "") -> None:
-    if len(password) < 12 or len(password) > 128:
-        raise ValueError("管理员密码长度必须为12至128位")
+    if len(password) < 8 or len(password) > 128:
+        raise ValueError("管理员密码长度必须为8至128位")
     normalized_username = normalize_admin_username(username)
     if normalized_username and normalized_username in password.lower():
         raise ValueError("管理员密码不能包含账号名")

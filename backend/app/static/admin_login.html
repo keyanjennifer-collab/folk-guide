@@ -5,21 +5,63 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>五色知时 · 管理员登录</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#f2f3ef;color:#29352f;font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif}.card{width:min(420px,100%);padding:32px;background:#fff;border-radius:18px;box-shadow:0 14px 42px #26352e18}h1{margin:0 0 6px;font-size:25px}.muted{margin:0 0 26px;color:#718078}label{display:block;margin:16px 0 6px;font-weight:600}input{width:100%;padding:12px 13px;border:1px solid #d5ded8;border-radius:9px;font:inherit;outline:none}input:focus{border-color:#385f4d;box-shadow:0 0 0 3px #385f4d18}button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:9px;background:#385f4d;color:#fff;font:inherit;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.error{min-height:22px;margin:14px 0 0;color:#a23d35}
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{
+      min-height:100vh;display:grid;place-items:center;padding:24px;
+      background:
+        radial-gradient(900px 600px at 15% -10%, #1a1d17 0%, transparent 55%),
+        radial-gradient(900px 600px at 90% 110%, #1c1a13 0%, transparent 55%),
+        #0c0d0c;
+      color:#ece9df;font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+      -webkit-font-smoothing:antialiased;
+    }
+    .card{
+      width:min(420px,100%);padding:44px 38px 38px;position:relative;
+      background:linear-gradient(180deg,#171a17,#121412);
+      border:1px solid #2a2f2a;border-radius:20px;
+      box-shadow:0 30px 80px rgba(0,0,0,.55);
+    }
+    .mark{
+      width:54px;height:54px;border-radius:15px;margin:0 auto 20px;
+      background:linear-gradient(135deg,#c9a05c,#8a6a34);
+      display:grid;place-items:center;color:#14120b;font-weight:800;font-size:26px;
+      box-shadow:0 10px 30px rgba(201,160,92,.3);
+    }
+    h1{margin:0 0 4px;font-size:22px;text-align:center;font-weight:700;letter-spacing:1px}
+    .sub{margin:0 0 30px;color:#6d756c;text-align:center;font-size:12.5px;letter-spacing:2px}
+    label{display:block;margin:16px 0 7px;font-weight:600;font-size:13px;color:#9ba096}
+    input{
+      width:100%;padding:12px 14px;border:1px solid #2a2f2a;border-radius:10px;
+      font:inherit;background:#0c0d0c;color:#ece9df;outline:none;transition:.18s;
+    }
+    input:focus{border-color:#c9a05c;box-shadow:0 0 0 3px rgba(201,160,92,.14)}
+    input::placeholder{color:#4b514b}
+    button{
+      width:100%;margin-top:26px;padding:13px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;
+      background:linear-gradient(135deg,#c9a05c,#b0883e);color:#181408;transition:filter .18s,transform .08s;
+    }
+    button:hover{filter:brightness(1.06)}
+    button:active{transform:translateY(1px)}
+    button:disabled{opacity:.55;cursor:wait;filter:none}
+    .error{min-height:22px;margin:14px 0 0;color:#e0a09a;font-size:13px;text-align:center}
+    .foot{margin-top:26px;text-align:center;color:#4b514b;font-size:11px;letter-spacing:1px}
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>五色知时管理后台</h1>
-    <p class="muted">仅限授权管理员登录</p>
+    <div class="mark">五</div>
+    <h1>五色知时 · 管理后台</h1>
+    <p class="sub">仅限授权管理员登录</p>
     <form id="login-form">
       <label for="username">管理员账号</label>
-      <input id="username" name="username" autocomplete="username" minlength="3" maxlength="64" required autofocus>
+      <input id="username" name="username" autocomplete="username" minlength="3" maxlength="64" required autofocus placeholder="请输入账号">
       <label for="password">密码</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
-      <button id="submit" type="submit">登录</button>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required placeholder="请输入密码">
+      <button id="submit" type="submit">登 录</button>
       <p id="error" class="error" role="alert"></p>
     </form>
+    <div class="foot">五色知时 · 运营管理</div>
   </main>
   <script>
     const form=document.getElementById('login-form'),button=document.getElementById('submit'),error=document.getElementById('error');

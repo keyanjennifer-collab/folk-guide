@@ -8,6 +8,49 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
 
 
+class Product(Base):
+    """商品主数据：名称、价格、图片与详情文案全部入库，由管理后台维护。
+
+    价格和上下架状态以本表为准；小程序与下单接口只按 product_id 读取，
+    不信任客户端提交的名称或金额。图片字段保存相对路径，客户端拼上
+    ``/product-assets/`` 前缀即可访问。
+    """
+
+    __tablename__ = "products"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))
+    price_fen: Mapped[int] = mapped_column(Integer, default=0)
+    # 成本价（分），用于后台利润统计；不对外暴露给小程序。
+    cost_fen: Mapped[int] = mapped_column(Integer, default=0)
+    category: Mapped[str] = mapped_column(String(16), default="single", index=True)
+    length_cm: Mapped[float] = mapped_column(default=0.0)
+    weight_grams: Mapped[int] = mapped_column(Integer, default=0)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+
+    # 五行归属与品牌文案
+    color: Mapped[str] = mapped_column(String(32), default="")
+    element: Mapped[str] = mapped_column(String(32), default="")
+    beast: Mapped[str] = mapped_column(String(64), default="")
+    mood: Mapped[str] = mapped_column(String(128), default="")
+    scent: Mapped[str] = mapped_column(String(255), default="")
+    story: Mapped[str] = mapped_column(Text, default="")
+    meaning: Mapped[str] = mapped_column(Text, default="")
+
+    # 图片：主图、角标图、详情图库（JSON 数组）与色板（JSON 数组）。
+    image: Mapped[str] = mapped_column(String(512), default="")
+    emblem: Mapped[str] = mapped_column(String(512), default="")
+    gallery_json: Mapped[str] = mapped_column(Text, default="[]")
+    swatches_json: Mapped[str] = mapped_column(Text, default="[]")
+
+    # 扩展详情段落，保留给「使用与养护」等可编辑富文本。
+    detail_json: Mapped[str] = mapped_column(Text, default="{}")
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class ProductInventory(Base):
     """每个商品的可售、锁定和已售数量。"""
 

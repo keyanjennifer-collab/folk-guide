@@ -1,7 +1,15 @@
 import { getTheme, AppTheme } from "../../services/theme";
-import { PRODUCTS } from "../../data/products";
+import { PRODUCTS, Product } from "../../data/products";
 import { readCart, changeCart, CartItem } from "../../services/cart";
 import { getCatalog } from "../../services/commerce";
+import { API_BASE_URL } from "../../config";
+
+function assetUrl(filename: string): string {
+  if (!filename) return "";
+  if (filename.startsWith("http")) return filename;
+  return `${API_BASE_URL}/product-assets/${filename}`;
+}
+
 const INITIAL_PRODUCTS = PRODUCTS.map(product => ({ ...product, available: 0, active: true }));
 Page({
   data: { themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
@@ -19,15 +27,25 @@ Page({
       this.setData({ showCart: true });
     }
   },
+  // 动态拉取价格、库存、名称与图片；后台修改后无需重新提审即可生效。
   async syncCatalog() {
     try {
       const catalog = await getCatalog();
       const live = new Map(catalog.items.map(item => [item.id, item]));
-      const products = PRODUCTS.map(product => ({ ...product,
-        price: (live.get(product.id)?.price_fen ?? product.price * 100) / 100,
-        available: live.get(product.id)?.available ?? 0,
-        active: live.get(product.id)?.active ?? false,
-      }));
+      const products = PRODUCTS.map(product => {
+        const item = live.get(product.id);
+        if (!item) return { ...product, available: 0, active: false };
+        return { ...product,
+          name: item.name || product.name,
+          mood: item.mood || product.mood,
+          element: item.element || product.element,
+          beast: item.beast || product.beast,
+          image: item.image ? assetUrl(item.image) : product.image,
+          price: item.price_fen / 100,
+          available: item.available ?? 0,
+          active: item.active ?? false,
+        };
+      });
       const visibleProducts = products.filter(item => this.data.category === "all" || item.category === this.data.category);
       this.setData({ products, visibleProducts, gift: products[0], saleEnabled: catalog.sale_enabled,
         saleNote: catalog.sale_enabled ? `正式开售 · 满 ¥${(catalog.free_shipping_threshold_fen / 100).toFixed(0)} 包邮` : "商城收款尚未开启" });

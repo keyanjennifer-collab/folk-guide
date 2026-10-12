@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     daily_cache_lease_minutes: int = 30
     # 留空时使用项目storage/knowledge；测试和生产可分别指向临时目录或挂载卷。
     knowledge_storage_root: str = ""
+    # 商品图片落盘目录；留空时使用 backend/app/static/products（由 /product-assets 提供）。
+    # 生产环境应指向持久化挂载卷，避免容器重建丢失上传的图片。
+    product_assets_dir: str = ""
     # PDF本地提取与OCR后备。MinerU默认关闭，避免在未授权时把整本资料发送给第三方。
     pdf_max_pages: int = 1000
     pdf_min_text_chars_per_page: int = 20

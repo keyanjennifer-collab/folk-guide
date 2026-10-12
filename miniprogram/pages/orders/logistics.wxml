@@ -1,0 +1,31 @@
+<view class="logistics-page {{themeClass}}">
+  <view class="screen-heading"><view class="eyebrow">一路有迹 · 安心等候</view><view class="screen-title">查看物流</view></view>
+  <view wx:if="{{!loggedIn}}" class="empty-state"><view class="empty-title">登录后查看物流</view><view class="muted">仅你本人可以查看订单的运单信息。</view><button class="outline-button" bindtap="toLogin">去登录</button></view>
+  <view wx:elif="{{error}}" class="empty-state"><view class="empty-title">暂时无法读取物流</view><view class="muted">{{error}}</view><button class="outline-button" bindtap="retry">重新读取</button><button class="text-button" bindtap="toOrders">返回我的订单</button></view>
+  <view wx:elif="{{loading}}" class="empty-state"><view class="muted">正在读取物流信息…</view></view>
+  <block wx:elif="{{logistics}}">
+    <view class="logistics-card">
+      <view class="card-heading"><view class="card-title">{{logistics.shipment_recorded ? '发货信息' : '配送状态'}}</view><text class="order-status">{{statusLabel}}</text></view>
+      <view wx:if="{{logistics.shipment_recorded}}" class="carrier-name">{{logistics.carrier || '快递公司待补充'}}</view>
+      <view wx:if="{{logistics.tracking_number}}" class="tracking-row"><view><text class="muted">快递单号</text><view class="tracking-number">{{logistics.tracking_number}}</view></view><button class="copy-button" bindtap="copyTracking">复制单号</button></view>
+      <view wx:elif="{{logistics.shipment_recorded}}" class="muted">运单号待补充，可联系售后客服查询。</view>
+      <view class="order-reference"><text>订单编号</text><button class="text-button" bindtap="copyOrderNumber">{{logistics.order_number}} · 复制</button></view>
+    </view>
+    <view class="logistics-card">
+      <view class="card-heading"><view class="card-title">运输轨迹</view><button class="text-button" bindtap="retry">刷新</button></view>
+      <view wx:if="{{updatedLabel}}" class="update-time">更新于 {{updatedLabel}} · 北京时间</view>
+      <view wx:if="{{trackingEvents.length}}" class="timeline">
+        <view wx:for="{{trackingEvents}}" wx:key="index" class="timeline-item {{index === 0 ? 'latest' : ''}}"><view class="timeline-dot"/><view class="event-title">{{item.title}}</view><view wx:if="{{item.description}}" class="event-description">{{item.description}}</view><view class="event-time">{{item.timeLabel}}</view></view>
+      </view>
+      <view class="tracking-note">{{logistics.tracking_message}}</view>
+    </view>
+    <view class="logistics-card">
+      <view class="card-heading"><view class="card-title">订单记录</view><text class="muted small">北京时间</text></view>
+      <view class="timeline">
+        <view wx:for="{{orderEvents}}" wx:key="index" class="timeline-item {{index === 0 ? 'latest' : ''}}"><view class="timeline-dot"/><view class="event-title">{{item.title}}</view><view wx:if="{{item.description}}" class="event-description">{{item.description}}</view><view class="event-time">{{item.timeLabel}}</view></view>
+      </view>
+    </view>
+    <button class="outline-button support-button" bindtap="contactSupport">物流有疑问？联系售后客服</button>
+    <view class="page-foot">五色知时 · 每一份香，都有来处</view>
+  </block>
+</view>

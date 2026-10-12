@@ -1,0 +1,28 @@
+.logistics-page { min-height: 100vh; padding: 32rpx 34rpx; box-sizing: border-box; color: var(--text); background: var(--canvas); }
+.screen-heading { margin-bottom: 32rpx; }
+.screen-title { margin-top: 8rpx; }
+.logistics-card { margin-bottom: 24rpx; padding: 30rpx; background: var(--surface); border: 1rpx solid var(--line); border-radius: 20rpx; }
+.card-heading { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-bottom: 24rpx; }
+.card-title { color: var(--cream); font-family: var(--font-display); font-size: 34rpx; }
+.order-status { color: var(--copper); font-size: 26rpx; }
+.carrier-name { margin-bottom: 18rpx; color: var(--cream); font-size: 32rpx; }
+.tracking-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
+.tracking-row > view { flex: 1; min-width: 0; }
+.tracking-row .muted, .small { font-size: 24rpx; }
+.tracking-number { margin-top: 8rpx; overflow-wrap: anywhere; font-family: var(--font-numeric); font-size: 34rpx; }
+.copy-button { flex: none; margin: 0; padding: 4rpx 20rpx; color: var(--copper); border: 1rpx solid var(--copper-deep); border-radius: 12rpx; background: transparent; font-size: 25rpx; line-height: 2.2; }
+.order-reference { margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); font-size: 24rpx; color: var(--muted); }
+.order-reference .text-button { display: block; padding: 8rpx 0 0; margin: 0; font-size: 24rpx; text-align: left; overflow-wrap: anywhere; }
+.tracking-note { color: var(--muted); font-size: 27rpx; line-height: 1.9; }
+.update-time { margin-bottom: 24rpx; font-size: 23rpx; color: var(--muted); }
+.timeline { padding-left: 10rpx; }
+.timeline-item { position: relative; padding: 0 0 30rpx 32rpx; border-left: 1rpx solid var(--line); }
+.timeline-item:last-child { padding-bottom: 0; border-left-color: transparent; }
+.timeline-dot { position: absolute; top: 12rpx; left: -7rpx; width: 12rpx; height: 12rpx; border-radius: 50%; background: var(--muted); }
+.latest .timeline-dot { background: var(--copper); }
+.event-title { color: var(--cream); font-size: 29rpx; }
+.latest .event-title { color: var(--copper); }
+.event-description { margin-top: 6rpx; color: var(--muted); font-size: 25rpx; line-height: 1.8; overflow-wrap: anywhere; }
+.event-time { margin-top: 6rpx; color: var(--muted); font-size: 23rpx; }
+.support-button { margin-top: 32rpx; font-size: 28rpx; }
+.empty-state .text-button { margin-top: 24rpx; }

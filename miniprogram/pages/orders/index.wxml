@@ -6,11 +6,12 @@
   <view wx:elif="{{loading && !orders.length}}" class="empty-state"><view class="muted">正在读取你的订单…</view></view>
   <view wx:elif="{{!orders.length}}" class="empty-state"><view class="empty-mark">香</view><view class="empty-title">{{status === 'all' ? '还没有订单' : '这里还没有相关订单'}}</view><view class="muted">去看看五色香，为日常留一缕香气。</view><button class="outline-button" bindtap="toShop">逛逛五色香</button></view>
   <view wx:else class="order-list">
-    <button wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="showDetail">
+    <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="showDetail" role="button" aria-label="查看订单详情">
       <view class="order-top"><text>{{item.dateLabel}}</text><text>{{item.statusLabel}}</text></view>
       <view class="order-product"><image src="{{item.thumbnail}}" mode="aspectFill"/><view><view>{{item.itemLabel}}</view><text>共 {{item.quantity}} 件</text></view></view>
       <view class="order-total"><text class="price-figure">合计 ¥{{item.amount}}</text><text>订单详情 ›</text></view>
-    </button>
+      <view wx:if="{{item.paid_at || item.tracking_number || item.shipped_at}}" class="order-card-actions"><button class="text-button" data-id="{{item.id}}" catchtap="viewLogistics">{{item.tracking_number || item.shipped_at ? '查看物流' : '查看配送进度'}} ›</button></view>
+    </view>
     <view class="page-foot {{themeClass}}">{{loading ? '正在读取…' : hasMore ? '上拉查看更多' : '已显示全部订单'}}</view>
   </view>
   <view wx:if="{{selected}}" class="scrim" bindtap="closeDetail" catchtouchmove="noop"/>
@@ -27,6 +28,7 @@
     <view class="order-detail-row"><text>下单日期</text><text>{{selected.dateLabel}}</text></view>
     <block wx:if="{{selected.tracking_number}}"><view class="order-detail-row"><text>物流公司</text><text>{{selected.carrier || '承运中'}}</text></view><view class="order-detail-row"><text>运单号</text><button class="text-button" bindtap="copyTracking">{{selected.tracking_number}} · 复制</button></view></block>
     <view class="detail-actions"><button wx:if="{{selected.status === 'pending'}}" class="outline-button" disabled="{{actionLoading}}" bindtap="cancelSelected">取消订单</button><button wx:if="{{selected.status === 'pending'}}" class="solid-button" loading="{{actionLoading}}" bindtap="paySelected">继续支付</button><button wx:if="{{selected.status === 'paid'}}" class="outline-button" loading="{{actionLoading}}" bindtap="refundSelected">申请整单退款</button><button wx:if="{{selected.status === 'shipped'}}" class="solid-button" loading="{{actionLoading}}" bindtap="completeSelected">确认收货</button></view>
+    <button wx:if="{{selected.paid_at || selected.tracking_number || selected.shipped_at}}" class="outline-button" bindtap="viewLogistics">{{selected.tracking_number || selected.shipped_at ? '查看物流' : '查看配送进度'}}</button>
     <button class="outline-button" bindtap="contactSupport">联系售后客服</button>
     <view class="muted order-tip">商品、配送或退换货问题，可联系微信客服处理；咨询时请提供上方订单编号。</view>
   </view>

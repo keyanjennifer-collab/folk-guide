@@ -14,6 +14,8 @@
 .order-product>view>text { color: var(--muted); font-size:27rpx; }
 .order-total { display: flex; justify-content: space-between; padding-top: 18rpx; border-top: 1rpx solid var(--line); font-size:29rpx; }
 .order-total>text:last-child { color: #d2a367; font-size:26rpx; }
+.order-card-actions { display: flex; justify-content: flex-end; margin-top: 12rpx; }
+.order-card-actions .text-button { margin: 0; padding: 10rpx 0 0 24rpx; font-size: 26rpx; }
 .detail-status { margin-bottom: 16rpx; font-family: var(--font-display); font-size:37rpx; }
 .order-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 18rpx 0; border-bottom: 1rpx solid var(--line); font-size:28rpx; }
 .order-detail-row>text:first-child { color: var(--muted); }

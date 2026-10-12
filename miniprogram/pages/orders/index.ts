@@ -50,6 +50,10 @@ Page({
   copyTracking() { if (this.data.selected?.tracking_number) wx.setClipboardData({ data: this.data.selected.tracking_number }); },
   copyNumber() { if (this.data.selected) wx.setClipboardData({ data: this.data.selected.number }); },
   contactSupport() { contactAfterSales(this.data.selected?.number); },
+  viewLogistics(event: WechatMiniprogram.TouchEvent) {
+    const id = Number(event.currentTarget.dataset.id || this.data.selected?.id);
+    if (Number.isSafeInteger(id) && id > 0) wx.navigateTo({ url: `/pages/orders/logistics?id=${id}` });
+  },
   async paySelected() {
     const order = this.data.selected; if (!order || this.data.actionLoading) return;
     this.setData({ actionLoading: true });

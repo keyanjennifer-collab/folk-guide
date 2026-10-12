@@ -23,6 +23,7 @@ from .product_admin_routes import router as product_admin_router
 from .operations_routes import router as operations_router
 from .admin_user_routes import router as admin_user_router
 from .after_sales_routes import router as after_sales_router
+from .logistics_routes import router as logistics_router
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -189,6 +190,7 @@ app.include_router(ai_router)
 app.include_router(daily_update_router)
 app.include_router(order_router)
 app.include_router(after_sales_router)
+app.include_router(logistics_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
 app.include_router(product_admin_router)

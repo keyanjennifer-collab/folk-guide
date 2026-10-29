@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,6 +38,26 @@ class Settings(BaseSettings):
     # 微信客服公开接入信息，无需企业 Secret，也不会向企业群推送消息。
     wecom_corp_id: str = ""
     wecom_customer_service_url: str = ""
+    # 微信物流助手：后台生成运单、打开官方面单打印，再人工确认发货。
+    # 需小程序已在 mp.weixin.qq.com 物流助手中绑定快递公司账号。
+    wechat_express_enabled: bool = False
+    wechat_express_delivery_id: str = "ZTO"
+    wechat_express_carrier_name: str = "中通快递"
+    # 快递客户编码（biz_id）。留空时自动读取物流助手已绑定的同快递公司账号编码。
+    wechat_express_biz_id: str = ""
+    # 服务类型。留空时自动使用绑定账号支持的第一个服务类型（一般为标准快递）。
+    wechat_express_service_type: str = ""
+    wechat_express_service_name: str = ""
+    # 固定寄件人资料；省市区拆开填写以匹配微信 sender 字段结构。
+    wechat_express_sender_name: str = ""
+    wechat_express_sender_phone: str = ""
+    wechat_express_sender_province: str = ""
+    wechat_express_sender_city: str = ""
+    wechat_express_sender_district: str = ""
+    wechat_express_sender_address: str = ""
+    # 商品缩略图文件名拼接为公网HTTPS地址，默认应填写实际API域名。
+    wechat_express_asset_origin: str = ""
+    wechat_express_print_type: int = Field(default=0, ge=0, le=1)
     # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
     wechat_pay_mode: str = "disabled"
     wechat_pay_mch_id: str = ""
@@ -123,6 +144,20 @@ def validate_runtime_settings(settings: Settings | None = None) -> None:
         return
 
     errors: list[str] = []
+    if runtime.wechat_express_enabled:
+        for name in ("sender_name", "sender_phone", "sender_province", "sender_city", "sender_address"):
+            if not getattr(runtime, "wechat_express_" + name).strip():
+                errors.append("WECHAT_EXPRESS_" + name.upper() + " 未配置")
+        if not runtime.wechat_express_delivery_id.strip() or not runtime.wechat_express_carrier_name.strip():
+            errors.append("WECHAT_EXPRESS_DELIVERY_ID 和 WECHAT_EXPRESS_CARRIER_NAME 必须配置")
+        from urllib.parse import urlsplit
+        origin = urlsplit(runtime.wechat_express_asset_origin)
+        if origin.scheme != "https" or not origin.netloc or origin.path not in {"", "/"} or origin.query or origin.fragment or origin.username:
+            errors.append("WECHAT_EXPRESS_ASSET_ORIGIN 必须为不带路径的HTTPS资源域名")
+        if bool(runtime.wechat_express_service_type.strip()) != bool(runtime.wechat_express_service_name.strip()):
+            errors.append("微信物流服务类型ID和名称须同时填写，或同时留空自动读取")
+        if runtime.wechat_express_service_type and not runtime.wechat_express_service_type.isdigit():
+            errors.append("WECHAT_EXPRESS_SERVICE_TYPE 必须为非负整数")
     if runtime.commerce_sale_mode not in {"ready", "preorder"}:
         errors.append("COMMERCE_SALE_MODE 必须为 ready 或 preorder")
     if runtime.testing:

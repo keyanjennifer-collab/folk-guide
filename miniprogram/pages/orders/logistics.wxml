@@ -13,7 +13,7 @@
     </view>
     <view class="logistics-card">
       <view class="card-heading"><view class="card-title">运输轨迹</view><button class="text-button" bindtap="retry">刷新</button></view>
-      <view wx:if="{{updatedLabel}}" class="update-time">更新于 {{updatedLabel}} · 北京时间</view>
+      <view wx:if="{{updatedLabel}}" class="update-time">查询于 {{updatedLabel}} · 北京时间</view>
       <view wx:if="{{trackingEvents.length}}" class="timeline">
         <view wx:for="{{trackingEvents}}" wx:key="index" class="timeline-item {{index === 0 ? 'latest' : ''}}"><view class="timeline-dot"/><view class="event-title">{{item.title}}</view><view wx:if="{{item.description}}" class="event-description">{{item.description}}</view><view class="event-time">{{item.timeLabel}}</view></view>
       </view>

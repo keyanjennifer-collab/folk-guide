@@ -25,6 +25,7 @@ from .database import get_db
 from .order_routes import _change_stock, _items, _restock_refund, _success_time, ensure_inventory_rows, expire_pending_orders, output
 from .commerce_catalog import load_products
 from .wechat_pay import WechatPayError, create_refund
+from .wechat_express_service import guard_refund
 
 
 router = APIRouter(tags=["商城运营后台"])
@@ -430,6 +431,7 @@ def admin_refund(
         raise HTTPException(409, "只有已付款、已发货、已完成或售后中的订单可以退款")
     if order.refunded_at:
         raise HTTPException(409, "订单已退款")
+    guard_refund(db, order)
     # 退款请求在途时固定回库决定；网关重试复用同一退款单号。
     if not order.refund_number:
         order.refund_restock = order.shipped_at is None or data.restock

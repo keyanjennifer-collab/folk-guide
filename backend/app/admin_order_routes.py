@@ -19,7 +19,8 @@ from .admin_auth import (
 )
 from .admin_auth_routes import admin_page_response
 from .commerce_catalog import load_products, product_or_none
-from .commerce_models import Order, ProductInventory
+from .commerce_models import WechatExpressOrder, Order, ProductInventory
+from .wechat_express_service import guard_manual_shipment
 from .database import get_db
 from .order_routes import OrderOutput, ensure_inventory_rows, expire_pending_orders, output
 
@@ -42,11 +43,15 @@ class AdminOrderOutput(OrderOutput):
     wx_transaction_id: str | None = None
     refund_number: str | None = None
     refund_restock: bool = True
+    shipping_sync_status: str | None = None
+    shipping_sync_message: str | None = None
 
 
-def admin_order_output(order: Order) -> AdminOrderOutput:
+def admin_order_output(order: Order, sync: WechatExpressOrder | None = None) -> AdminOrderOutput:
     return AdminOrderOutput(**output(order).model_dump(), wx_transaction_id=order.wx_transaction_id,
-                            refund_number=order.refund_number, refund_restock=order.refund_restock)
+                            refund_number=order.refund_number, refund_restock=order.refund_restock,
+                            shipping_sync_status=sync.status if sync else None,
+                            shipping_sync_message=sync.message if sync else None)
 
 
 class InventoryUpdate(BaseModel):
@@ -161,7 +166,9 @@ def list_admin_orders(
             raise HTTPException(400, "date_to 格式应为 YYYY-MM-DD")
         end = end_day + timedelta(days=1, hours=-8)
         query = query.where(Order.created_at < end)
-    return [admin_order_output(order) for order in db.scalars(query).all()]
+    orders = db.scalars(query).all()
+    syncs = {s.order_id: s for s in db.scalars(select(WechatExpressOrder).where(WechatExpressOrder.order_id.in_([o.id for o in orders]))).all()}
+    return [admin_order_output(order, syncs.get(order.id)) for order in orders]
 
 
 @router.put("/api/admin/orders/{order_id}/logistics", response_model=OrderOutput, summary="修改已发货订单运单")
@@ -194,6 +201,7 @@ def ship_order(
         raise HTTPException(404, "订单不存在")
     if order.status != "paid":
         raise HTTPException(409, "只有待发货订单可以确认发货")
+    guard_manual_shipment(db, order, data.carrier, data.tracking_number)
     order.carrier = data.carrier
     order.tracking_number = data.tracking_number
     order.status = "shipped"

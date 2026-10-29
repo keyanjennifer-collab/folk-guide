@@ -24,6 +24,8 @@ from .operations_routes import router as operations_router
 from .admin_user_routes import router as admin_user_router
 from .after_sales_routes import router as after_sales_router
 from .logistics_routes import router as logistics_router
+from .wechat_express_routes import router as wechat_express_router
+from .wechat_express_service import worker_loop as wechat_express_worker_loop
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -67,6 +69,7 @@ async def lifespan(_: FastAPI):
         Base.metadata.create_all(engine)
         migrate_development_schema(engine)
     scheduler_task: asyncio.Task | None = None
+    shipping_task: asyncio.Task | None = None
     # 正式运行时由带数据库租约的任务统一完成启动补跑，避免多worker在lifespan中
     # 同时写公共缓存。测试或显式关闭调度时仍同步预热，保持接口开箱即用。
     if runtime_settings.testing or not runtime_settings.daily_scheduler_enabled:
@@ -77,9 +80,15 @@ async def lifespan(_: FastAPI):
         scheduler_task = asyncio.create_task(
             daily_cache_scheduler_loop(), name="daily-color-cache-scheduler"
         )
+    if runtime_settings.wechat_express_enabled and not runtime_settings.testing:
+        shipping_task = asyncio.create_task(wechat_express_worker_loop(), name="wechat-express-order-sync")
     try:
         yield
     finally:
+        if shipping_task is not None:
+            shipping_task.cancel()
+            with suppress(CancelledError):
+                await shipping_task
         if scheduler_task is not None:
             scheduler_task.cancel()
             with suppress(CancelledError):
@@ -191,6 +200,7 @@ app.include_router(daily_update_router)
 app.include_router(order_router)
 app.include_router(after_sales_router)
 app.include_router(logistics_router)
+app.include_router(wechat_express_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
 app.include_router(product_admin_router)

@@ -76,3 +76,44 @@ test('后台脚本可解析，只有可退款订单显示退款入口', () => {
   context.adminProfile.role = 'operator';
   assert.doesNotMatch(context.renderOrder(order), /onclick="restockReturn/);
 });
+
+test('后台发货使用JSON和CSRF，上传文件保留浏览器生成的表单类型', async () => {
+  const html = fs.readFileSync(path.join(root, 'backend/app/static/admin_orders.html'), 'utf8');
+  const helper = html.match(/async function api\(path,options=\{\}\)\{[\s\S]*?\n    \}/)[0];
+  const calls = [];
+  class FormData {}
+  const context = { FormData, csrfToken: 'csrf-test', fetch: async (url, options) => {
+    calls.push({ url, ...options });
+    return { ok: true, status: 200, json: async () => ({ status: 'shipped' }) };
+  } };
+  vm.runInNewContext(helper, context);
+  await context.api('/api/admin/orders/1/ship', { method: 'POST', body: JSON.stringify({ carrier: '中通快递', tracking_number: '73123456789012' }) });
+  assert.equal(calls[0].headers['content-type'], 'application/json');
+  assert.equal(calls[0].headers['X-CSRF-Token'], 'csrf-test');
+  assert.equal(calls[0].credentials, 'same-origin');
+  await context.api('/upload', { method: 'POST', body: new FormData() });
+  assert.equal(calls[1].headers['content-type'], undefined);
+});
+
+test('微信模式先取号打印再确认发货，异常只补查，未取号填写实际包裹数据', () => {
+  const html = fs.readFileSync(path.join(root, 'backend/app/static/admin_orders.html'), 'utf8');
+  const renderer = html.match(/function renderOrder\(x, opts=\{\}\)\{[\s\S]*?\n    \}/)[0];
+  const context = { adminProfile: { role: 'superadmin' }, shippingIntegration: { enabled: true },
+    esc: s => String(s), money: n => String(n), fmtTime: s => s, STATUS_TEXT: {} };
+  vm.runInNewContext(renderer, context);
+  const row = { id: 1, number: 'WS1', status: 'paid', items: [], total_fen: 7800,
+    shipping_sync_status: 'ordered', shipping_sync_message: '已取号待发货' };
+  const rendered = context.renderOrder(row, { showShip: true });
+  assert.match(rendered, /已取号待发货/);
+  assert.match(rendered, /打印 \/ 重打面单/);
+  assert.match(rendered, /打包后确认发货/);
+  row.shipping_sync_status = 'unknown';
+  assert.match(context.renderOrder(row, { showShip: true }), /补查运单/);
+  assert.doesNotMatch(context.renderOrder(row, { showShip: true }), /生成运单|打包后确认发货/);
+  assert.doesNotMatch(rendered, /id="tracking-1"|onclick="ship\(1\)"/);
+  row.shipping_sync_status = 'failed';
+  assert.match(context.renderOrder(row, { showShip: true }), /重新生成运单/);
+  assert.match(context.renderOrder(row, { showShip: true }), /id="weight-1"/);
+  context.shippingIntegration.enabled = false;
+  assert.match(context.renderOrder(row, { showShip: true }), /id="tracking-1"/);
+});

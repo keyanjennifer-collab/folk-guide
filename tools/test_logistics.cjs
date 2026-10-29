@@ -65,6 +65,21 @@ test('物流页展示运单但不会凭发货记录生成运输轨迹', async ()
   assert.equal(page.data.loading, false);
 });
 
+test('物流页展示快递返回的真实轨迹与查询时间，保留交易状态', async () => {
+  const response = { ...shipment('73123456789012'), carrier: '中通快递', tracking_status: 'available',
+    tracking_updated_at: '2026-10-29T05:10:00Z',
+    tracking_events: [{ time: '2026-10-29T05:05:00Z', title: '签收', description: '快件已签收' }],
+  };
+  const page = pageSetup(async () => response);
+  page.onLoad({ id: '7' });
+  await page.loadLogistics();
+  assert.equal(page.data.trackingEvents[0].title, '签收');
+  assert.equal(page.data.trackingEvents[0].timeLabel, '2026-10-29 13:05');
+  assert.equal(page.data.updatedLabel, '2026-10-29 13:10');
+  assert.equal(page.data.statusLabel, '待收货');
+  assert.equal(page.data.orderEvents[0].title, '商家已登记发货');
+});
+
 test('未登录或订单编号无效时不查询', async () => {
   const noFetch = async () => assert.fail('不应请求订单');
   const loggedOut = pageSetup(noFetch, '');

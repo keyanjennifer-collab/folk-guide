@@ -20,6 +20,7 @@ from .commerce_catalog import load_products, product_or_none, seed_products
 from .commerce_models import Order, PaymentEvent, ProductInventory, ShippingAddress
 from .config import get_settings
 from .database import get_db
+from .wechat_express_service import guard_refund
 from .models import User
 from .wechat_pay import WechatPayError, close_payment, create_jsapi_payment, create_refund, jsapi_payment_params, verify_and_decrypt_notification
 
@@ -411,7 +412,7 @@ def create_order(data: CheckoutInput, user: User = Depends(current_user), db: Se
         if not product or not product.active or not stock or not stock.active:
             raise HTTPException(409, "购物袋中有商品已经下架")
         rows.append({
-            "product_id": product.id, "name": product.name, "quantity": quantity,
+            "product_id": product.id, "name": product.name, "quantity": quantity, "image": product.image,
             "unit_price_fen": product.price_fen, "subtotal_fen": product.price_fen * quantity,
             "unit_cost_fen": product.cost_fen,
             "sale_mode": settings.commerce_sale_mode, "shipping_eta": settings.commerce_shipping_eta,
@@ -534,6 +535,7 @@ def refund_order(order_id: int, data: RefundInput, user: User = Depends(current_
         raise HTTPException(404, "订单不存在")
     if order.status != "paid":
         raise HTTPException(409, "只有已付款且未发货订单可以直接申请整单退款")
+    guard_refund(db, order)
     refund_number = order.refund_number or _refund_number(order)
     try:
         result = create_refund(order.number, refund_number, order.total_fen, data.reason)

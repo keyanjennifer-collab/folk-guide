@@ -1,4 +1,4 @@
-"""本人订单物流查询：发货记录与未来承运方轨迹使用独立字段。"""
+"""本人订单物流查询：订单记录与微信物流助手运输轨迹使用独立字段。"""
 
 from datetime import datetime, timezone
 from typing import Literal
@@ -13,15 +13,10 @@ from .commerce_models import Order
 from .database import get_db
 from .models import User
 from .order_routes import OrderStatus
+from .wechat_express_service import LogisticsEvent, TrackingResult, get_tracking
 
 
 router = APIRouter(tags=["商城交易"])
-
-
-class LogisticsEvent(BaseModel):
-    time: datetime
-    title: str
-    description: str = ""
 
 
 class OrderLogistics(BaseModel):
@@ -31,7 +26,7 @@ class OrderLogistics(BaseModel):
     carrier: str | None
     tracking_number: str | None
     shipment_recorded: bool
-    # 合作确定后由后端适配供应商，不能将录单时间伪装成揽收轨迹。
+    # 商家登记发货时间与承运方揽收轨迹分别返回。
     tracking_status: Literal["not_shipped", "not_connected", "available", "temporarily_unavailable"]
     tracking_message: str
     tracking_updated_at: datetime | None = None
@@ -65,9 +60,7 @@ def order_logistics(order_id: int, response: Response,
             events.append(LogisticsEvent(time=_utc(timestamp), title=title, description=description))
     events.sort(key=lambda event: event.time, reverse=True)
     shipment_recorded = bool(order.shipped_at or order.tracking_number)
-    if shipment_recorded:
-        message = "运输轨迹暂不可用。可凭运单号向快递公司查询，或联系售后客服协助。"
-    elif order.status == "pending":
+    if order.status == "pending":
         message = "付款后我们会安排发货，发货后可在这里查看运单信息。"
     elif order.status in {"cancelled", "refunded"}:
         message = "这笔订单暂无发货记录。"
@@ -76,13 +69,13 @@ def order_logistics(order_id: int, response: Response,
     else:
         message = "商家尚未登记发货，发货后快递公司和运单号会显示在这里。"
 
-    # 此阶段不调用任何第三方，不向外发送手机号或收货地址。
-    # 未来供应商适配器在此填入真实 tracking_events / tracking_updated_at，
-    # 通过 tracking_status 表达结果；查询不得直接修改交易状态或库存。
+    tracking = get_tracking(db, order) if shipment_recorded else None
     return OrderLogistics(
         order_id=order.id, order_number=order.number, order_status=order.status,
         carrier=order.carrier, tracking_number=order.tracking_number,
         shipment_recorded=shipment_recorded,
-        tracking_status="not_connected" if shipment_recorded else "not_shipped",
-        tracking_message=message, order_events=events,
+        tracking_status=tracking.status if tracking else "not_shipped",
+        tracking_message=tracking.message if tracking else message,
+        tracking_updated_at=tracking.updated_at if tracking else None,
+        tracking_events=tracking.events if tracking else [], order_events=events,
     )

@@ -114,18 +114,19 @@ curl -fsSI https://api.wusezhishi.com/font-assets/wuse-serif.woff2
 
 ## 更新代码
 
+确认现有数据库容器正常运行后，先构建、迁移及验证，再替换API；不提前停服，不执行down，不重复下载未变更的依赖。依赖缓存缺失或首次构建时仍可能下载基础镜像和依赖。
+
 ```bash
-cd ~/folk-guide
-git pull --ff-only
-cd deploy
-docker-compose --env-file .env.production down --remove-orphans
-docker-compose --env-file .env.production build api migrate
-docker-compose --env-file .env.production up -d db
-docker-compose --env-file .env.production run --rm migrate
-docker-compose --env-file .env.production up -d api caddy
+cd ~/folk-guide && git pull --ff-only &&
+cd deploy &&
+docker-compose --env-file .env.production config -q &&
+docker-compose --env-file .env.production build api migrate &&
+docker-compose --env-file .env.production run --rm --no-deps migrate &&
+docker-compose --env-file .env.production run --rm --no-deps api python -c "from app.main import app; print('API preflight OK')" &&
+docker-compose --env-file .env.production up -d --no-deps api
 ```
 
-如果迁移失败，不要删除 PostgreSQL 数据卷；先查看迁移日志并修复后再重试。
+如果迁移或预检失败，旧API保持运行；不要删除PostgreSQL数据卷，也不要继续切换，先根据该步完整错误修复。微信物流助手的配置、更新与验收见[接入说明](../物流查询接入说明.md)。
 
 ## 回滚和备份
 

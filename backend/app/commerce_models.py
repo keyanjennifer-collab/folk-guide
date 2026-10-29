@@ -120,6 +120,55 @@ class Order(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class LogisticsQueryCache(Base):
+    """独立的物流查询缓存；跨进程/重启保留每个运单的查询间隔与最近轨迹。"""
+
+    __tablename__ = "logistics_query_cache"
+    cache_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    tracking_status: Mapped[str] = mapped_column(String(32), default="temporarily_unavailable")
+    tracking_message: Mapped[str] = mapped_column(String(255), default="物流信息正在查询，请稍后刷新。")
+    events_json: Mapped[str] = mapped_column(Text, default="[]")
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    next_query_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class WechatAccessToken(Base):
+    """小程序全局 access_token 的数据库缓存；多 worker 共享，stable_token 重复获取不作废旧令牌。"""
+
+    __tablename__ = "wechat_access_tokens"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(512), default="")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class WechatExpressOrder(Base):
+    """微信物流助手运单任务：付款后排队取号、超时反查与退款撤销。
+
+    ``waybill_id`` 即中通运单号，取号后仍待发货，由管理员打印打包后确认；
+    ``remote_order_id`` 是传给微信的商家订单号，撤销重下时追加轮次后缀。
+    """
+
+    __tablename__ = "wechat_express_orders"
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), primary_key=True)
+    remote_order_id: Mapped[str] = mapped_column(String(96), default="", index=True)
+    waybill_id: Mapped[str] = mapped_column(String(64), default="", index=True)
+    delivery_id: Mapped[str] = mapped_column(String(64), default="")
+    carrier_name: Mapped[str] = mapped_column(String(64), default="")
+    package_json: Mapped[str] = mapped_column(Text, default="{}")
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    # queued=待下单 create=下单中 unknown=结果待反查 ordered=已取号 failed/ cancelled/ conflict
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    next_action: Mapped[str] = mapped_column(String(16), default="create", index=True)
+    message: Mapped[str] = mapped_column(String(255), default="排队中，等待微信物流助手下单")
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    attempt_round: Mapped[int] = mapped_column(Integer, default=1)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    lease_token: Mapped[str] = mapped_column(String(64), default="")
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class PaymentEvent(Base):
     """微信异步通知去重与审计记录；不保存支付密钥。"""
 

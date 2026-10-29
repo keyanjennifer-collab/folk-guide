@@ -95,6 +95,7 @@ Page({
   onHide() { if (midnightTimer) clearTimeout(midnightTimer); },
   onUnload() { if (midnightTimer) clearTimeout(midnightTimer); },
   onPullDownRefresh() { void this.loadToday().finally(() => wx.stopPullDownRefresh()); },
+  retryToday() { void this.loadToday(); },
   scheduleRefresh() {
     if (midnightTimer) clearTimeout(midnightTimer);
     const now = Date.now(), beijing = new Date(now + 8 * 3600000);

@@ -11,7 +11,7 @@
   <view wx:elif="{{contentSource === 'error'}}" class="reload-card">
     <view class="reload-mark">时</view>
     <view class="reload-copy"><view>今日内容稍后即来</view><text>网络恢复后可立即重新读取，不会展示过期排行。</text></view>
-    <button bindtap="loadToday">重新读取</button>
+    <button bindtap="retryToday">重新读取</button>
   </view>
 
   <block wx:else>

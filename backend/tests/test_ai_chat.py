@@ -138,7 +138,7 @@ def test_new_user_quota_chat_history_feedback_and_safety(direct_provider):
         headers = login(client, "formal-ai-user")
         quota = client.get("/api/ai/quota", headers=headers)
         assert quota.status_code == 200
-        assert quota.json()["plan"] == "new_user_3_days"
+        assert quota.json()["plan"] == "new_user_7_days"
         assert quota.json()["normal_limit"] == 20
         assert quota.json()["comparison_limit"] == 2
         assert quota.json()["answer_ready"] is True

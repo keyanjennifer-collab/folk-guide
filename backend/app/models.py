@@ -157,14 +157,14 @@ class ChatMessage(Base):
 class AIServiceGrant(Base):
     """AI 服务权益。
 
-    新客赠送权益可直接按 User.created_at 计算；购买30天服务后，再在本表写入
-    start_at/end_at。单独建表便于以后连接订单，又不会把支付状态塞进用户表。
+    保留已有按期限发放的服务记录。新客七天体验由 User.created_at 计算，
+    五色套装永久权益由未退款的已付款订单判断，统一入口见 entitlements.py。
     """
     __tablename__ = "ai_service_grants"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    # grant_type 当前支持 new_user_3_days / paid_30_days 的业务概念，未来应改成权益产品表。
+    # 兼容已有 paid_30_days 等期限权益；七天体验和套装永久权益不在本表重复写入。
     grant_type: Mapped[str] = mapped_column(String(32), index=True)
     start_at: Mapped[datetime] = mapped_column(DateTime)
     end_at: Mapped[datetime] = mapped_column(DateTime, index=True)

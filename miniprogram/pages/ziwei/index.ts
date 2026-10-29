@@ -1,4 +1,5 @@
 import { ensureLogin, getApiErrorMessage } from "../../services/api";
+import { ensureFeatureAccess } from "../../services/entitlements";
 import { getTheme, AppTheme } from "../../services/theme";
 import { deleteZiweiChart, deleteZiweiCompatibility, getZiweiCharts, getZiweiCompatibilities, saveZiweiChart, saveZiweiCompatibility, ZiweiBirthInput, ZiweiCompatibilityRecord, ZiweiChartRecord, ZiweiGender, ZiweiRelationType } from "../../services/ziwei";
 
@@ -14,7 +15,7 @@ function toInput(form: BirthForm): ZiweiBirthInput {
 Page({
   data: {
     themeClass: "theme-" + getTheme(), theme: getTheme() as AppTheme,
-    loading: true, saving: false, mode: "chart" as "chart" | "compatibility",
+    loading: true, saving: false, accessAllowed: false, mode: "chart" as "chart" | "compatibility",
     chartForm: emptyForm("我的命盘"), personA: emptyForm("第一位"), personB: emptyForm("第二位"),
     relationType: "business" as ZiweiRelationType,
     relations: [{ id: "business", label: "生意合伙" }, { id: "love", label: "姻缘感情" }, { id: "family", label: "家庭亲子" }, { id: "friend", label: "朋友协作" }],
@@ -27,12 +28,18 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   onShow() {
-    if (!this.data.loading) void this.loadRecords();
+    if (!this.data.loading) void this.loadRecords().catch(error => {
+      this.setData({ accessAllowed: false, savedCharts: [], savedCompatibilities: [] });
+      wx.showToast({ title: getApiErrorMessage(error, "记录暂时无法读取，请重试"), icon: "none" });
+    });
   },
   async loadRecords() {
+    this.setData({ accessAllowed: false, savedCharts: [], savedCompatibilities: [] });
+    if (!(await ensureFeatureAccess())) return;
     const [savedCharts, savedCompatibilities] = await Promise.all([getZiweiCharts(), getZiweiCompatibilities()]);
-    this.setData({ savedCharts, savedCompatibilities });
+    this.setData({ accessAllowed: true, savedCharts, savedCompatibilities });
   },
+  toGift() { wx.navigateTo({ url: "/pages/product/index?id=gift" }); },
   setMode(event: WechatMiniprogram.TouchEvent) { this.setData({ mode: event.currentTarget.dataset.mode }); },
   setFormInput(event: WechatMiniprogram.Input) {
     const person = event.currentTarget.dataset.person as "chartForm" | "personA" | "personB";
@@ -69,6 +76,7 @@ Page({
     return true;
   },
   async createChart() {
+    if (!this.data.accessAllowed) return;
     if (this.data.saving || !this.valid(this.data.chartForm)) return;
     this.setData({ saving: true });
     try {
@@ -81,6 +89,7 @@ Page({
     finally { this.setData({ saving: false }); }
   },
   async createCompatibility() {
+    if (!this.data.accessAllowed) return;
     if (this.data.saving || !this.valid(this.data.personA) || !this.valid(this.data.personB)) return;
     this.setData({ saving: true });
     try {

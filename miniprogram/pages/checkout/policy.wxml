@@ -2,6 +2,7 @@
   <view class="screen-title">购买、配送与售后须知</view>
   <view class="policy-card"><view class="title">经营与客服信息</view><text>经营主体：{{merchantName}}</text><text wx:if="{{customerService}}" class="block">客服：{{customerService}}</text><button class="outline-button" bindtap="contactSupport">联系售后客服</button></view>
   <view class="policy-card"><view class="title">订单与支付</view><text>提交订单后请在页面标示的有效时间内完成微信支付。逾期未支付，订单将自动取消并释放库存。支付是否成功以微信支付服务端通知为准。</text></view>
+  <view class="policy-card"><view class="title">套装赠送权益</view><text>购买268元五色套装，付款成功后赠送购买账号小程序全部功能的永久使用权，包含个人今日五色和“测一测”全部功能，AI问答保留每日使用次数。已有未退款的套装订单同样享有权益。订单成功退款后撤销该订单赠送的权益；如仍在7天体验期内或另有有效套装订单，可继续使用对应权益。</text></view>
   <view class="policy-card"><view class="title">{{saleMode === 'preorder' ? '预购与配送' : '现货与配送'}}</view><text>{{saleMode === 'preorder' ? '当前商品为预购商品。' : '商城商品正式开售，按实际可售库存接受订单。'}}{{shippingEta}}。具体配送进度以订单页为准；发出后可在“我的订单”查看承运公司和运单号。如遇特殊情况，客服会及时说明。</text></view>
   <view class="policy-card"><view class="title">取消与售后</view><text>待付款订单可直接取消。已付款且尚未发货的订单，可在订单详情申请整单原路退款。已发货、已收货商品如需退换货，请点击“联系售后客服”，提供订单编号并说明问题；客服会根据商品状态、物流与适用规则协助处理。</text></view>
   <view class="policy-card"><view class="title">商品与安全</view><text>单支线香长度约10.5厘米；单个小盒净含量15克，五色礼盒净含量75克。线香属于燃烧类商品，请使用稳固、耐热的香插，远离易燃物、儿童和宠物，离开时熄灭余火，并密封存放于阴凉干燥处。香气感受因人而异，页面寓意用于文化表达，不构成效果承诺。</text></view>

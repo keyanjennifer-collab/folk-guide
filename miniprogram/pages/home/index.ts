@@ -80,7 +80,7 @@ Page({
     solarDateLabel: "公历今日", lunarDateLabel: "农历时序", dayPillar: "", dayBranch: "", dayElement: "", dayBasis: "",
     term: "时序流转", summary: "观色知序，为今天安排一份从容。",
     shareTitle: "五色知时 · 今日五色",
-    personalState: "locked" as "locked" | "missing" | "ready" | "error",
+    personalState: "locked" as "locked" | "expired" | "missing" | "ready" | "error",
     personalOpen: false,
     personalDate: "",
     personalPrimaryColor: "",
@@ -187,10 +187,11 @@ Page({
         })),
       });
     } catch (error: unknown) {
-      this.setData({ personalState: isApiError(error, 409) ? "missing" : "error", personalColors: [], personalOpen: false });
+      this.setData({ personalState: isApiError(error, 403) ? "expired" : isApiError(error, 409) ? "missing" : "error", personalColors: [], personalOpen: false });
     }
   },
   togglePersonalColors() { this.setData({ personalOpen: !this.data.personalOpen }); },
+  retryPersonalColors() { void this.loadPersonalColors(); },
   getPublicGuidePosterCanvas(): Promise<WechatMiniprogram.Canvas> {
     return new Promise((resolve, reject) => {
       // 2D Canvas 必须先通过节点查询取得实例，不能使用旧版 canvas-id 上下文混画。

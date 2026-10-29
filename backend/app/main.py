@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 
 from .auth import create_token, current_user
 from .ai_routes import router as ai_router
-from .ai_service import quota_for_user
 from .admin_auth_routes import router as admin_auth_router
 from .admin_order_routes import router as admin_order_router
 from .product_admin_routes import router as product_admin_router
@@ -29,6 +28,7 @@ from .wechat_express_service import worker_loop as wechat_express_worker_loop
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
+from .entitlements import feature_access_for_user, require_feature_access
 from .daily_color_cache_service import warm_personal_color_cache, warm_public_color_cache
 from .daily_color_rule_routes import router as daily_color_rule_router
 from .daily_update_routes import router as daily_update_router
@@ -356,11 +356,10 @@ def save_profile(data: BirthProfileInput, user: User = Depends(current_user), db
     # 档案首次创建或版本更新后，删除该用户所有日期的旧个人建议。未来改成三天预缓存
     # 时仍使用同一失效入口，避免旧生辰对应的结果继续被读取。
     db.query(DailyGuidance).filter(DailyGuidance.user_id == user.id).delete()
-    # 个人五色已按当前产品阶段默认开放，不消耗AI问答次数；权益仍保留在响应元数据中。
-    quota = quota_for_user(db, user)
-    warm_personal_color_cache(
-        db, profile, quota.plan or "default_unlocked", beijing_today(), commit=False
-    )
+    # 档案管理始终可用；仅在体验或正式权益有效时预热个人五色。
+    access = feature_access_for_user(db, user)
+    if access.active:
+        warm_personal_color_cache(db, profile, access.plan, beijing_today(), commit=False)
     db.commit()
     db.refresh(profile)
     return profile_output(profile)
@@ -393,13 +392,13 @@ def get_daily(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
-    """读取已开放的个人五色；个人五色不扣AI问答次数，可按日期读取预热结果。"""
-    quota = quota_for_user(db, user)
+    """权益有效时读取个人五色，不消耗AI问答次数。"""
+    access = require_feature_access(db, user)
     profile = db.scalar(select(BirthProfile).where(BirthProfile.user_id == user.id))
     if profile is None:
         raise HTTPException(status_code=409, detail="请先创建生辰档案")
     guide_date = target_date or beijing_today()
-    payloads = warm_personal_color_cache(db, profile, quota.plan or "default_unlocked", guide_date)
+    payloads = warm_personal_color_cache(db, profile, access.plan, guide_date)
     return payloads[guide_date]
 
 
@@ -412,6 +411,7 @@ def get_daily(
 )
 def chat(data: ChatRequest, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """旧版规则问答接口；正式知识库 AI 接口完成后将由 /api/ai/chat 替代。"""
+    require_feature_access(db, user)
     answer, category, references = answer_question(data.question.strip())
     db.add(ChatMessage(user_id=user.id, question=data.question, answer=answer))
     db.commit()

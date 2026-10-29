@@ -1,4 +1,5 @@
-import { ensureLogin, getApiErrorMessage } from "../../services/api";
+import { ensureLogin, getApiErrorMessage, isApiError } from "../../services/api";
+import { ensureFeatureAccess, showFeatureAccessRequired } from "../../services/entitlements";
 import { getTheme, AppTheme } from "../../services/theme";
 import { deleteZiweiCompatibility, getZiweiCompatibilities, interpretZiweiCompatibility, ZiweiCompatibilityRecord } from "../../services/ziwei";
 
@@ -26,16 +27,25 @@ Page({
       void this.loadRemoteAnalysis(compatibilityResult.id);
     } catch (error: unknown) {
       this.setData({ loading: false });
-      wx.showToast({ title: getApiErrorMessage(error, "合盘读取失败"), icon: "none" });
+      if (isApiError(error, 403)) showFeatureAccessRequired();
+      else wx.showToast({ title: getApiErrorMessage(error, "合盘读取失败"), icon: "none" });
     }
+  },
+  async onShow() {
+    if (this.data.loading || !this.data.compatibilityResult) return;
+    if (!(await ensureFeatureAccess())) this.setData({ compatibilityResult: null, compatibilityAnalysis: "" });
   },
   async loadRemoteAnalysis(compatibilityId: number) {
     this.setData({ compatibilityAnalysisLoading: true });
     try {
       const result = await interpretZiweiCompatibility({ compatibility_id: compatibilityId });
       this.setData({ compatibilityAnalysis: result.answer });
-    } catch (_) {
-      // 模型暂时不可用时仍显示已保存的结构化合盘观察。
+    } catch (error) {
+      if (isApiError(error, 403)) {
+        this.setData({ compatibilityResult: null, compatibilityAnalysis: "" });
+        showFeatureAccessRequired();
+      }
+      // 模型暂不可用时保留结构化观察，权益失效时清除个人结果。
     } finally {
       this.setData({ compatibilityAnalysisLoading: false });
     }

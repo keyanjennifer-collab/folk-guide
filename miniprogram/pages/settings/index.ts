@@ -2,6 +2,7 @@ import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
 import { getCurrentUser, loginWithWechat, logoutLocalAccount, bindWechatPhone, requestWechatProfile, saveLocalUserProfile, getLocalUserProfile, updateUserProfile } from "../../services/account";
 import { getAIQuota } from "../../services/ai";
+import { entitlementPresentation } from "../../services/entitlements";
 import { getCurrentProfile, isProfileMissing } from "../../services/profile";
 import { getOrders } from "../../services/orders";
 import { contactAfterSales, prepareAfterSalesContact } from "../../services/after-sales";
@@ -12,6 +13,7 @@ const INFO_DIALOGS: Record<"help" | "privacy" | "about", InfoDialog> = {
   help: {
     eyebrow: "GUIDE", title: "使用帮助", intro: "从今日五色到选香、测算与个人记录，可按以下方式使用。",
     sections: [
+      { title: "体验与永久权益", body: "新用户注册后可体验7天个人今日五色与测一测全部功能。购买268元五色套装，付款成功后赠送购买账号全部功能的永久使用权，已有未退款套装订单也享有权益。订单成功退款后撤销对应赠送权益；AI问答保留每日使用次数。" },
       { title: "查看今日五色", body: "首页内容以北京时间公历自然日为边界自动更新。系统取得当日日柱后，仅取日支所属五行作为“当日五行”，再按固定生克关系排列贵人色、合作色、奋斗色、消耗色与不利色。" },
       { title: "阅读色序建议", body: "点击首页五种色系可切换对应香品；进入“五色详解”后，点击“展开”可查看色序依据、今日适宜、行动建议与需要留意的事项。" },
       { title: "选香、结算与支付", body: "商城包含五色知时线香套装及青木、朱蜜、黄檀、白桂、墨沉五款单香。加入购物袋后，可填写收货地址并使用微信支付；正式价格、运费和库存均在提交订单时由服务端核验。" },
@@ -43,7 +45,7 @@ Page({
     isLoggedIn: false, nickname: "五色知时用户", avatarUrl: "/assets/brand/logo-ai.png", editingProfile: false, showProfileHint: false, dashboardLoading: false, loginBusy: false, accountError: "",
     phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
     profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
-    serviceTitle: "紫微起盘与合盘", serviceCopy: "购买产品后开通测算服务", remainingQuestions: "—",
+    serviceTitle: "登录享7天体验", serviceCopy: "购买268元五色套装，赠送全部功能永久使用权", remainingQuestions: "—",
     orderCounts: EMPTY_COUNTS, orderError: "",
     infoDialog: null as InfoDialog | null,
     orderEntries: [{ id: "pending", label: "待付款", icon: "pay" }, { id: "paid", label: "待发货", icon: "box" }, { id: "shipped", label: "待收货", icon: "delivery" }, { id: "after_sale", label: "退款 / 售后", icon: "service" }],
@@ -54,7 +56,7 @@ Page({
   resetAccount() {
     this.setData({ isLoggedIn: false, phoneDisplay: "未绑定手机号", phoneBound: false, wechatPhoneAvailable: false,
       profileSummary: "完善档案，查看自己的五色", hasProfile: false, profileCompleteness: 0,
-      serviceTitle: "紫微起盘与合盘", serviceCopy: "购买产品后开通测算服务", remainingQuestions: "—",
+      serviceTitle: "登录享7天体验", serviceCopy: "购买268元五色套装，赠送全部功能永久使用权", remainingQuestions: "—",
       orderCounts: EMPTY_COUNTS, orderError: "", accountError: "" });
   },
   async loadAccount() {
@@ -72,11 +74,11 @@ Page({
       if (profile.status === "fulfilled") this.setData({ hasProfile: true, profileCompleteness: profile.value.completeness,
         profileSummary: "本人档案 · 完整度 " + profile.value.completeness + "%" });
       else this.setData({ profileSummary: isProfileMissing(profile.reason) ? "还未创建档案，去填写" : "档案暂时无法读取，请刷新" });
-      if (quota.status === "fulfilled") this.setData({
-        serviceTitle: quota.value.active ? "测一测 · 个人服务" : "紫微起盘与合盘",
-        serviceCopy: quota.value.active ? "个人五色与测算服务已开通" : "购买产品后开通测算服务",
-        remainingQuestions: String(quota.value.normal_remaining),
-      });
+      if (quota.status === "fulfilled") {
+        const presentation = entitlementPresentation(quota.value);
+        this.setData({ serviceTitle: presentation.title, serviceCopy: presentation.description,
+          remainingQuestions: String(quota.value.normal_remaining) });
+      }
       else this.setData({ serviceCopy: "权益暂时无法读取，请刷新" });
       if (orders.status === "fulfilled") {
         const c = orders.value.counts;

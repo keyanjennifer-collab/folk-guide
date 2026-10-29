@@ -3,7 +3,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -11,9 +11,10 @@ from sqlalchemy.orm import Session
 from .ai_safety import review_model_output
 from .config import get_settings
 from .daily_color_cache_service import ensure_personal_color_cache
+from .entitlements import TRIAL_PLAN, feature_access_for_user
 from .llm_provider import AnswerProvider
 from .models import (
-    AIConversation, AIConversationMessage, AIDeletedUsage, AIServiceGrant, BirthProfile, User,
+    AIConversation, AIConversationMessage, AIDeletedUsage, BirthProfile, User,
     ZiweiChartRecord, ZiweiCompatibilityRecord,
 )
 from .retrieval_service import hybrid_search
@@ -132,23 +133,17 @@ def question_requests_ziwei_context(question: str) -> bool:
 def quota_for_user(db: Session, user: User, now: datetime | None = None) -> QuotaState:
     """计算当前有效权益和今天已用次数。
 
-    正式30天权益优先；没有购买记录时，新账号从创建时间起享受72小时赠送。
+    套装永久权益优先；新账号从创建时间起享受七天全部功能体验。
     每日统计固定以北京时间自然日计算，与服务器部署时区无关。
     """
     now = now or utc_now_naive()
     settings = get_settings()
-    paid = db.scalar(select(AIServiceGrant).where(
-        AIServiceGrant.user_id == user.id,
-        AIServiceGrant.start_at <= now,
-        AIServiceGrant.end_at > now,
-    ).order_by(AIServiceGrant.end_at.desc()))
-    trial_end = user.created_at + timedelta(days=3)
-    if paid:
-        plan, expires_at = paid.grant_type, paid.end_at
+    access = feature_access_for_user(db, user, now)
+    plan, expires_at = access.plan, access.expires_at
+    if access.active and plan != TRIAL_PLAN:
         normal_limit = max(0, settings.ai_paid_normal_limit)
         comparison_limit = max(0, settings.ai_paid_comparison_limit)
-    elif now < trial_end:
-        plan, expires_at = "new_user_3_days", trial_end
+    elif access.active:
         normal_limit = max(0, settings.ai_trial_normal_limit)
         comparison_limit = max(0, settings.ai_trial_comparison_limit)
     else:

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from .auth import current_user
 from .database import get_db
+from .entitlements import require_feature_access
 from .models import User, ZiweiAnalysisCache, ZiweiChartRecord, ZiweiCompatibilityRecord
 from .ziwei_schemas import ZiweiBirthInput, ZiweiChartOutput, ZiweiCompatibilityInput, ZiweiCompatibilityOutput
 from .ziwei_service import build_compatibility, generate_chart
@@ -38,6 +39,7 @@ def person_snapshot(data: ZiweiBirthInput, chart: dict) -> dict:
 
 @router.post("/charts", response_model=ZiweiChartOutput, summary="起盘并保存我的紫微命盘")
 def create_chart(data: ZiweiBirthInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_feature_access(db, user)
     try:
         chart = generate_chart(data)
     except (ValueError, RuntimeError) as exc:
@@ -54,6 +56,7 @@ def create_chart(data: ZiweiBirthInput, user: User = Depends(current_user), db: 
 
 @router.get("/charts", response_model=list[ZiweiChartOutput], summary="读取我保存的紫微命盘")
 def list_charts(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_feature_access(db, user)
     records = db.scalars(select(ZiweiChartRecord).where(ZiweiChartRecord.user_id == user.id)
                          .order_by(desc(ZiweiChartRecord.updated_at))).all()
     return [chart_output(record) for record in records]
@@ -76,6 +79,7 @@ def delete_chart(chart_id: int, user: User = Depends(current_user), db: Session 
 
 @router.post("/compatibilities", response_model=ZiweiCompatibilityOutput, summary="双人合盘并保存结果")
 def create_compatibility(data: ZiweiCompatibilityInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_feature_access(db, user)
     try:
         chart_a, chart_b = generate_chart(data.person_a), generate_chart(data.person_b)
     except (ValueError, RuntimeError) as exc:
@@ -96,6 +100,7 @@ def create_compatibility(data: ZiweiCompatibilityInput, user: User = Depends(cur
 
 @router.get("/compatibilities", response_model=list[ZiweiCompatibilityOutput], summary="读取我保存的合盘记录")
 def list_compatibilities(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_feature_access(db, user)
     records = db.scalars(select(ZiweiCompatibilityRecord).where(ZiweiCompatibilityRecord.user_id == user.id)
                          .order_by(desc(ZiweiCompatibilityRecord.created_at))).all()
     return [{"id": item.id, "relation_type": item.relation_type, "person_a": json.loads(item.person_a_json),

@@ -34,7 +34,8 @@ from .daily_color_cache_service import (
     warm_public_color_cache,
 )
 from .database import SessionLocal
-from .models import AIServiceGrant, BirthProfile, DailyCacheRun, User
+from .entitlements import active_paid_access, trial_access
+from .models import BirthProfile, DailyCacheRun, User
 from .time_service import BEIJING_TIMEZONE, beijing_now, beijing_today, utc_now_naive
 
 
@@ -175,32 +176,16 @@ def _acquire_run(
 
 
 def _active_paid_plans(db: Session, user_ids: list[int], now: datetime) -> dict[int, str]:
-    """一次查询取得本批用户的有效正式权益，结束时间更晚的记录优先。"""
-    if not user_ids:
-        return {}
-    grants = db.scalars(
-        select(AIServiceGrant)
-        .where(
-            AIServiceGrant.user_id.in_(user_ids),
-            AIServiceGrant.start_at <= now,
-            AIServiceGrant.end_at > now,
-        )
-        .order_by(AIServiceGrant.user_id, AIServiceGrant.end_at.desc())
-    ).all()
-    plans: dict[int, str] = {}
-    for grant in grants:
-        plans.setdefault(grant.user_id, grant.grant_type)
-    return plans
+    """批量读取含历史套装购买在内的有效正式权益。"""
+    return {user_id: access.plan for user_id, access in active_paid_access(db, user_ids, now).items()}
 
 
 def _entitlement_plan(user: User, paid_plans: dict[int, str], now: datetime) -> str | None:
-    """返回缓存所需权益计划；正式权益优先，其次是账号创建后72小时体验。"""
+    """返回缓存所需权益计划；正式权益优先，其次是账号创建后七天体验。"""
     paid = paid_plans.get(user.id)
     if paid:
         return paid
-    if now < user.created_at + timedelta(days=3):
-        return "new_user_3_days"
-    return None
+    return trial_access(user, now).plan
 
 
 def _safe_error_message(exc: Exception) -> str:

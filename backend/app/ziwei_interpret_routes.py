@@ -13,6 +13,7 @@ from .ai_safety import review_model_output
 from .auth import current_user
 from .config import get_settings
 from .database import get_db
+from .entitlements import require_feature_access
 from .llm_provider import ModelServiceError, get_answer_provider
 from .models import User, ZiweiAnalysisCache, ZiweiChartRecord, ZiweiCompatibilityRecord
 from .ziwei_interpret_service import KNOWLEDGE_VERSION, compatibility_prompt, request_hash, single_prompt
@@ -51,6 +52,7 @@ def interpret_chart(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
+    require_feature_access(db, user)
     record = db.scalar(select(ZiweiChartRecord).where(
         ZiweiChartRecord.id == data.chart_id,
         ZiweiChartRecord.user_id == user.id,
@@ -102,6 +104,7 @@ def interpret_compatibility(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
+    require_feature_access(db, user)
     record = db.scalar(select(ZiweiCompatibilityRecord).where(
         ZiweiCompatibilityRecord.id == data.compatibility_id,
         ZiweiCompatibilityRecord.user_id == user.id,

@@ -1,5 +1,6 @@
 import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken, isApiError } from "../../services/api";
+import { ensureFeatureAccess, entitlementPresentation, showFeatureAccessRequired } from "../../services/entitlements";
 import { isPublicRankingQuestion } from "../../data/confirmed-colors";
 import {
   AIHistoryRecord,
@@ -67,6 +68,7 @@ Page({
     inputFocus: false,
     loading: true,
     serviceActive: false,
+    accessLoaded: false,
     answerReady: false,
     serviceTitle: "正在读取服务状态",
     serviceCopy: "请稍候",
@@ -99,12 +101,12 @@ Page({
     (this as any).getTabBar?.()?.setData({ selected: 2 });
     const loadVersion = ++chatLoadVersion;
     if (!getToken()) {
-      this.setData({ isLoggedIn: false, loading: false, serviceActive: false, answerReady: false,
-        serviceTitle: "登录后开启国学对话", serviceCopy: "保存问答记录，查看个人五色",
+      this.setData({ isLoggedIn: false, loading: false, serviceActive: false, accessLoaded: false, answerReady: false,
+        serviceTitle: "登录享7天全部功能体验", serviceCopy: "个人今日五色、紫微起盘、合盘与文化问答",
         messages: [WELCOME], remainingQuestions: 0, dailyLimit: 0, sending: false });
       return;
     }
-    this.setData({ isLoggedIn: true });
+    this.setData({ isLoggedIn: true, serviceActive: false, accessLoaded: false });
     this.setData({ loading: true });
     try {
       const [quota, history, conversationPage] = await Promise.all([getAIQuota(), getAIHistory(20), getAIConversations()]);
@@ -130,17 +132,13 @@ Page({
 
   applyQuota(quota: AIQuota) {
     const remainingDays = daysLeft(quota.expires_at);
-    let serviceTitle = "时序文化服务尚未开通";
-    if (quota.plan === "new_user_3_days") serviceTitle = "新客3天体验";
-    else if (quota.active) serviceTitle = "时序文化个人服务使用中";
-    const serviceCopy = quota.active
-      ? `剩余${remainingDays}天；普通问答与七日比较分别计算次数`
-      : "当前权益已结束，历史回答仍可查看";
+    const presentation = entitlementPresentation(quota);
     this.setData({
       serviceActive: quota.active,
+      accessLoaded: true,
       answerReady: quota.answer_ready,
-      serviceTitle,
-      serviceCopy,
+      serviceTitle: presentation.title,
+      serviceCopy: presentation.description,
       answerStatus: quota.answer_ready ? "问答服务已就绪" : "问答服务准备中",
       trialDaysLeft: remainingDays,
       dailyLimit: quota.normal_limit,
@@ -153,7 +151,12 @@ Page({
   toProfile() {
     wx.navigateTo({ url: "/pages/profile/index" });
   },
-  toZiwei(event?: WechatMiniprogram.TouchEvent) {
+  toAccess() {
+    if (!getToken()) { this.toLogin(); return; }
+    wx.navigateTo({ url: "/pages/product/index?id=gift" });
+  },
+  async toZiwei(event?: WechatMiniprogram.TouchEvent) {
+    if (!(await ensureFeatureAccess())) return;
     const mode = event?.currentTarget.dataset.mode === "compatibility" ? "compatibility" : "chart";
     wx.navigateTo({ url: `/pages/ziwei/index?mode=${mode}` });
   },
@@ -243,7 +246,7 @@ Page({
     }
     if (!getToken()) { this.toLogin(); return; }
     if (!this.data.serviceActive) {
-      wx.showModal({ title: "问答服务未开通", content: "当前没有可用的时序文化体验或服务权益。", showCancel: false });
+      showFeatureAccessRequired();
       return;
     }
     if (!this.data.answerReady) {

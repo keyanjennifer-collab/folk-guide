@@ -70,7 +70,7 @@ def test_active_ai_trial_warms_three_personal_days_from_birth_profile():
         assert payload["rule_version"] == "PERSONAL_FIVE_COLOR_V1"
         assert payload["precision_mode"] == "four_pillars"
         assert payload["profile_version"] == created.json()["profile_version"]
-        assert payload["entitlement_plan"] == "new_user_3_days"
+        assert payload["entitlement_plan"] == "new_user_7_days"
         assert payload["content_version"] == "personal-guidance-v1.2"
         assert payload["primary_color"] == payload["colors"][0]["name"]
         assert payload["supporting_colors"] == [payload["colors"][1]["name"], payload["colors"][2]["name"]]
@@ -99,7 +99,7 @@ def test_active_ai_trial_warms_three_personal_days_from_birth_profile():
         client.delete("/api/account", headers=headers)
 
 
-def test_expired_ai_trial_still_reads_default_unlocked_personal_colors():
+def test_expired_trial_cannot_read_or_generate_personal_colors():
     with TestClient(app) as client:
         headers, user_id = login(client, "personal-color-expired-trial")
         now = utc_now_naive()
@@ -119,10 +119,10 @@ def test_expired_ai_trial_still_reads_default_unlocked_personal_colors():
             },
         )
         assert created.status_code == 200
-        allowed = client.get("/api/daily", headers=headers)
-        assert allowed.status_code == 200
-        assert allowed.json()["entitlement_plan"] == "default_unlocked"
+        denied = client.get("/api/daily", headers=headers)
+        assert denied.status_code == 403
+        assert denied.json()["detail"]["code"] == "feature_access_required"
         with SessionLocal() as db:
-            assert len(db.scalars(select(DailyGuidance).where(DailyGuidance.user_id == user_id)).all()) == 3
+            assert db.scalars(select(DailyGuidance).where(DailyGuidance.user_id == user_id)).all() == []
 
         client.delete("/api/account", headers=headers)

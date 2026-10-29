@@ -76,11 +76,11 @@
       <view class="personal-card-rail"/>
       <view class="personal-lock-copy">
         <view class="personal-lock-kicker">PERSONAL FIVE COLORS</view>
-        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : '请登录'}}</text></view>
+        <view class="personal-lock-title-row"><view class="personal-lock-title">个人五色</view><text class="personal-lock-status">{{personalState === 'missing' ? '待完善' : personalState === 'expired' ? '体验已结束' : personalState === 'error' ? '读取失败' : '请登录'}}</text></view>
         <view class="personal-hero-swatches" aria-hidden="true"><view class="personal-hero-swatch personal-swatch-white active"/><view class="personal-hero-swatch personal-swatch-gold"/><view class="personal-hero-swatch personal-swatch-green"/><view class="personal-hero-swatch personal-swatch-red"/><view class="personal-hero-swatch personal-swatch-black"/></view>
-        <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : '登录后即可查看结合本命与当日流日生成的个人五色。'}}</text>
+        <text>{{personalState === 'missing' ? '完善本人档案后，即可生成你的专属色序。' : personalState === 'expired' ? '7天体验已结束，购买268元五色套装，赠送全部功能永久使用权。' : personalState === 'error' ? '个人五色暂时无法读取，请重试。' : '新用户登录享7天体验，可使用个人五色与测一测全部功能。'}}</text>
       </view>
-      <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案 ›</button><button wx:else bindtap="toSettings">登录查看 ›</button>
+      <button wx:if="{{personalState === 'missing'}}" bindtap="toProfile">完善档案 ›</button><button wx:elif="{{personalState === 'expired'}}" bindtap="toGift">查看五色套装 ›</button><button wx:elif="{{personalState === 'error'}}" bindtap="retryPersonalColors">重新读取 ›</button><button wx:else bindtap="toSettings">登录体验 ›</button>
     </view>
 
     <view class="detail-section">

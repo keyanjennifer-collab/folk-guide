@@ -13,6 +13,7 @@ from .ai_service import DISCLAIMER, answer_ai_question, quota_for_user
 from .auth import current_user
 from .config import get_settings
 from .database import get_db
+from .entitlements import require_feature_access
 from .llm_provider import ModelServiceError, get_answer_provider
 from .models import AIConversation, AIConversationMessage, KnowledgeChunk, KnowledgeDocument, User
 from .vector_store import get_vector_store
@@ -44,7 +45,7 @@ def quota_output(quota, provider, approved_chunk_count: int, use_knowledge_base:
 def get_quota(user: User = Depends(current_user), db: Session = Depends(get_db)):
     """前端进入AI国学页面时首先调用。
 
-    新用户从账号创建时间起获得3天体验；普通问答与七日比较分别计算每日次数。
+    新用户从账号创建时间起获得7天体验；购买五色套装赠送永久权益。
     本接口不扣次数，只返回当前JWT所属用户的真实权益状态。
     """
     approved_chunk_count = db.scalar(
@@ -76,6 +77,7 @@ def chat_ai(data: AIChatInput, user: User = Depends(current_user), db: Session =
     小程序只通过 ``GET /api/ai/quota`` 的 ``answer_ready`` 判断服务是否可用；
     是否启用知识库检索由后端环境配置控制，不暴露给用户页面。
     """
+    require_feature_access(db, user)
     settings = get_settings()
     conversation_id = data.conversation_id
     if conversation_id is not None:

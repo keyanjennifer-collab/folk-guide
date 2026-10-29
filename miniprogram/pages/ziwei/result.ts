@@ -1,4 +1,5 @@
-import { ensureLogin, getApiErrorMessage } from "../../services/api";
+import { ensureLogin, getApiErrorMessage, isApiError } from "../../services/api";
+import { ensureFeatureAccess, showFeatureAccessRequired } from "../../services/entitlements";
 import { getTheme, AppTheme } from "../../services/theme";
 import { deleteZiweiChart, getZiweiCharts, interpretZiwei, ZiweiChartRecord, ZiweiPeriodType } from "../../services/ziwei";
 import { ANALYSIS_TABS, AnalysisKey, PeriodMode, makeAnalysis, makeAnalysisForPalace, normalizePalaceName } from "./analysis";
@@ -21,8 +22,13 @@ Page({
       void this.loadRemoteAnalysis("overview", "mingpan", null);
     } catch (error: unknown) {
       this.setData({ loading: false });
-      wx.showToast({ title: getApiErrorMessage(error, "命盘读取失败"), icon: "none" });
+      if (isApiError(error, 403)) showFeatureAccessRequired();
+      else wx.showToast({ title: getApiErrorMessage(error, "命盘读取失败"), icon: "none" });
     }
+  },
+  async onShow() {
+    if (this.data.loading || !this.data.chartResult) return;
+    if (!(await ensureFeatureAccess())) this.setData({ chartResult: null, analysis: null, analysisText: "" });
   },
   selectAnalysis(event: WechatMiniprogram.TouchEvent) {
     const chart = this.data.chartResult?.chart;
@@ -57,8 +63,12 @@ Page({
     try {
       const result = await interpretZiwei({ chart_id: chartResult.id, topic, period_type, period_key, palace_branch: palaceBranch });
       this.setData({ analysisText: result.answer });
-    } catch (_) {
-      // 保留本地结构化分析，模型暂不可用时仍能浏览命盘。
+    } catch (error) {
+      if (isApiError(error, 403)) {
+        this.setData({ chartResult: null, analysis: null, analysisText: "" });
+        showFeatureAccessRequired();
+      }
+      // 模型暂不可用时保留结构化分析，权益失效时清除个人结果。
     } finally {
       this.setData({ analysisLoading: false });
     }

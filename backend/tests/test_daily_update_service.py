@@ -131,7 +131,7 @@ def test_daily_batch_warms_only_entitled_users_and_is_idempotent():
                 assert len(paid_rows) == 3
                 assert expired_rows == []
                 assert {json.loads(row.payload_json)["entitlement_plan"] for row in trial_rows} == {
-                    "new_user_3_days"
+                    "new_user_7_days"
                 }
                 assert {json.loads(row.payload_json)["entitlement_plan"] for row in paid_rows} == {
                     "paid_30_days"

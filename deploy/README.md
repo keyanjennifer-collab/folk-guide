@@ -114,19 +114,37 @@ curl -fsSI https://api.wusezhishi.com/font-assets/wuse-serif.woff2
 
 ## 更新代码
 
-确认现有数据库容器正常运行后，先构建、迁移及验证，再替换API；不提前停服，不执行down，不重复下载未变更的依赖。依赖缓存缺失或首次构建时仍可能下载基础镜像和依赖。
+当前服务器使用 `docker-compose 1.29.2`。仅更新代码、Python和Node依赖清单未变时，使用下面的流程：以正在运行的完整API镜像为基础，只复制代码，构建关闭网络，不重新安装依赖。脚本先比较两份依赖清单；不一致时停止并提示，不自动下载。
+
+`build-code-offline.sh` 按当前Compose版本选取正确的镜像标签，兼容旧容器使用 `deploy-api`、Compose 1.x使用 `deploy_api` 的命名差异，并给原镜像保留一个本地备份标签。构建上下文只包含后台代码、迁移和Alembic配置，不扫描支付密钥目录。
+
+先确认服务状态，在项目根目录拉取最新代码：
 
 ```bash
-cd ~/folk-guide && git pull --ff-only &&
-cd deploy &&
-docker-compose --env-file .env.production config -q &&
-docker-compose --env-file .env.production build api migrate &&
-docker-compose --env-file .env.production run --rm --no-deps migrate &&
-docker-compose --env-file .env.production run --rm --no-deps api python -c "from app.main import app; print('API preflight OK')" &&
-docker-compose --env-file .env.production up -d --no-deps api
+cd ~/folk-guide/deploy && docker-compose --env-file .env.production ps
+cd ~/folk-guide && git pull --ff-only origin main
 ```
 
-如果迁移或预检失败，旧API保持运行；不要删除PostgreSQL数据卷，也不要继续切换，先根据该步完整错误修复。微信物流助手的配置、更新与验收见[接入说明](../物流查询接入说明.md)。
+如果此前为修复构建问题手工改过 `.dockerignore`，先运行 `git diff -- .dockerignore` 核对。仅当修改只是重复添加 `deploy/secrets` 时，执行 `git restore -- .dockerignore` 后再拉取；仓库已经包含相同排除规则。不要覆盖其他本地修改或生产配置。
+
+随后构建、检查配置和数据库，再切换API：
+
+```bash
+cd ~/folk-guide/deploy &&
+docker-compose --env-file .env.production config -q &&
+bash build-code-offline.sh &&
+docker-compose --env-file .env.production run --rm --no-deps api python -c "from app.main import app; print('API preflight OK')" &&
+docker-compose --env-file .env.production run --rm --no-deps api alembic upgrade head &&
+docker-compose --env-file .env.production rm -sf api &&
+docker-compose --env-file .env.production up -d --no-deps --no-build api &&
+curl -fsS --retry 10 --retry-delay 2 --retry-connrefused --max-time 3 https://api.wusezhishi.com/health
+```
+
+原API持续运行至预检、迁移完成。最后移除并创建API容器会短暂中断后台访问；此处只移除API容器，保留命名数据卷、数据库和Caddy，并避开Compose 1.29.2重建容器时的 `ContainerConfig` 兼容错误。若预检或迁移失败，命令在切换前停止，按完整错误修复。
+
+依赖变化或首次部署不适用此脚本，需要单独核对变更并准备依赖镜像。不要因脚本提示清单不一致而直接清缓存或反复全量重建。
+
+微信物流助手的配置、更新与验收见[接入说明](../物流查询接入说明.md)，试用和套装赠送规则见[功能权益说明](../功能权益说明.md)。
 
 ## 回滚和备份
 

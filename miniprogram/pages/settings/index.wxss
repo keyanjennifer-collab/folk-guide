@@ -19,6 +19,7 @@
 .avatar-edit-preview { width: 64rpx; height: 64rpx; margin-bottom: 5rpx; border-radius: 50%; }
 .nickname-input { min-width: 0; flex: 1; height: 64rpx; padding: 0 14rpx; color: var(--text); background: rgba(0,0,0,.16); border-radius: 10rpx; font-size: 26rpx; }
 .save-profile-button { padding: 0 14rpx; color: #fff5e8; background: var(--copper-deep); border-radius: 22rpx; font-size: 22rpx; line-height: 58rpx; }
+.profile-save-note { margin-top: 12rpx; color: var(--muted); font-size: 23rpx; line-height: 1.6; }
 .orders-panel, .service-panel { margin-top: 20rpx; padding: 28rpx; background: #343331; border-radius: 20rpx; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
 .panel-title { color: var(--cream); font-family: var(--font-display); font-size:34rpx; letter-spacing: 3rpx; }

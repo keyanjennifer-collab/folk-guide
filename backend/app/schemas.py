@@ -2,7 +2,9 @@
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from .avatar_service import MAX_AVATAR_BASE64_LENGTH
 
 
 class LoginRequest(BaseModel):
@@ -29,6 +31,18 @@ class CurrentUserOutput(BaseModel):
 class UserProfileInput(BaseModel):
     nickname: str = Field(min_length=1, max_length=64)
     avatar_url: str | None = Field(default=None, max_length=512)
+    avatar_base64: str | None = Field(default=None, max_length=MAX_AVATAR_BASE64_LENGTH, repr=False)
+
+    @field_validator("nickname", mode="before")
+    @classmethod
+    def trim_nickname(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def single_avatar_source(self):
+        if self.avatar_base64 is not None and self.avatar_url:
+            raise ValueError("头像图片与已有头像地址不能同时提交")
+        return self
 
 
 class PhoneCodeInput(BaseModel):

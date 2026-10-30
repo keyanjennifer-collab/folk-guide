@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import create_token, current_user
+from .avatar_service import avatar_file_response, remove_avatar, save_avatar, validate_avatar_url
 from .ai_routes import router as ai_router
 from .admin_auth_routes import router as admin_auth_router
 from .admin_order_routes import router as admin_order_router
@@ -216,6 +217,11 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/avatar-assets/{filename}", include_in_schema=False)
+def avatar_asset(filename: str):
+    return avatar_file_response(filename)
+
+
 @app.post(
     "/api/auth/wechat",
     response_model=TokenResponse,
@@ -253,12 +259,29 @@ def current_account(user: User = Depends(current_user)):
 
 @app.put("/api/users/me/profile", response_model=CurrentUserOutput, tags=["账号与微信登录"])
 def update_account_profile(data: UserProfileInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    user.nickname = data.nickname.strip()
-    user.avatar_url = data.avatar_url
-    db.commit(); db.refresh(user)
-    return {"id": user.id, "phone_number": user.phone_number, "phone_bound": bool(user.phone_number),
-            "wechat_phone_available": bool(settings.wechat_app_id and settings.wechat_app_secret),
-            "created_at": user.created_at, "nickname": user.nickname, "avatar_url": user.avatar_url}
+    user = db.scalar(select(User).where(User.id == user.id).with_for_update()
+                     .execution_options(populate_existing=True))
+    if user is None:
+        raise HTTPException(401, "账号已失效，请重新登录")
+    previous_avatar = user.avatar_url
+    uploaded_avatar = None
+    if data.avatar_base64 is not None:
+        uploaded_avatar = save_avatar(data.avatar_base64, user.id)
+        avatar_url = uploaded_avatar
+    else:
+        avatar_url = validate_avatar_url(data.avatar_url, user.id)
+    user.nickname = data.nickname
+    user.avatar_url = avatar_url
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        remove_avatar(uploaded_avatar, user.id)
+        raise
+    db.refresh(user)
+    if previous_avatar != avatar_url:
+        remove_avatar(previous_avatar, user.id)
+    return current_account(user)
 
 
 @app.post(
@@ -434,6 +457,7 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     # 有交易记录的账号转人工办理注销与留存/脱敏，不允许此接口物理删除订单。
     if db.scalar(select(Order.id).where(Order.user_id == user.id).limit(1)) is not None:
         raise HTTPException(409, "账号存在交易记录，请联系售后客服办理注销，订单与财务记录需要保留")
+    previous_avatar, user_id = user.avatar_url, user.id
     # 必须先删没有配置数据库级联的子表，否则PostgreSQL启用外键后会拒绝删除用户。
     db.query(AIConversationMessage).filter(AIConversationMessage.user_id == user.id).delete()
     db.query(AIConversation).filter(AIConversation.user_id == user.id).delete()
@@ -446,5 +470,6 @@ def delete_account(user: User = Depends(current_user), db: Session = Depends(get
     db.query(ZiweiChartRecord).filter(ZiweiChartRecord.user_id == user.id).delete()
     db.delete(user)
     db.commit()
+    remove_avatar(previous_avatar, user_id)
     return Response(status_code=204)
 """FastAPI 应用入口：装配路由，并提供登录、档案、每日建议与旧版问答接口。"""

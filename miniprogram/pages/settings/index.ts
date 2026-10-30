@@ -69,7 +69,10 @@ Page({
       if (version !== loadVersion) return;
       this.setData({ isLoggedIn: true, phoneBound: user.phone_bound, wechatPhoneAvailable: user.wechat_phone_available,
         phoneDisplay: user.phone_number ? user.phone_number.slice(0,3) + "****" + user.phone_number.slice(-4) : "未绑定手机号" });
-      const [profile, quota, orders] = await Promise.allSettled([getCurrentProfile(), getAIQuota(), getOrders("all", 0, 1)]);
+      const orderTask = getOrders("all", 0, 1);
+      // 订单读取会补查微信付款结果，完成后再读权益，避免同屏仍显示旧会员状态。
+      const quotaTask = orderTask.then(() => getAIQuota(), () => getAIQuota());
+      const [profile, quota, orders] = await Promise.allSettled([getCurrentProfile(), quotaTask, orderTask]);
       if (version !== loadVersion) return;
       if (profile.status === "fulfilled") this.setData({ hasProfile: true, profileCompleteness: profile.value.completeness,
         profileSummary: "本人档案 · 完整度 " + profile.value.completeness + "%" });

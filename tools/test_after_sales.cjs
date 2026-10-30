@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'miniprogram/services/after-sales.ts'), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
 
-function setup(response, supported = true) {
+function setup(response, supported = true, platform = 'ios') {
   const calls = [];
   const exports = {};
   const context = {
@@ -20,10 +20,12 @@ function setup(response, supported = true) {
       return response;
     } }),
     wx: {
+      getDeviceInfo: () => ({ platform }),
       canIUse: () => supported,
       openCustomerServiceChat: data => calls.push(['chat', data]),
       showModal: data => calls.push(['modal', data]),
       showToast: data => calls.push(['toast', data]),
+      setClipboardData: data => calls.push(['copy', data]),
     },
   };
   vm.runInNewContext(compiled, context);
@@ -58,6 +60,38 @@ test('旧版微信提示升级并提供备用客服方式', async () => {
   api.contactAfterSales();
   assert.equal(calls[0][0], 'modal');
   assert.match(calls[0][1].content, /400-000-0000/);
+});
+
+test('开发者工具直接提示手机预览，不把模拟器失败当作客服配置错误', async () => {
+  const { api, calls } = setup({ available: true, corp_id: 'ww-test', url: 'https://work.weixin.qq.com/kfid/test', fallback_contact: '' }, true, 'devtools');
+  await api.prepareAfterSalesContact();
+  api.contactAfterSales();
+  assert.equal(calls[0][0], 'modal');
+  assert.match(calls[0][1].content, /预览二维码/);
+  assert.equal(calls.filter(x => x[0] === 'chat').length, 0);
+});
+
+test('真机客服失败保留微信错误，用户主动确认后可复制诊断信息', async () => {
+  const { api, calls } = setup({ available: true, corp_id: 'ww-test', url: 'https://work.weixin.qq.com/kfid/test', fallback_contact: '' });
+  await api.prepareAfterSalesContact();
+  api.contactAfterSales();
+  calls[0][1].fail({ errMsg: 'openCustomerServiceChat:fail corpId invalid', errCode: 123 });
+  const modal = calls[1][1];
+  assert.match(modal.content, /corpId invalid/);
+  assert.equal(modal.confirmText, '复制错误');
+  modal.success({ confirm: false });
+  assert.equal(calls.filter(x => x[0] === 'copy').length, 0);
+  modal.success({ confirm: true });
+  assert.match(calls[2][1].data, /错误码：123/);
+  assert.match(calls[2][1].data, /企业ID：ww-test/);
+});
+
+test('用户取消客服不弹故障提示', async () => {
+  const { api, calls } = setup({ available: true, corp_id: 'ww-test', url: 'https://work.weixin.qq.com/kfid/test', fallback_contact: '' });
+  await api.prepareAfterSalesContact();
+  api.contactAfterSales();
+  calls[0][1].fail({ errMsg: 'openCustomerServiceChat:fail cancel' });
+  assert.equal(calls.length, 1);
 });
 
 test('后台脚本可解析，只有可退款订单显示退款入口', () => {

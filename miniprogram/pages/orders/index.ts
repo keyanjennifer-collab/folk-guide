@@ -2,7 +2,7 @@ import { getTheme, AppTheme } from "../../services/theme";
 import { getApiErrorMessage, getToken } from "../../services/api";
 import { Order, ORDER_LABELS, getOrders } from "../../services/orders";
 import { PRODUCTS } from "../../data/products";
-import { cancelOrder, completeOrder, payOrder, refundOrder } from "../../services/commerce";
+import { cancelOrder, completeOrder, payOrder, refundOrder, syncOrderPayment } from "../../services/commerce";
 import { contactAfterSales, prepareAfterSalesContact } from "../../services/after-sales";
 type OrderView = Order & { statusLabel: string; amount: string; subtotal: string; shipping: string; dateLabel: string; thumbnail: string; itemLabel: string; quantity: number; preorder: boolean; shippingEta: string };
 let requestVersion = 0;
@@ -57,8 +57,24 @@ Page({
   async paySelected() {
     const order = this.data.selected; if (!order || this.data.actionLoading) return;
     this.setData({ actionLoading: true });
-    try { await payOrder(order.id); wx.showToast({ title: "支付已提交", icon: "success" }); this.setData({ selected: null }); setTimeout(() => void this.loadOrders(), 1200); }
-    catch (error) { const raw = String((error as { errMsg?: unknown })?.errMsg || ""); if (raw.includes("cancel")) wx.showToast({ title: "已取消支付", icon: "none" }); }
+    try { const result = await payOrder(order.id); wx.showToast({ title: result?.paid_at ? "付款已确认" : "付款核实中，请勿重复支付", icon: "none" }); this.setData({ selected: null }); await this.loadOrders(); }
+    catch (error) {
+      const raw = String((error as { errMsg?: unknown })?.errMsg || "");
+      if (raw.includes("cancel")) wx.showToast({ title: "已取消支付", icon: "none" });
+      else wx.showModal({ title: "付款结果待核实", content: getApiErrorMessage(error, "如已扣款，请刷新付款状态，勿重复付款。"), showCancel: false });
+    }
+    finally { this.setData({ actionLoading: false }); }
+  },
+  async syncSelectedPayment() {
+    const order = this.data.selected; if (!order || this.data.actionLoading) return;
+    this.setData({ actionLoading: true });
+    try {
+      const result = await syncOrderPayment(order.id);
+      this.setData({ selected: null });
+      await this.loadOrders();
+      if (result.paid_at) wx.showToast({ title: "付款已确认", icon: "success" });
+      else wx.showModal({ title: "付款结果待核实", content: "微信暂未返回付款成功结果。如已扣款，请勿重复付款，稍后刷新或联系客服核对订单编号。", showCancel: false });
+    } catch (error) { wx.showModal({ title: "付款结果待核实", content: getApiErrorMessage(error, "查询暂时失败，请勿重复付款，稍后刷新。"), showCancel: false }); }
     finally { this.setData({ actionLoading: false }); }
   },
   cancelSelected() { this.confirmAction("确定取消这张待付款订单吗？", id => cancelOrder(id)); },

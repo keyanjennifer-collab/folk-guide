@@ -19,12 +19,13 @@ from sqlalchemy.orm import sessionmaker
 
 from app.admin_auth import create_admin_user
 from app.admin_models import AdminAuditLog
-from app.commerce_models import Order, PaymentEvent, Product
+from app.commerce_models import Order, PaymentEvent, Product, ProductInventory
 from app.config import get_settings
 from app.database import Base, get_db
 from app.main import app
 from app.operations_routes import _beijing_today_range
 from app.wechat_pay import WechatPayError
+from app.models import User
 
 
 ADMIN = {"X-Admin-Key": "dev-admin-key", "X-Admin-Name": "sale-test"}
@@ -118,6 +119,193 @@ def signed_notify(tmp_path, monkeypatch):
 def payment_resource(order, total=None):
     return {"out_trade_no": order["number"], "transaction_id": "WX-" + order["number"],
             "trade_state": "SUCCESS", "amount": {"total": total if total is not None else order["total_fen"]}}
+
+
+def real_payment_query(shop, order, monkeypatch, state="SUCCESS"):
+    """只替换网关结果，保留服务端的归属、身份、金额、库存和权益校验。"""
+    _, sessions, _, _ = shop
+    settings = get_settings()
+    monkeypatch.setattr(settings, "wechat_pay_mode", "wechat")
+    monkeypatch.setattr(settings, "wechat_app_id", "test-query-app")
+    monkeypatch.setattr(settings, "wechat_pay_mch_id", "test-query-merchant")
+    with sessions() as db:
+        record = db.get(Order, order["id"])
+        record.payment_prepay_id = "test-prepay"
+        openid = db.get(User, record.user_id).openid
+        db.commit()
+    resource = {**payment_resource(order), "appid": settings.wechat_app_id,
+                "mchid": settings.wechat_pay_mch_id, "payer": {"openid": openid},
+                "success_time": datetime.now().astimezone().isoformat(), "trade_state": state,
+                "amount": {"total": order["total_fen"], "currency": "CNY"}}
+    calls = []
+
+    def query(number):
+        calls.append(number)
+        return resource
+
+    monkeypatch.setattr("app.order_routes.query_payment", query)
+    return resource, calls
+
+
+def test_active_query_recovers_payment_and_late_callback_does_not_sell_stock_twice(shop, signed_notify, monkeypatch):
+    client, sessions, owner, _ = shop
+    order = checkout(shop)
+    resource, calls = real_payment_query(shop, order, monkeypatch)
+    for _ in range(2):
+        result = client.post(f"/api/orders/{order['id']}/sync-payment", headers=owner)
+        assert result.status_code == 200 and result.json()["status"] == "paid", result.text
+    assert calls == [order["number"]]
+    assert signed_notify(client, "TRANSACTION.SUCCESS", resource).status_code == 200
+    with sessions() as db:
+        inventory = db.get(ProductInventory, "green")
+        assert (inventory.available, inventory.reserved, inventory.sold) == (8, 0, 2)
+        assert db.get(Order, order["id"]).wx_transaction_id == resource["transaction_id"]
+
+
+def test_order_list_repairs_existing_clients_before_returning_counts(shop, monkeypatch):
+    client, _, owner, _ = shop
+    order = checkout(shop)
+    _, calls = real_payment_query(shop, order, monkeypatch)
+    result = client.get("/api/orders?status=pending", headers=owner)
+    assert result.status_code == 200
+    assert result.json()["items"] == []
+    assert result.json()["counts"]["paid"] == 1 and result.json()["counts"]["pending"] == 0
+    assert calls == [order["number"]]
+
+
+def test_active_query_gift_opens_lifetime_and_successful_refund_revokes_it(shop, monkeypatch):
+    client, sessions, owner, address_id = shop
+    assert client.put("/api/admin/inventory/gift", headers=ADMIN, json={"available": 2}).status_code == 200
+    order = client.post("/api/orders", headers=owner, json={
+        "items": [{"product_id": "gift", "quantity": 1}], "address_id": address_id,
+        "idempotency_key": uuid4().hex,
+    }).json()
+    with sessions() as db:
+        db.get(User, db.get(Order, order["id"]).user_id).created_at = datetime.utcnow() - timedelta(days=100)
+        db.commit()
+    assert not client.get("/api/ai/quota", headers=owner).json()["active"]
+    real_payment_query(shop, order, monkeypatch)
+    assert client.post(f"/api/orders/{order['id']}/sync-payment", headers=owner).json()["status"] == "paid"
+    quota = client.get("/api/ai/quota", headers=owner).json()
+    assert quota["active"] and quota["plan"] == "gift_lifetime" and quota["expires_at"] is None
+    monkeypatch.setattr("app.order_routes.create_refund", lambda *args: {"status": "SUCCESS"})
+    assert client.post(f"/api/orders/{order['id']}/refund", headers=owner, json={"reason": "查询补单后测试退款"}).json()["status"] == "refunded"
+    assert not client.get("/api/ai/quota", headers=owner).json()["active"]
+
+
+@pytest.mark.parametrize("field,value", [
+    ("out_trade_no", "OTHER-ORDER"), ("mchid", "other-merchant"), ("appid", "other-app"),
+    ("payer", {"openid": "other-payer"}), ("transaction_id", ""), ("success_time", "bad-time"),
+    ("amount", {"total": 1, "currency": "CNY"}),
+    ("amount", {"total": 14600, "currency": "USD"}),
+])
+def test_query_mismatch_never_marks_paid_or_changes_inventory(shop, monkeypatch, field, value):
+    client, sessions, owner, _ = shop
+    order = checkout(shop)
+    resource, _ = real_payment_query(shop, order, monkeypatch)
+    resource[field] = value
+    result = client.post(f"/api/orders/{order['id']}/sync-payment", headers=owner,
+                         json={"status": "paid", "total_fen": 1})
+    assert result.status_code == 502 and "请勿重复付款" in result.text
+    with sessions() as db:
+        record = db.get(Order, order["id"])
+        assert record.status == "pending" and record.paid_at is None
+        inventory = db.get(ProductInventory, "green")
+        assert (inventory.available, inventory.reserved, inventory.sold) == (8, 2, 0)
+
+
+def test_sync_rejects_other_user_and_never_queries_unpaid_local_order(shop, monkeypatch):
+    client, _, owner, _ = shop
+    order = checkout(shop)
+    monkeypatch.setattr("app.order_routes.query_payment", lambda *args: pytest.fail("不能查询未发起支付或别人的订单"))
+    assert client.post(f"/api/orders/{order['id']}/sync-payment", headers=owner).json()["status"] == "pending"
+    token = client.post("/api/auth/wechat", json={"code": "other-query-user"}).json()["access_token"]
+    other = {"Authorization": f"Bearer {token}"}
+    monkeypatch.setattr(get_settings(), "wechat_pay_mode", "wechat")
+    assert client.post(f"/api/orders/{order['id']}/sync-payment", headers=other).status_code == 404
+    assert client.post(f"/api/orders/{order['id']}/sync-payment").status_code in (401, 403)
+
+
+@pytest.mark.parametrize("state", ["NOTPAY", "USERPAYING", "CLOSED", "PAYERROR"])
+def test_query_non_success_does_not_grant_payment(shop, monkeypatch, state):
+    client, sessions, owner, _ = shop
+    order = checkout(shop)
+    real_payment_query(shop, order, monkeypatch, state)
+    result = client.post(f"/api/orders/{order['id']}/sync-payment", headers=owner)
+    assert result.status_code == 200 and result.json()["status"] == "pending"
+    with sessions() as db:
+        assert db.get(Order, order["id"]).paid_at is None
+
+
+def test_paid_but_overdue_is_reconciled_before_inventory_expiration(shop, monkeypatch):
+    client, sessions, owner, _ = shop
+    order = checkout(shop)
+    real_payment_query(shop, order, monkeypatch)
+    with sessions() as db:
+        db.get(Order, order["id"]).expires_at = datetime.utcnow() - timedelta(minutes=1)
+        db.commit()
+    monkeypatch.setattr("app.order_routes.close_payment", lambda *args: pytest.fail("已付款不能关单"))
+    result = client.get("/api/orders", headers=owner)
+    assert result.status_code == 200 and result.json()["items"][0]["status"] == "paid"
+    with sessions() as db:
+        inventory = db.get(ProductInventory, "green")
+        assert (inventory.available, inventory.reserved, inventory.sold) == (8, 0, 2)
+
+
+@pytest.mark.parametrize("query_state", ["NOTPAY", "USERPAYING", "GATEWAY_ERROR", "REFUND", "CLOSE_ERROR"])
+def test_expiration_requires_confirmed_unpaid_and_successful_remote_close(shop, monkeypatch, query_state):
+    client, sessions, owner, _ = shop
+    order = checkout(shop)
+    real_payment_query(shop, order, monkeypatch, "NOTPAY" if query_state == "CLOSE_ERROR" else query_state)
+    with sessions() as db:
+        db.get(Order, order["id"]).expires_at = datetime.utcnow() - timedelta(minutes=1)
+        db.commit()
+
+    def failed(*args, **kwargs):
+        raise WechatPayError("测试网关超时")
+
+    if query_state == "GATEWAY_ERROR":
+        monkeypatch.setattr("app.order_routes.query_payment", failed)
+    closed = []
+    monkeypatch.setattr("app.order_routes.close_payment", failed if query_state == "CLOSE_ERROR" else lambda n, **kw: closed.append(n))
+    result = client.get("/api/orders", headers=owner)
+    assert result.status_code == 200
+    with sessions() as db:
+        inventory = db.get(ProductInventory, "green")
+        record = db.get(Order, order["id"])
+        if query_state == "NOTPAY":
+            assert closed == [order["number"]]
+            assert record.status == "cancelled"
+            assert (inventory.available, inventory.reserved, inventory.sold) == (10, 0, 0)
+        else:
+            assert record.status == "pending" and record.paid_at is None
+            assert (inventory.available, inventory.reserved, inventory.sold) == (8, 2, 0)
+
+
+def test_retry_pay_recovers_old_payment_without_creating_new_prepay(shop, monkeypatch):
+    client, _, owner, _ = shop
+    order = checkout(shop)
+    real_payment_query(shop, order, monkeypatch)
+    monkeypatch.setattr("app.order_routes.create_jsapi_payment", lambda *args: pytest.fail("不能再次发起支付"))
+    assert client.post(f"/api/orders/{order['id']}/pay", headers=owner).status_code == 409
+    assert client.get(f"/api/orders/{order['id']}", headers=owner).json()["status"] == "paid"
+
+
+@pytest.mark.parametrize("sync", [False, True])
+def test_payment_check_is_read_only_by_default_and_sync_is_verified(shop, monkeypatch, capsys, sync):
+    from app import payment_check
+    client, sessions, _, _ = shop
+    order = checkout(shop)
+    resource, _ = real_payment_query(shop, order, monkeypatch)
+    monkeypatch.setattr(payment_check, "SessionLocal", sessions)
+    monkeypatch.setattr(payment_check, "query_payment", lambda *args: resource)
+    monkeypatch.setattr("sys.argv", ["payment_check", order["number"]] + (["--sync"] if sync else []))
+    assert payment_check.main() == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["local_status_before"] == "pending" and result["wechat_trade_state"] == "SUCCESS"
+    with sessions() as db:
+        assert db.get(Order, order["id"]).status == ("paid" if sync else "pending")
+    assert not any(key in result for key in ("openid", "api_v3_key", "receiver_phone", "receiver_address"))
 
 
 def test_sale_catalog_and_contact_configuration(shop, monkeypatch):

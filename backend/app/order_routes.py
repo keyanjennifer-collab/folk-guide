@@ -5,13 +5,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import logging
 import re
 import secrets
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import func, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -22,12 +23,13 @@ from .config import get_settings
 from .database import get_db
 from .wechat_express_service import guard_refund
 from .models import User
-from .wechat_pay import WechatPayError, close_payment, create_jsapi_payment, create_refund, jsapi_payment_params, verify_and_decrypt_notification
+from .wechat_pay import WechatPayError, close_payment, create_jsapi_payment, create_refund, jsapi_payment_params, query_payment, verify_and_decrypt_notification
 
 
 OrderStatus = Literal["pending", "paid", "shipped", "completed", "after_sale", "refunded", "cancelled"]
 STATUSES = ("pending", "paid", "shipped", "completed", "after_sale", "refunded", "cancelled")
 router = APIRouter(tags=["商城交易"])
+logger = logging.getLogger(__name__)
 
 
 class CatalogItemOutput(BaseModel):
@@ -262,13 +264,32 @@ def expire_pending_orders(db: Session, user_id: int | None = None) -> int:
     if user_id is not None:
         query = query.where(Order.user_id == user_id)
     expired = list(db.scalars(query).all())
+    payments_checked = 0
     for order in expired:
+        if order.payment_prepay_id and get_settings().wechat_pay_mode == "wechat":
+            # 页面请求每次最多处理一笔需要远程查单的超时订单，避免积压拖慢商城。
+            if payments_checked >= 1:
+                continue
+            payments_checked += 1
+            try:
+                state = reconcile_payment(db, order)
+                if state == "SUCCESS" or order.status != "pending":
+                    continue
+                # 支付结果不确定时保留订单和锁定库存，避免已扣款订单被本地取消。
+                if state == "USERPAYING":
+                    continue
+                if state == "NOTPAY":
+                    close_payment(order.number, timeout=3.0)
+            except WechatPayError as exc:
+                db.rollback()
+                logger.warning("Payment expiration deferred for order %s: %s", order.number, exc)
+                continue
         claimed = db.execute(update(Order).where(Order.id == order.id, Order.status == "pending").values(
             status="cancelled", cancelled_at=now, updated_at=now,
         ))
         if claimed.rowcount == 1:
             _release_order_stock(db, order)
-    if expired:
+        # 每单单独提交，后续某笔查单失败不能撤回此前已核实的付款。
         db.commit()
     return len(expired)
 
@@ -292,6 +313,70 @@ def _success_time(resource: dict[str, Any]) -> datetime:
         return value.astimezone(timezone.utc).replace(tzinfo=None)
     except ValueError as exc:
         raise WechatPayError("微信成功时间格式无效") from exc
+
+
+def _apply_successful_payment(db: Session, order: Order, resource: dict[str, Any]) -> None:
+    """通知与主动查单共用库存结算，行锁与状态判断保证只结算一次。"""
+    total = (resource.get("amount") or {}).get("total")
+    if resource.get("trade_state") != "SUCCESS" or type(total) is not int or total != order.total_fen:
+        raise WechatPayError("支付状态或金额不匹配")
+    if order.status == "pending":
+        _settle_order_stock(db, order)
+        order.status = "paid"
+        order.paid_at = _success_time(resource)
+    elif order.status == "cancelled":
+        order.status = "after_sale"
+        order.paid_at = _success_time(resource)
+        order.refund_number = order.refund_number or _refund_number(order)
+        create_refund(order.number, order.refund_number, order.total_fen, "订单取消后支付，自动退款")
+    order.wx_transaction_id = str(resource.get("transaction_id") or "") or order.wx_transaction_id
+
+
+def reconcile_payment(db: Session, order: Order) -> str | None:
+    """只对已发起支付的待付款单查单；客户端不能提交金额或付款状态。"""
+    settings = get_settings()
+    if settings.wechat_pay_mode != "wechat" or order.status != "pending" or not order.payment_prepay_id:
+        return None
+    resource = query_payment(order.number)
+    if (resource.get("out_trade_no") != order.number
+            or resource.get("mchid") != settings.wechat_pay_mch_id
+            or resource.get("appid") != settings.wechat_app_id):
+        raise WechatPayError("微信查单的订单号、商户号或应用编号不匹配")
+    state = resource.get("trade_state")
+    if not isinstance(state, str) or state not in {"SUCCESS", "NOTPAY", "USERPAYING", "CLOSED", "REVOKED", "PAYERROR", "REFUND"}:
+        raise WechatPayError("微信查单返回了未知支付状态")
+    if state == "REFUND":
+        raise WechatPayError("微信订单已发生退款，请核对退款记录")
+    if state == "SUCCESS":
+        owner = db.get(User, order.user_id)
+        if (not owner or (resource.get("payer") or {}).get("openid") != owner.openid
+                or not resource.get("transaction_id") or not resource.get("success_time")
+                or (resource.get("amount") or {}).get("currency") != "CNY"):
+            raise WechatPayError("微信查单的付款人、交易号、成功时间或币种无效")
+        # 查单的网络请求期间，微信通知可能已结算同一单；刷新并锁定后再判断。
+        order = db.scalar(select(Order).where(Order.id == order.id).with_for_update()
+                          .execution_options(populate_existing=True))
+        if order is None:
+            raise WechatPayError("查单中的本地订单不存在")
+        # 已取消订单维持原有通知退款流程；主动查单不发起任何扣款或退款。
+        if order.status == "pending":
+            _apply_successful_payment(db, order, resource)
+        db.commit()
+    return state
+
+
+def _reconcile_latest_pending(db: Session, user_id: int) -> None:
+    """兼容已发布小程序：读取订单时补查最近一笔付款，最多一次外部请求。"""
+    order = db.scalar(select(Order).where(
+        Order.user_id == user_id, Order.status == "pending", Order.payment_prepay_id.is_not(None),
+        or_(Order.expires_at.is_(None), Order.expires_at > datetime.utcnow()),
+    ).order_by(Order.created_at.desc(), Order.id.desc()).limit(1))
+    if order:
+        try:
+            reconcile_payment(db, order)
+        except WechatPayError as exc:
+            db.rollback()
+            logger.warning("Payment reconciliation deferred for order %s: %s", order.number, exc)
 
 
 def _owned_order(db: Session, order_id: int, user_id: int) -> Order:
@@ -454,6 +539,7 @@ def list_orders(
     user: User = Depends(current_user), db: Session = Depends(get_db),
 ):
     expire_pending_orders(db, user.id)
+    _reconcile_latest_pending(db, user.id)
     owner = Order.user_id == user.id
     counts = {name: 0 for name in STATUSES}
     counts.update(dict(db.execute(select(Order.status, func.count(Order.id)).where(owner).group_by(Order.status)).all()))
@@ -467,7 +553,26 @@ def list_orders(
 @router.get("/api/orders/{order_id}", response_model=OrderOutput, summary="读取本人单个订单")
 def get_order(order_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     expire_pending_orders(db, user.id)
-    return output(_owned_order(db, order_id, user.id))
+    order = _owned_order(db, order_id, user.id)
+    try:
+        if order.expires_at is None or order.expires_at > datetime.utcnow():
+            reconcile_payment(db, order)
+    except WechatPayError as exc:
+        db.rollback()
+        logger.warning("Payment reconciliation deferred for order %s: %s", order.number, exc)
+    return output(order)
+
+
+@router.post("/api/orders/{order_id}/sync-payment", response_model=OrderOutput, summary="向微信核实本人订单付款结果")
+def sync_order_payment(order_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    order = _owned_order(db, order_id, user.id)
+    try:
+        reconcile_payment(db, order)
+    except WechatPayError as exc:
+        db.rollback()
+        logger.warning("Payment reconciliation failed for order %s: %s", order.number, exc)
+        raise HTTPException(502, f"付款结果暂未核实，请勿重复付款：{exc}") from exc
+    return output(order)
 
 
 @router.post("/api/orders/{order_id}/pay", response_model=PaymentOutput, summary="发起微信支付")
@@ -475,6 +580,11 @@ def pay_order(order_id: int, user: User = Depends(current_user), db: Session = D
     """生成小程序调起支付的短期参数；重复点击时复用尚未过期的 prepay_id。"""
     expire_pending_orders(db, user.id)
     order = _owned_order(db, order_id, user.id)
+    try:
+        reconcile_payment(db, order)
+    except WechatPayError as exc:
+        db.rollback()
+        raise HTTPException(502, f"请先核实上次付款结果，请勿重复付款：{exc}") from exc
     if order.status != "pending":
         raise HTTPException(409, "当前订单不能支付")
     try:
@@ -604,20 +714,7 @@ async def wechat_payment_notify(request: Request, db: Session = Depends(get_db))
         if resource.get("appid") and resource.get("appid") != settings.wechat_app_id:
             raise WechatPayError("通知应用编号不匹配")
         if event_type == "TRANSACTION.SUCCESS":
-            total = int((resource.get("amount") or {}).get("total", -1))
-            if resource.get("trade_state") != "SUCCESS" or total != order.total_fen:
-                raise WechatPayError("支付状态或金额不匹配")
-            if order.status == "pending":
-                _settle_order_stock(db, order)
-                order.status = "paid"
-                order.paid_at = _success_time(resource)
-            elif order.status == "cancelled":
-                order.status = "after_sale"
-                order.paid_at = _success_time(resource)
-                order.refund_number = order.refund_number or _refund_number(order)
-                # 取消与支付极端并发时，立即发起原路退款；若网关失败则返回失败让微信重试。
-                create_refund(order.number, order.refund_number, order.total_fen, "订单取消后支付，自动退款")
-            order.wx_transaction_id = str(resource.get("transaction_id") or "") or order.wx_transaction_id
+            _apply_successful_payment(db, order, resource)
         elif event_type == "REFUND.SUCCESS":
             if resource.get("refund_status") != "SUCCESS" or str(resource.get("out_refund_no") or "") != order.refund_number:
                 raise WechatPayError("退款状态或退款单号不匹配")
@@ -641,6 +738,8 @@ async def wechat_payment_notify(request: Request, db: Session = Depends(get_db))
         raise HTTPException(409, "支付记录冲突，请核对交易记录")
     except WechatPayError as exc:
         db.rollback()
+        # 只记录原因，不输出通知正文、密钥、收件人或支付签名。
+        logger.warning("WeChat payment notification rejected: %s", exc)
         raise HTTPException(400, str(exc)) from exc
 
 

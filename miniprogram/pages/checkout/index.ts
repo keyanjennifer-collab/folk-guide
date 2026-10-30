@@ -131,11 +131,11 @@ Page({
       // 订单已经在服务端成立，即使用户取消付款也应从“我的订单”继续，而非再次下单。
       removeCartItems(this.data.items.map(item => item.id));
       try {
-        await payOrder(order.id);
-        wx.showToast({ title: "支付已提交，请查看订单", icon: "none" });
+        const result = await payOrder(order.id);
+        wx.showToast({ title: result?.paid_at ? "付款已确认" : "付款核实中，请勿重复支付", icon: "none", duration: 2600 });
       } catch (paymentError) {
         const raw = String((paymentError as { errMsg?: unknown })?.errMsg || (paymentError as Error)?.message || "");
-        wx.showToast({ title: raw.includes("cancel") ? "订单已创建，可稍后支付" : "支付未完成，请在订单中重试", icon: "none", duration: 2600 });
+        wx.showModal({ title: "订单已创建", content: raw.includes("cancel") ? "已取消本次支付，可在订单中继续。" : "暂未核实付款结果。如已扣款，请在订单详情刷新付款状态，勿重复付款。", showCancel: false });
       }
       setTimeout(() => wx.redirectTo({ url: "/pages/orders/index?status=all" }), 700);
     } catch (_) {

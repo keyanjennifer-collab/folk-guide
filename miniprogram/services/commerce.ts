@@ -50,7 +50,14 @@ export function createOrder(data: {
   // 前端只提交商品 ID 和数量；最终单价、运费与总额全部由后端计算。
   return request<Order>({ path: "/api/orders", method: "POST", data });
 }
+export function syncOrderPayment(orderId: number): Promise<Order> {
+  return request<Order>({ path: `/api/orders/${orderId}/sync-payment`, method: "POST", showError: false });
+}
 export async function payOrder(orderId: number): Promise<Order | null> {
+  // 继续支付前先核实旧结果，已扣款的订单不再调起支付。
+  const current = await syncOrderPayment(orderId);
+  if (current.paid_at && ["paid", "shipped", "completed"].includes(current.status)) return current;
+  if (current.status !== "pending") throw new Error("当前订单不能支付，请刷新订单状态");
   // mock 分支仅用于本机自动化测试，生产环境由后端启动校验强制禁用。
   const payment = await request<PaymentParams>({ path: `/api/orders/${orderId}/pay`, method: "POST" });
   if (payment.mock) {
@@ -59,12 +66,13 @@ export async function payOrder(orderId: number): Promise<Order | null> {
   if (!payment.timeStamp || !payment.nonceStr || !payment.package || !payment.signType || !payment.paySign) {
     throw new Error("服务器未返回完整支付参数");
   }
-  // wx.requestPayment 成功只代表客户端流程结束，订单最终状态仍由服务端通知更新。
+  // 客户端成功后让服务端主动查单，不能把 success 回调直接当作付款凭据。
   await new Promise<void>((resolve, reject) => wx.requestPayment({
     timeStamp: payment.timeStamp!, nonceStr: payment.nonceStr!, package: payment.package!,
     signType: payment.signType!, paySign: payment.paySign!, success: () => resolve(), fail: reject,
   }));
-  return null;
+  try { return await syncOrderPayment(orderId); }
+  catch (_) { return null; } // 已完成支付操作；同步失败时提示核实中，不能提示重新付款。
 }
 export function cancelOrder(orderId: number): Promise<Order> {
   return request<Order>({ path: `/api/orders/${orderId}/cancel`, method: "POST" });

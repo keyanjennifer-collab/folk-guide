@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlencode, urlsplit
 
 import httpx
 from cryptography.exceptions import InvalidSignature
@@ -69,10 +69,12 @@ def _verify_signature(timestamp: str, nonce: str, signature_text: str, serial: s
         raise WechatPayError("微信支付响应验签失败") from exc
 
 
-def _request(method: str, path: str, payload: dict[str, Any], settings: Settings | None = None) -> dict[str, Any]:
+def _request(method: str, path: str, payload: dict[str, Any] | None = None,
+             settings: Settings | None = None, *, timeout: float = 15.0) -> dict[str, Any]:
     """签名请求并验证微信响应签名，避免只依赖 HTTPS 判断响应可信。"""
     runtime = settings or get_settings()
-    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    # GET 查单必须签名空请求体，不能把 {} 当成 GET 的正文。
+    body = "" if payload is None else json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)
     url = runtime.wechat_pay_api_base_url.rstrip("/") + path
@@ -87,7 +89,7 @@ def _request(method: str, path: str, payload: dict[str, Any], settings: Settings
         response = httpx.request(
             method, url, content=body.encode("utf-8"),
             headers={"Authorization": authorization, "Accept": "application/json", "Content-Type": "application/json"},
-            timeout=15.0,
+            timeout=timeout,
         )
     except httpx.HTTPError as exc:
         raise WechatPayError("微信支付网关暂时无法连接") from exc
@@ -103,7 +105,19 @@ def _request(method: str, path: str, payload: dict[str, Any], settings: Settings
     if response.status_code < 200 or response.status_code >= 300:
         message = data.get("message") if isinstance(data, dict) else None
         raise WechatPayError(str(message or f"微信支付网关返回 {response.status_code}"))
+    if not isinstance(data, dict):
+        raise WechatPayError("微信支付响应格式无效")
     return data
+
+
+def query_payment(order_number: str) -> dict[str, Any]:
+    """使用商户订单号查单；请求签名和微信响应验签与下单相同。"""
+    settings = get_settings()
+    if settings.wechat_pay_mode != "wechat":
+        raise WechatPayError("微信支付尚未配置")
+    path = "/v3/pay/transactions/out-trade-no/" + quote(order_number, safe="")
+    path += "?" + urlencode({"mchid": settings.wechat_pay_mch_id})
+    return _request("GET", path, settings=settings, timeout=3.0)
 
 
 def jsapi_payment_params(prepay_id: str) -> dict[str, Any]:
@@ -145,14 +159,14 @@ def create_jsapi_payment(order_number: str, description: str, total_fen: int, op
     return jsapi_payment_params(prepay_id)
 
 
-def close_payment(order_number: str) -> None:
+def close_payment(order_number: str, *, timeout: float = 15.0) -> None:
     settings = get_settings()
     if settings.wechat_pay_mode == "mock":
         return
     if settings.wechat_pay_mode != "wechat":
         raise WechatPayError("微信支付尚未配置")
     _request("POST", f"/v3/pay/transactions/out-trade-no/{order_number}/close",
-             {"mchid": settings.wechat_pay_mch_id}, settings)
+             {"mchid": settings.wechat_pay_mch_id}, settings, timeout=timeout)
 
 
 def create_refund(order_number: str, refund_number: str, total_fen: int, reason: str) -> dict[str, Any]:

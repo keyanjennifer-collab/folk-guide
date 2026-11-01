@@ -1,4 +1,7 @@
-"""微信物流助手的管理入口、运单任务和隔离的官方面单预览。"""
+"""微信物流助手的管理入口、运单任务和隔离的官方面单预览。
+
+运单生成渠道由配置决定：快递100 启用后由快递100同步下单/取消，物流轨迹仍由微信推送。
+"""
 
 import json
 from datetime import datetime
@@ -9,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from . import kuaidi100_client as kd100
 from . import wechat_express as api
 from .admin_auth import AdminIdentity, audit_admin_action, ensure_admin_role, require_admin_identity, require_admin_write
 from .commerce_models import Order, WechatExpressOrder
@@ -20,11 +24,12 @@ router = APIRouter(tags=["商城运营后台"])
 
 
 def _enabled() -> None:
-    if not get_settings().wechat_express_enabled or not api.configured():
-        raise HTTPException(409, "请先在服务器配置并启用微信物流助手")
+    # 运单生成渠道：快递100优先；未启用则要求微信物流助手
+    if not (kd100.configured() or (get_settings().wechat_express_enabled and api.configured())):
+        raise HTTPException(409, "请先在服务器配置快递100或微信物流助手")
 
 
-@router.get("/api/admin/wechat-express", summary="查看微信物流助手绑定状态")
+@router.get("/api/admin/wechat-express", summary="查看物流助手绑定状态")
 def integration_status(response: Response, identity: AdminIdentity = Depends(require_admin_identity), db: Session = Depends(get_db)):
     s = get_settings()
     bindings, error = [], ""
@@ -34,10 +39,18 @@ def integration_status(response: Response, identity: AdminIdentity = Depends(req
         except api.WechatExpressError as exc:
             error = exc.message
     response.headers["Cache-Control"] = "private, no-store"
-    return {"enabled": s.wechat_express_enabled, "configured": api.configured(),
-        "delivery_id": s.wechat_express_delivery_id, "carrier_name": s.wechat_express_carrier_name,
+    # 同时返回快递100配置状态
+    from .kuaidi100_client import integration_status as kd100_status
+    return {
+        "enabled": s.wechat_express_enabled,
+        "configured": api.configured(),
+        "delivery_id": s.wechat_express_delivery_id,
+        "carrier_name": s.wechat_express_carrier_name,
         "bindings": bindings, "binding_error": error,
-        "printer_guide": "在连接热敏打印机的电脑打开官方面单，按Ctrl+P打印；打印并打包后再确认发货。"}
+        "kuaidi100": kd100_status(db),
+        "kuaidi100_active": kd100.configured(),
+        "printer_guide": "在连接热敏打印机的电脑打开官方面单，按Ctrl+P打印；打印并打包后再确认发货。",
+    }
 
 
 class PackageInput(BaseModel):

@@ -58,6 +58,17 @@ class Settings(BaseSettings):
     # 商品缩略图文件名拼接为公网HTTPS地址，默认应填写实际API域名。
     wechat_express_asset_origin: str = ""
     wechat_express_print_type: int = Field(default=0, ge=0, le=1)
+    # 快递100电子面单：与微信物流助手并存。
+    # 启用后运单生成/取消走快递100，物流轨迹推送仍由微信物流助手负责。
+    # 凭证由中通网点开通月结账号后提供，不要写入代码或聊天。
+    kuaidi100_enabled: bool = False
+    # 快递100开放平台 APP Key 和 Secret（b.kuaidi100.com → APIKey管理）
+    kuaidi100_key: str = ""
+    kuaidi100_secret: str = ""
+    # 中通月结账号凭证：商家编号、秘钥、网点编号
+    kuaidi100_partner_id: str = ""
+    kuaidi100_partner_key: str = ""
+    kuaidi100_net_code: str = ""
     # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
     wechat_pay_mode: str = "disabled"
     wechat_pay_mch_id: str = ""

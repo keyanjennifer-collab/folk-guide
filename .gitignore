@@ -4,10 +4,14 @@ __pycache__/
 .venv*/
 .env
 .env.*
+.envUtiz*
+.envUtiz*.*
 !.env.example
 *.db
+*.db-journal
 *.sqlite
 *.sqlite3
+*.sqlite-journal
 *.log
 *.pem
 *.key

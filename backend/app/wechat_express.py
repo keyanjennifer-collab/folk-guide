@@ -122,6 +122,37 @@ def _short(value: str, limit: int) -> str:
     return value.encode("utf-8")[:limit].decode("utf-8", errors="ignore")
 
 
+def _split_chinese_address(full: str) -> dict:
+    """从完整地址字符串解析出 province/city/area/address。"""
+    text = full.strip()
+    if not text:
+        return {"province": "", "city": "", "area": "", "address": ""}
+    parts = text.split(None, 3)
+    if len(parts) >= 4:
+        return {"province": parts[0], "city": parts[1], "area": parts[2], "address": parts[3]}
+    rest = text
+    province = ""
+    m = re.match(r"^(.+?(?:省|自治区|特别行政区))", rest)
+    if not m:
+        m = re.match(r"^(北京|上海|天津|重庆)市?", rest)
+    if m:
+        province = m.group(1)
+        if not province.endswith(("省", "自治区", "特别行政区")):
+            province += "市"
+        rest = rest[len(m.group(0)):].strip()
+    city = ""
+    m = re.match(r"^(.+?(?:市|自治州|地区|盟))", rest)
+    if m:
+        city = m.group(1)
+        rest = rest[len(m.group(0)):].strip()
+    area = ""
+    m = re.match(r"^(.+?(?:区|县|市|旗|新区|开发区))", rest)
+    if m:
+        area = m.group(1)
+        rest = rest[len(m.group(0)):].strip()
+    return {"province": province, "city": city, "area": area, "address": rest or text}
+
+
 def order_payload(db: Session, order, remote_order_id: str, openid: str, package: dict) -> dict:
     s = get_settings()
     binding = resolve_binding(db)
@@ -141,7 +172,9 @@ def order_payload(db: Session, order, remote_order_id: str, openid: str, package
     sender = {"name": s.wechat_express_sender_name.strip(), "mobile": s.wechat_express_sender_phone.strip(),
         "province": s.wechat_express_sender_province.strip(), "city": s.wechat_express_sender_city.strip(),
         "area": s.wechat_express_sender_district.strip(), "address": s.wechat_express_sender_address.strip()}
-    receiver = {"name": order.receiver_name.strip(), "mobile": order.receiver_phone.strip(), "address": order.receiver_address.strip()}
+    _r = _split_chinese_address(order.receiver_address.strip())
+    receiver = {"name": order.receiver_name.strip(), "mobile": order.receiver_phone.strip(),
+        "province": _r["province"], "city": _r["city"], "area": _r["area"], "address": _r["address"]}
     for person in (sender, receiver):
         for key, limit in (("name", 64), ("mobile", 32), ("province", 64), ("city", 64), ("area", 64), ("address", 512)):
             if key in person and (len(person[key].encode()) > limit or (key in {"name", "mobile", "address"} and not person[key])):
@@ -166,9 +199,9 @@ def order_payload(db: Session, order, remote_order_id: str, openid: str, package
             count = int(item["quantity"])
             if count < 1 or not item["name"]:
                 raise ValueError()
-            name = _short(str(item["name"]), 128)
-            details.append({"name": name, "count": count})
-            shop_details.append({"goods_name": name, "goods_img_url": image, "goods_desc": "数量：" + str(count)})
+            item_name = _short(str(item["name"]), 128)
+            details.append({"name": item_name, "count": count})
+            shop_details.append({"goods_name": item_name, "goods_img_url": image, "goods_desc": "数量：" + str(count)})
         if any(not math.isfinite(float(package[k])) or float(package[k]) <= 0 for k in ("weight", "space_x", "space_y", "space_z")):
             raise ValueError()
     except (ValueError, TypeError, KeyError, AttributeError):

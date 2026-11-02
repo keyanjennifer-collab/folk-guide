@@ -18,7 +18,6 @@ import httpx
 from sqlalchemy.orm import Session
 
 from . import wechat_express as wx_api
-from .commerce_models import Product
 from .config import get_settings
 
 # 快递100 电子面单接口
@@ -62,6 +61,7 @@ def configured() -> bool:
         and s.kuaidi100_partner_id.strip()
         and s.kuaidi100_partner_key.strip()
         and s.kuaidi100_net_code.strip()
+        and s.kuaidi100_temp_id.strip()
     )
 
 
@@ -134,21 +134,19 @@ def order_payload(db: Session, order, remote_order_id: str, package: dict) -> di
         if not re.fullmatch(r"1[0-9]{10}", person["mobile"]):
             raise Kuaidi100Error(f"{label}手机号格式异常")
 
-    # 商品明细
-    items = []
+    # 商品明细：cargo 是字符串（物品名称），count 是包裹总数
+    cargo_names = []
+    total_count = 0
     try:
         sku_list = json.loads(order.items_json)
         if not isinstance(sku_list, list) or not sku_list:
             raise ValueError()
         for item in sku_list:
-            product = db.get(Product, item["product_id"])
             quantity = int(item["quantity"])
             if quantity < 1:
                 raise ValueError()
-            items.append({
-                "name": str(item["name"])[:128],
-                "number": quantity,
-            })
+            cargo_names.append(str(item["name"])[:128])
+            total_count += quantity
     except (ValueError, TypeError, KeyError, AttributeError):
         raise Kuaidi100Error("订单商品明细不完整，无法生成运单") from None
 
@@ -161,7 +159,7 @@ def order_payload(db: Session, order, remote_order_id: str, package: dict) -> di
     except (ValueError, TypeError, KeyError):
         raise Kuaidi100Error("包裹重量或尺寸无效") from None
 
-    # 收件完整地址（快递100只有一个 address 字段）
+    # 收件完整地址（快递100只有一个 printAddr 字段）
     receiver["printAddr"] = f"{_r['province']}{_r['city']}{_r['area']}{_r['address']}"
     sender["printAddr"] = (
         f"{s.wechat_express_sender_province.strip()}"
@@ -171,19 +169,19 @@ def order_payload(db: Session, order, remote_order_id: str, package: dict) -> di
     )
 
     return {
+        "printType": "NON",
         "partnerId": s.kuaidi100_partner_id.strip(),
         "partnerKey": s.kuaidi100_partner_key.strip(),
         "net": s.kuaidi100_net_code.strip(),
         "kuaidicom": ZTO_COM,
         "sendMan": sender,
         "recMan": receiver,
-        "cargo": items,
+        "cargo": "、".join(cargo_names),
+        "count": total_count,
         "weight": weight,
+        "tempId": s.kuaidi100_temp_id.strip(),
         "remark": f"订单: {order.number}",
         "orderId": remote_order_id,
-        "thirdOrderNo": order.number,
-        "dayType": "1",
-        "orderType": "1",
     }
 
 
@@ -238,6 +236,7 @@ def integration_status(db: Session) -> dict:
         "key_set": bool(s.kuaidi100_key.strip()),
         "partner_id_set": bool(s.kuaidi100_partner_id.strip()),
         "net_code_set": bool(s.kuaidi100_net_code.strip()),
+        "temp_id_set": bool(s.kuaidi100_temp_id.strip()),
         "carrier_code": ZTO_COM,
         "carrier_name": s.wechat_express_carrier_name.strip() or "中通快递",
     }

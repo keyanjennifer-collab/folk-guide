@@ -62,13 +62,16 @@ class Settings(BaseSettings):
     # 启用后运单生成/取消走快递100，物流轨迹推送仍由微信物流助手负责。
     # 凭证由中通网点开通月结账号后提供，不要写入代码或聊天。
     kuaidi100_enabled: bool = False
-    # 快递100开放平台 APP Key 和 Secret（b.kuaidi100.com → APIKey管理）
+    # 快递100企业版 API 的 Key 和 Secret（api.kuaidi100.com → 我的信息 → 企业信息）
+    # 注意：不是快递管家 b.kuaidi100.com 的 APPKey，两者不通用。
     kuaidi100_key: str = ""
     kuaidi100_secret: str = ""
-    # 中通月结账号凭证：商家编号、秘钥、网点编号
+    # 中通月结账号凭证：商家编号、秘钥、网点编号（向中通网点申请）
     kuaidi100_partner_id: str = ""
     kuaidi100_partner_key: str = ""
     kuaidi100_net_code: str = ""
+    # 电子面单模板ID（api.kuaidi100.com 管理后台 → 快递公司模板V2 获取）
+    kuaidi100_temp_id: str = ""
     # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
     wechat_pay_mode: str = "disabled"
     wechat_pay_mch_id: str = ""

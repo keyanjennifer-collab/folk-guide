@@ -6,7 +6,6 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,25 +19,16 @@ from .wechat_express_service import RETRY_DELAY_LONG, _now, save_waybill
 router = APIRouter(tags=["商城运营后台"])
 
 
-class AuthorizeRequest(BaseModel):
-    mobile: str
-
-
-@router.post("/api/admin/kuaidi100/authorize", summary="用手机号授权快递管家账号")
-def authorize(
-    body: AuthorizeRequest,
-    request: Request,
-    identity: AdminIdentity = Depends(require_admin_write),
-    db: Session = Depends(get_db),
-):
+@router.post("/api/admin/kuaidi100/authorize", summary="授权快递管家主账号（网页OAuth）")
+def authorize(request: Request, identity: AdminIdentity = Depends(require_admin_write), db: Session = Depends(get_db)):
     ensure_admin_role(identity, "superadmin")
     try:
-        kd100.authorize_by_mobile(db, body.mobile)
+        url = kd100.authorize_url(db)
     except kd100.Kuaidi100Error as exc:
         raise HTTPException(409, exc.message) from None
     audit_admin_action(db, identity, action="kuaidi100_authorize", target_type="integration", target_id="kuaidiguanjia", request=request)
     db.commit()
-    return {"status": "ok", "message": "快递管家授权成功，access_token 有效期 1 年"}
+    return {"url": url}
 
 
 @router.get("/api/kuaidi100/callback", include_in_schema=False)

@@ -531,13 +531,9 @@
       }catch(e){toast(e.message,true)}
     }
     async function authorizeKuaidi100(){
-      const mobile=prompt('请输入快递管家账号绑定的手机号\n（用于获取 access_token，有效期 1 年）');
-      if(!mobile)return;
       try{
-        toast('正在授权...');
-        const result=await api('/api/admin/kuaidi100/authorize',{method:'POST',body:JSON.stringify({mobile:mobile.trim()})});
-        toast(result.message||'授权成功');
-        loadShip();
+        const result=await api('/api/admin/kuaidi100/authorize',{method:'POST'});
+        window.location.assign(result.url);
       }catch(e){toast(e.message,true)}
     }
     async function confirmWechatShip(id){

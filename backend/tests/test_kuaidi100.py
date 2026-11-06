@@ -220,15 +220,22 @@ def test_old_attempt_callbacks_and_mismatched_waybills_cannot_overwrite(shop, gu
 
 def test_authorization_state_is_single_use_and_tokens_are_not_exposed(shop, guanjia, monkeypatch):
     monkeypatch.setattr(get_settings(), "kuaidi100_access_token", "")
-    assert shop[0].post("/api/admin/kuaidi100/authorize", json={"mobile": "13800138000"}).status_code == 401
-    assert shop[0].post("/api/admin/kuaidi100/authorize", json={"mobile": "13800138000"}, headers=shop[2]).status_code == 401
-    assert shop[0].post("/api/admin/kuaidi100/authorize", json={"mobile": ""}, headers=ADMIN).status_code == 409
+    assert shop[0].post("/api/admin/kuaidi100/authorize").status_code == 401
+    assert shop[0].post("/api/admin/kuaidi100/authorize", headers=shop[2]).status_code == 401
+    started = shop[0].post("/api/admin/kuaidi100/authorize", headers=ADMIN)
+    assert started.status_code == 200
+    query = {k: v[0] for k, v in parse_qs(urlsplit(started.json()["url"]).query).items()}
+    assert query["client_id"] == "guanjia-app-key" and len(query["timestamp"]) == 13
+    assert query["sign"] == kd._sign(query)
     calls = provider(monkeypatch, lambda req, _: {"access_token": "saved-token", "refresh_token": "saved-refresh", "expires_in": 31536000})
-    started = shop[0].post("/api/admin/kuaidi100/authorize", json={"mobile": "13800138000"}, headers=ADMIN)
-    assert started.status_code == 200 and "saved-token" not in started.text and "saved-refresh" not in started.text
+    invalid = shop[0].get("/api/kuaidi100/callback", params={"code": "test-code", "state": "wrong"})
+    assert invalid.status_code == 400 and not calls
+    result = shop[0].get("/api/kuaidi100/callback", params={"code": "test-code", "state": query["state"]})
+    assert result.status_code == 200 and "saved-token" not in result.text
+    assert shop[0].get("/api/kuaidi100/callback", params={"code": "test-code", "state": query["state"]}).status_code == 400
     status = shop[0].get("/api/admin/wechat-express", headers=ADMIN)
     assert status.json()["configured"] is True and "saved-token" not in status.text and "saved-refresh" not in status.text
-    assert len(calls) == 1 and calls[0][0] == "/open/oauth/token"
+    assert len(calls) == 1
 
 
 def test_expiring_database_authorization_refreshes_before_import(shop, guanjia, monkeypatch):

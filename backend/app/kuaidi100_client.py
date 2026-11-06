@@ -148,6 +148,7 @@ def authorize_by_mobile(db: Session, mobile: str) -> None:
 
     快递管家文档：https://www.kuaidi100.com/ecommerce/api/index.html?name=11
     调用成功后 access_token 有效期 1 年，可用 refresh_token 刷新。
+    注意：此方式会创建子账号，订单在子账号下，电子面单需在子账号单独绑定。
     """
     s = get_settings()
     mobile = mobile.strip()
@@ -168,6 +169,25 @@ def authorize_by_mobile(db: Session, mobile: str) -> None:
         row = Kuaidi100Authorization(app_key=s.kuaidi100_key.strip())
         db.add(row)
     _save_token(row, result)
+
+
+def authorize_url(db: Session) -> str:
+    """构造网页 OAuth 授权 URL，用主账号登录授权，订单在主账号下。"""
+    s = get_settings()
+    callback = s.kuaidi100_callback_url.strip()
+    parsed = urlsplit(callback)
+    if not keys_configured() or parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
+        raise Kuaidi100Error("请配置管家 App Key、App Secret 和公网 HTTPS 回调地址 KUAIDI100_CALLBACK_URL")
+    row = db.get(Kuaidi100Authorization, s.kuaidi100_key.strip())
+    if row is None:
+        row = Kuaidi100Authorization(app_key=s.kuaidi100_key.strip())
+        db.add(row)
+    state = secrets.token_urlsafe(32)
+    row.oauth_state_hash = hashlib.sha256(state.encode()).hexdigest()
+    row.oauth_state_expires_at = datetime.utcnow() + timedelta(minutes=10)
+    params = {"client_id": row.app_key, "response_type": "code", "redirect_uri": callback,
+              "state": state, "timestamp": str(int(time.time() * 1000))}
+    return BASE_URL + "/open/oauth/authorize?" + urlencode({**params, "sign": _sign(params)})
 
 
 def finish_authorization(db: Session, code: str, state: str) -> None:

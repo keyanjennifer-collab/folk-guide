@@ -447,7 +447,8 @@
       const payTime=x.paid_at?('<div class="order-meta"><span>支付时间 <b>'+fmtTime(x.paid_at)+'</b></span></div>'):'';
       const shipInfo=(x.tracking_number?('<div class="order-meta"><span>物流 <b>'+esc(x.carrier||'')+' '+esc(x.tracking_number)+'</b></span></div>'):'');
       const autoShipping=typeof shippingIntegration!=='undefined'&&shippingIntegration&&shippingIntegration.enabled;
-      const syncInfo=x.shipping_sync_message?'<div class="order-meta"><span>微信物流 <b>'+esc(x.shipping_sync_message)+'</b></span></div>':'';
+      const guanjia=x.shipping_provider==='kuaidiguanjia';
+      const syncInfo=x.shipping_sync_message?'<div class="order-meta"><span>'+(guanjia?'快递管家':'微信物流')+' <b>'+esc(x.shipping_sync_message)+'</b></span></div>':'';
       let syncActions='';
       if(autoShipping&&opts.showShip){
         const state=x.shipping_sync_status;
@@ -455,13 +456,12 @@
           syncActions='<div class="ship-row">'
             +'<input type="number" min="0.001" step="0.001" id="weight-'+Number(x.id)+'" aria-label="包裹重量（千克）" placeholder="重量 kg">'
             +['space_x','space_y','space_z'].map((key,i)=>'<input type="number" min="0.1" step="0.1" id="'+key+'-'+Number(x.id)+'" aria-label="包裹'+['长','宽','高'][i]+'（厘米）" placeholder="'+['长','宽','高'][i]+' cm">').join('')
-            +'<button class="btn-sm" onclick="shippingAction('+Number(x.id)+',\'create\')">'+(state?'重新生成运单':'生成运单')+'</button></div>';
+            +'<button class="btn-sm" onclick="shippingAction('+Number(x.id)+',\'create\')">'+(shippingIntegration.kuaidi100_active?(state?'重新同步到快递管家':'同步到快递管家'):(state?'重新生成运单':'生成运单'))+'</button></div>';
         }
-        if(state==='unknown')syncActions+='<button class="btn-ghost btn-sm" onclick="shippingAction('+Number(x.id)+',\'verify\')">补查运单</button> ';
-        if(['queued','creating','unknown','ordered'].includes(state))syncActions+='<button class="btn-ghost btn-sm" onclick="shippingAction('+Number(x.id)+',\'cancel\')">撤销运单</button> ';
+        if(['unknown','waiting'].includes(state))syncActions+='<button class="btn-ghost btn-sm" onclick="shippingAction('+Number(x.id)+',\'verify\')">补查运单</button> ';
         if(state==='ordered')syncActions+='<button class="btn-sm" onclick="confirmWechatShip('+Number(x.id)+')">打包后确认发货</button> ';
       }
-      if(x.shipping_sync_status==='ordered'&&(opts.showShip||opts.showLogisticsEdit))syncActions+='<a class="btn-ghost btn-sm" href="/api/admin/orders/'+Number(x.id)+'/waybill" target="_blank" rel="noopener noreferrer">打印 / 重打面单</a>';
+      if((x.shipping_sync_status==='ordered'||(guanjia&&x.shipping_sync_status==='waiting'))&&(opts.showShip||opts.showLogisticsEdit))syncActions+='<a class="btn-ghost btn-sm" href="/api/admin/orders/'+Number(x.id)+'/waybill" target="_blank" rel="noopener noreferrer">'+(guanjia?'去快递管家打印':'打印 / 重打面单')+'</a>';
       const shipInput=(opts.showShip&&!autoShipping?('<div class="ship-row"><input id="carrier-'+Number(x.id)+'" value="中通快递" placeholder="快递公司"><input id="tracking-'+Number(x.id)+'" placeholder="运单号"><button class="btn-sm" onclick="ship('+Number(x.id)+')">确认发货</button></div>'):'');
       const canRefund=adminProfile.role==='superadmin'&&x.paid_at&&['paid','shipped','completed','after_sale'].includes(x.status);
       const refundBtn=(canRefund?('<div class="ship-row"><button class="btn-danger btn-sm" onclick="refundOrder('+Number(x.id)+')">'+(x.refund_number?'重试 / 查询退款':'原路退款')+'</button></div>'):'');
@@ -505,10 +505,11 @@
       try{
         shippingIntegration=await api('/api/admin/wechat-express');
         const state=shippingIntegration,panel=document.getElementById('shipping-integration');
-        document.getElementById('ship-note').textContent=state.enabled?'填写实际重量尺寸 → 生成运单 → 打印并打包 → 确认发货。取号后仍为待发货，处理后点击刷新查看状态。':'当前为人工录单；启用微信物流助手后可在这里生成并打印运单。';
+        document.getElementById('ship-note').textContent=state.kuaidi100_active?'填写实际重量尺寸 → 同步到快递管家 → 在管家打印 → 单号回传 → 打包后确认发货。':(state.enabled?'填写实际重量尺寸 → 生成运单 → 打印并打包 → 确认发货。取号后仍为待发货，处理后点击刷新查看状态。':'当前为人工录单；启用微信物流助手后可在这里生成并打印运单。');
         panel.hidden=!state.enabled;
         if(state.enabled){
           panel.innerHTML='<p class="hint">'+esc(state.printer_guide)+'</p>'
+            +(state.kuaidi100_active?'<p class="hint">快递管家：'+(state.configured?'已配置授权':'请配置 App Key、App Secret 并授权现有管家账号')+'</p>'+(adminProfile.role==='superadmin'?'<button class="btn-ghost btn-sm" onclick="authorizeKuaidi100()">授权快递管家账号</button>':''):'')
             +(state.binding_error?'<p class="hint">'+esc(state.binding_error)+'</p>':'')
             +(state.bindings||[]).map(row=>'<p class="hint">'+esc(row.delivery_id)+' · 客户编码 '+esc(row.biz_id)+' · '+(Number(row.status_code)===0?'审核通过':'未通过审核')+' · 面单余额 '+esc(row.quota_num??'请在微信后台查询')+'</p>').join('');
         }
@@ -525,9 +526,14 @@
           if(Object.values(pack).some(v=>!Number.isFinite(v)||v<=0))throw new Error('请填写包裹实际重量（千克）和长宽高（厘米）');
           options.body=JSON.stringify(pack);
         }
-        if(action==='cancel'&&!confirm('确认停止本次运单？已提交微信的运单需等待撤销结果。'))return;
         const result=await api('/api/admin/orders/'+id+'/shipping-sync/'+action,options);
         toast(result.message);loadShip();
+      }catch(e){toast(e.message,true)}
+    }
+    async function authorizeKuaidi100(){
+      try{
+        const result=await api('/api/admin/kuaidi100/authorize',{method:'POST'});
+        window.location.assign(result.url);
       }catch(e){toast(e.message,true)}
     }
     async function confirmWechatShip(id){

@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -58,20 +58,16 @@ class Settings(BaseSettings):
     # 商品缩略图文件名拼接为公网HTTPS地址，默认应填写实际API域名。
     wechat_express_asset_origin: str = ""
     wechat_express_print_type: int = Field(default=0, ge=0, le=1)
-    # 快递100电子面单：与微信物流助手并存。
-    # 启用后运单生成/取消走快递100，物流轨迹推送仍由微信物流助手负责。
-    # 凭证由中通网点开通月结账号后提供，不要写入代码或聊天。
-    kuaidi100_enabled: bool = False
-    # 快递100企业版 API 的 Key 和 Secret（api.kuaidi100.com → 我的信息 → 企业信息）
-    # 注意：不是快递管家 b.kuaidi100.com 的 APPKey，两者不通用。
-    kuaidi100_key: str = ""
-    kuaidi100_secret: str = ""
-    # 中通月结账号凭证：商家编号、秘钥、网点编号（向中通网点申请）
-    kuaidi100_partner_id: str = ""
-    kuaidi100_partner_key: str = ""
-    kuaidi100_net_code: str = ""
-    # 电子面单模板ID（api.kuaidi100.com 管理后台 → 快递公司模板V2 获取）
-    kuaidi100_temp_id: str = ""
+    # 快递100「快递管家」开放平台：b.kuaidi100.com → API服务。
+    # 保留原 KUAIDI100_* 配置名，也兼容 KUAIDIGUANJIA_*；不使用企业版面单凭证。
+    kuaidi100_enabled: bool = Field(default=False, validation_alias=AliasChoices("KUAIDI100_ENABLED", "KUAIDIGUANJIA_ENABLED"))
+    kuaidi100_key: str = Field(default="", validation_alias=AliasChoices("KUAIDI100_KEY", "KUAIDI100_APP_KEY", "KUAIDIGUANJIA_APP_KEY", "KUAIDIGUANJIA_KEY"))
+    kuaidi100_secret: str = Field(default="", validation_alias=AliasChoices("KUAIDI100_SECRET", "KUAIDI100_APP_SECRET", "KUAIDIGUANJIA_APP_SECRET", "KUAIDIGUANJIA_SECRET"))
+    kuaidi100_access_token: str = Field(default="", validation_alias=AliasChoices("KUAIDI100_ACCESS_TOKEN", "KUAIDIGUANJIA_ACCESS_TOKEN"))
+    kuaidi100_refresh_token: str = Field(default="", validation_alias=AliasChoices("KUAIDI100_REFRESH_TOKEN", "KUAIDIGUANJIA_REFRESH_TOKEN"))
+    # 与管家 API KEY 管理里的回调 URL 完全一致，同时接收 GET 授权和 POST 消息。
+    kuaidi100_callback_url: str = Field(default="", validation_alias=AliasChoices("KUAIDI100_CALLBACK_URL", "KUAIDIGUANJIA_CALLBACK_URL"))
+    kuaidi100_api_pay_mode: str = Field(default="SINGLE", pattern="^(SINGLE|STANDARD)$")
     # disabled / mock / wechat。mock 仅允许开发和自动测试使用。
     wechat_pay_mode: str = "disabled"
     wechat_pay_mch_id: str = ""
@@ -138,7 +134,7 @@ class Settings(BaseSettings):
     admin_max_failed_logins: int = 5
     admin_lock_minutes: int = 15
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
 
 @lru_cache

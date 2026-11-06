@@ -143,6 +143,18 @@ class WechatAccessToken(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Kuaidi100Authorization(Base):
+    """快递管家授权；与微信 access_token 分开保存，按 App Key 隔离。"""
+
+    __tablename__ = "kuaidi100_authorizations"
+    app_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(1024), default="")
+    refresh_token: Mapped[str] = mapped_column(String(1024), default="")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    oauth_state_hash: Mapped[str] = mapped_column(String(64), default="")
+    oauth_state_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class WechatExpressOrder(Base):
     """微信物流助手运单任务：付款后排队取号、超时反查与退款撤销。
 
@@ -152,6 +164,8 @@ class WechatExpressOrder(Base):
 
     __tablename__ = "wechat_express_orders"
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), primary_key=True)
+    # 已有微信记录保持原渠道；不能用当前开关决定历史运单的处理渠道。
+    provider: Mapped[str] = mapped_column(String(32), default="wechat", server_default="wechat")
     remote_order_id: Mapped[str] = mapped_column(String(96), default="", index=True)
     waybill_id: Mapped[str] = mapped_column(String(64), default="", index=True)
     delivery_id: Mapped[str] = mapped_column(String(64), default="")

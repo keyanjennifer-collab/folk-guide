@@ -1,9 +1,7 @@
 """管理员生成运单，后台持久化处理；取号与确认发货分别执行。
 
-运单生成/取消支持两种渠道：
-- 微信物流助手（默认）：与小程序深度集成，物流轨迹推送由微信负责
-- 快递100电子面单（可选）：支持取消运单、回收面单，需开通中通月结账号
-两者并存，由 KUAIDI100_ENABLED 开关切换发货渠道，物流轨迹始终走微信推送。
+微信物流助手保持原有流程；快递管家分支导入订单后等待打印、回传或补查单号。
+快递管家不提供本后台撤销运单功能；物流查询继续使用现有微信接口。
 """
 
 import asyncio
@@ -80,16 +78,29 @@ def _cancelled(db: Session, order: Order, row: WechatExpressOrder) -> None:
 
 
 def save_waybill(db: Session, order: Order, row: WechatExpressOrder, number: str) -> None:
+    if row.provider == kd100.PROVIDER:
+        if row.waybill_id and row.waybill_id != number:
+            row.status, row.next_action, row.message = "conflict", "none", "快递管家回传了不同单号，请核对管家订单与实际包裹"
+            return
+        if row.status == "ordered" and row.waybill_id == number:
+            return  # 重复推送不重复写审计，也不能倒退已确认的状态。
+        if row.status == "conflict":
+            return
+        row.waybill_id = number
+        row.lease_token, row.lease_until = "", None
+        if row.cancel_requested or order.refund_number or order.status not in {"paid", "shipped", "completed"}:
+            row.status, row.next_action, row.message = "stopped", "none", "已停止本地任务；管家回传的单号已保留，请人工核对面单，系统未撤销运单"
+            return
     row.waybill_id = number  # 即使本地冲突，也保留外部单号供核对和撤销。
     if order.status == "paid" and not order.refund_number and (not order.tracking_number or order.tracking_number == number):
         order.carrier, order.tracking_number = row.carrier_name, number
         row.status, row.message = "ordered", "已取号待发货，请打印面单、打包后确认发货"
-        _audit(db, order, "wechat_waybill_created")
+        _audit(db, order, "kuaidi100_waybill_received" if row.provider == kd100.PROVIDER else "wechat_waybill_created")
     else:
-        row.status, row.message = "conflict", "微信已有运单，但订单状态或原单号冲突，请核对包裹与售后"
-        _audit(db, order, "wechat_waybill_conflict")
+        row.status, row.message = "conflict", "外部已有运单，但订单状态或原单号冲突，请核对包裹与售后"
+        _audit(db, order, "kuaidi100_waybill_conflict" if row.provider == kd100.PROVIDER else "wechat_waybill_conflict")
     row.next_action = "none"
-    if row.cancel_requested and row.status == "ordered":
+    if row.cancel_requested and row.status == "ordered" and row.provider != kd100.PROVIDER:
         row.status, row.next_action, row.next_attempt_at = "cancelling", "cancel", _now()
 
 
@@ -118,7 +129,8 @@ def _claim(db: Session) -> dict | None:
         row.remote_order_id = _remote_order_id(order.number, row.attempt_round)
         row.delivery_id = get_settings().wechat_express_delivery_id.strip().upper()
         row.carrier_name = get_settings().wechat_express_carrier_name.strip()
-        row.status, row.message = "creating", "正在向微信申请运单"
+        row.status = "creating"
+        row.message = "正在同步订单到快递管家" if row.provider == kd100.PROVIDER else "正在向微信申请运单"
         row.attempts += 1
     lease = secrets.token_hex(16)
     claimed = db.execute(update(WechatExpressOrder).where(WechatExpressOrder.order_id == row.order_id,
@@ -144,21 +156,20 @@ def _execute(sessions, job: dict) -> None:
                 return
             openid = _openid_of(db, order)
             if job["action"] == "create":
-                # 关键决策：运单生成走快递100还是微信物流助手
-                # 物流轨迹始终由微信物流助手推送，但运单号生成渠道可切换
-                if kd100.configured():
-                    # 快递100：直接生成运单号，下单数据由快递100构造
+                if row.provider == kd100.PROVIDER:
+                    payload = kd100.order_payload(db, order, job["remote"], json.loads(row.package_json))
                     order = db.scalar(select(Order).where(Order.id == job["order_id"]).with_for_update().execution_options(populate_existing=True))
                     db.refresh(row)
                     if row.lease_token != job["lease"]:
                         return
                     if row.cancel_requested or order.status != "paid" or order.refund_number:
-                        _cancelled(db, order, row)
+                        row.status, row.next_action, row.message = "stopped", "none", "订单已停止同步，未提交快递管家"
+                        row.lease_token, row.lease_until = "", None
                         db.commit()
                         return
                     db.commit()
-                    waybill = kd100.create_waybill(db, order, job["remote"], json.loads(row.package_json))
-                    result = {"waybill_id": waybill}
+                    kd100.import_order(db, payload)
+                    result = {"imported": True}
                 else:
                     payload = api.order_payload(db, order, job["remote"], openid, json.loads(row.package_json))
                     # 配置/绑定检查可能耗时；真正下单前再检查撤销请求。
@@ -173,16 +184,13 @@ def _execute(sessions, job: dict) -> None:
                     db.commit()
                     result = {"waybill_id": api.create_waybill(db, payload)}
             elif job["action"] == "verify":
-                # 仅微信物流助手需要 verify（崩溃恢复补查）；快递100下单是同步的，无 verify
-                if kd100.configured():
-                    # 快递100下单同步返回运单号，无需补查；unknown 状态保持异步任务
-                    result = {"order_status": 0, "waybill_id": row.waybill_id}
+                if row.provider == kd100.PROVIDER:
+                    result = kd100.lookup_waybill(db, job["remote"])
                 else:
                     result = api.lookup_waybill(db, job["delivery_id"], job["remote"])
             else:
-                # cancel：优先走快递100（支持取消运单）；未启用则走微信（中通会拒绝）
-                if kd100.configured() and row.waybill_id:
-                    kd100.cancel_waybill(row.waybill_id, job["remote"])
+                if row.provider == kd100.PROVIDER:
+                    raise kd100.Kuaidi100Error("快递管家运单请在管家中人工核对，本系统不调用撤单接口")
                 else:
                     api.cancel_waybill(db, job["delivery_id"], job["remote"], job["waybill_id"], openid)
     except (api.WechatExpressError, kd100.Kuaidi100Error) as exc:
@@ -194,10 +202,16 @@ def _execute(sessions, job: dict) -> None:
             return
         row.lease_token, row.lease_until = "", None
         row.next_attempt_at = _now() + RETRY_DELAY_LONG
-        if error:
+        if row.provider == kd100.PROVIDER and row.cancel_requested:
+            if result and result.get("waybill_id"):
+                row.waybill_id = result["waybill_id"]
+            row.status, row.next_action, row.message = "stopped", "none", "已停止本地任务，请在快递管家核对并停止打单或交寄；系统未撤销运单"
+        elif result and result.get("imported"):
+            row.status, row.next_action, row.message = "waiting", "verify", "已提交快递管家，等待导入确认及打印回传单号"
+        elif error:
             row.message = error.message
             if job["action"] != "create" or error.uncertain:
-                row.status, row.next_action = "unknown", "verify"
+                row.status, row.next_action = ("waiting" if row.provider == kd100.PROVIDER and row.status == "waiting" else "unknown"), "verify"
             else:
                 row.status, row.next_action = "failed", "none"
                 if row.cancel_requested:
@@ -210,8 +224,7 @@ def _execute(sessions, job: dict) -> None:
 
 
 def run_batch(sessions=SessionLocal, limit: int = 10) -> None:
-    # 启用快递100时不检查微信物流助手配置（这是微信侧负责，由 wechat_express_routes 单独检查）
-    if not kd100.configured() and (not get_settings().wechat_express_enabled or not api.configured()):
+    if not get_settings().kuaidi100_enabled and (not get_settings().wechat_express_enabled or not api.configured()):
         return
     # 付款本身不生成运单；任务由管理员按钮创建。
     for _ in range(limit):
@@ -232,20 +245,12 @@ async def worker_loop() -> None:
 
 
 def request_cancel(db: Session, order: Order, row: WechatExpressOrder) -> None:
+    if row.provider == kd100.PROVIDER:
+        raise HTTPException(409, "后台不支持撤销快递管家运单，请在快递管家核对处理")
     row.cancel_requested = True
     if row.status in {"queued", "failed"} and not row.waybill_id:
         _cancelled(db, order, row)
     elif row.status == "ordered":
-        # 快递100启用时：同步调用取消接口，成功则直接 cancelled
-        if kd100.configured() and row.waybill_id:
-            try:
-                kd100.cancel_waybill(row.waybill_id, row.remote_order_id)
-                _cancelled(db, order, row)
-                return
-            except kd100.Kuaidi100Error as exc:
-                # 业务失败（运单已揽收等）保留原状态；guard_refund 兜底允许退款
-                row.message = f"快递100取消失败：{exc.message}"
-                return
         # 微信物流助手：异步任务，等待 worker 执行
         row.status, row.next_action, row.next_attempt_at = "cancelling", "cancel", _now()
     elif row.status == "unknown":
@@ -259,8 +264,14 @@ def guard_refund(db: Session, order: Order) -> None:
     row = db.get(WechatExpressOrder, order.id)
     if row is None or row.status == "cancelled" or order.shipped_at:
         return
+    if row.provider == kd100.PROVIDER:
+        # 退款仅停止本地同步，保留远端编号和已回传的面单用于人工核对。
+        row.cancel_requested = True
+        row.status, row.next_action, row.message = "stopped", "none", "退款已停止本地任务，请在快递管家核对并停止打单或交寄；系统未撤销运单"
+        if order.tracking_number == row.waybill_id:
+            order.carrier, order.tracking_number = None, None
+        return
     # 未发货的订单：尝试撤销运单，但不因撤销失败而阻止退款
-    # 快递100：同步调用取消接口，成功回收面单；中通支持取消运单
     # 微信物流助手：异步任务，中通不支持取消运单，会返回 failed 但不阻止退款
     request_cancel(db, order, row)
     if row.status == "cancelled":

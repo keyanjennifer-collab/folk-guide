@@ -84,6 +84,10 @@ def migrate_development_schema(engine: Engine) -> None:
     inspector = inspect(engine)
     tables = inspector.get_table_names()
     with engine.begin() as connection:
+        if "wechat_express_orders" in tables:
+            existing = {column["name"] for column in inspector.get_columns("wechat_express_orders")}
+            if "provider" not in existing:
+                connection.execute(text("ALTER TABLE wechat_express_orders ADD COLUMN provider VARCHAR(32) NOT NULL DEFAULT 'wechat'"))
         if "products" in tables:
             existing = {column["name"] for column in inspector.get_columns("products")}
             if "cost_fen" not in existing:

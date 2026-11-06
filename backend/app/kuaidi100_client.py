@@ -1,242 +1,240 @@
-"""快递100电子面单客户端：负责运单生成、取消、版权底打印。
-
-设计要点：
-- 凭证（key/secret/partnerId/partnerKey/netCode）全部走 Settings 读取，不写进代码。
-- 共用 wechat_express._split_chinese_address 解析收件人省市区，避免重复实现。
-- 与微信物流助手并存：运单生成/取消走快递100，物流轨迹推送由微信侧负责。
-- 不复用 wechat_express 的 token 体系（快递100用 MD5 签名 + 时间戳鉴权）。
-"""
+"""快递100「快递管家」开放平台；导入后在管家打印，再接收单号回传或补查。"""
 
 import hashlib
+import hmac
 import json
+import math
 import re
+import secrets
 import time
-from datetime import datetime, timezone
-from urllib.parse import quote
+from datetime import datetime, timedelta
+from urllib.parse import urlencode, urlsplit
 
 import httpx
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import wechat_express as wx_api
+from .commerce_models import Kuaidi100Authorization
 from .config import get_settings
+from .models import User
 
-# 快递100 电子面单接口
-ORDER_URL = "https://api.kuaidi100.com/label/order"
-# 订阅物流轨迹推送（可选，当前由微信物流助手负责轨迹）
-SUBSCRIBE_URL = "https://api.kuaidi100.com/label/order"
-HTTP_TIMEOUT = 12.0
-
-# 中通在快递100的快递公司编码
+BASE_URL = "https://b.kuaidi100.com"
+IMPORT_PATH = "/v7/open/api/send"
+QUERY_PATH = "/v7/open/api/queryKuaidiNum"
+PROVIDER = "kuaidiguanjia"
 ZTO_COM = "zhongtong"
-
-# 常见错误码
-ERROR_MESSAGES = {
-    "200": "成功",
-    "400": "请求参数错误",
-    "401": "授权失败：APP Key 或 Secret 错误",
-    "403": "无权限访问接口",
-    "500": "快递100服务端异常",
-}
+HTTP_TIMEOUT = 12.0
 
 
 class Kuaidi100Error(Exception):
-    """快递100接口异常。
-
-    uncertain=True 表示请求结果未知（网络超时、5xx），调用方需补查；
-    uncertain=False 表示明确失败（业务错误），可直接标记 failed。
-    """
-
     def __init__(self, message: str, code: str = "error", uncertain: bool = False):
         super().__init__(message)
         self.message, self.code, self.uncertain = message, code, uncertain
 
 
-def configured() -> bool:
-    """快递100是否完整配置了下单所需凭证。"""
-    s = get_settings()
-    return bool(
-        s.kuaidi100_enabled
-        and s.kuaidi100_key.strip()
-        and s.kuaidi100_secret.strip()
-        and s.kuaidi100_partner_id.strip()
-        and s.kuaidi100_partner_key.strip()
-        and s.kuaidi100_net_code.strip()
-        and s.kuaidi100_temp_id.strip()
-    )
+def _json(value) -> str:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
-def _sign(param_json: str, t: int) -> str:
-    """快递100签名：MD5(param + t + key + secret)，32位大写。"""
+def keys_configured() -> bool:
     s = get_settings()
-    raw = param_json + str(t) + s.kuaidi100_key.strip() + s.kuaidi100_secret.strip()
+    return bool(s.kuaidi100_enabled and s.kuaidi100_key.strip() and s.kuaidi100_secret.strip())
+
+
+def configured(db: Session | None = None) -> bool:
+    if not keys_configured():
+        return False
+    s = get_settings()
+    saved = db.get(Kuaidi100Authorization, s.kuaidi100_key.strip()) if db is not None else None
+    return bool((saved and saved.access_token) or s.kuaidi100_access_token.strip() or s.kuaidi100_refresh_token.strip())
+
+
+def _sign(params: dict) -> str:
+    """参数名升序拼接参数名和值，首尾加 App Secret，再 MD5 转大写。"""
+    secret = get_settings().kuaidi100_secret.strip()
+    raw = secret + "".join(str(k) + str(v) for k, v in sorted(params.items()) if k != "sign") + secret
     return hashlib.md5(raw.encode("utf-8")).hexdigest().upper()
 
 
-def _request(method: str, param: dict) -> dict:
-    """同步调用快递100接口。
-
-    method 取值："order" 下单，"cancel" 取消。
-    返回快递100响应 JSON；非 200 状态或业务 code != 200 抛 Kuaidi100Error。
-    """
-    s = get_settings()
-    t = int(time.time())
-    param_json = json.dumps(param, ensure_ascii=False, separators=(",", ":"))
-    sign = _sign(param_json, t)
-    payload = {
-        "method": method,
-        "key": s.kuaidi100_key.strip(),
-        "sign": sign,
-        "t": str(t),
-        "param": param_json,
-    }
+def _post(path: str, payload: dict, *, uncertain: bool = False) -> dict:
+    payload = {**payload, "sign": _sign(payload)}
     try:
         with httpx.Client(timeout=HTTP_TIMEOUT) as client:
-            response = client.post(ORDER_URL, data=payload)
+            response = client.post(BASE_URL + path, data=payload)
             response.raise_for_status()
             result = response.json()
-    except (httpx.HTTPError, ValueError, TypeError) as exc:
-        raise Kuaidi100Error("快递100网络异常，请补查运单状态", "network", True) from exc
-
+    except (httpx.HTTPError, ValueError) as exc:
+        raise Kuaidi100Error("快递管家响应未能确认，请补查，勿重复导入订单", "network", uncertain) from exc
     if not isinstance(result, dict):
-        raise Kuaidi100Error("快递100响应格式异常", "format", True)
-    code = str(result.get("code", ""))
-    if code and code != "200":
-        message = result.get("message") or ERROR_MESSAGES.get(code, "快递100接口返回错误")
-        uncertain = code in {"500", "501", "502"}
-        raise Kuaidi100Error(message, code, uncertain)
+        raise Kuaidi100Error("快递管家返回格式异常，请补查", "format", uncertain)
+    if path.startswith("/open/oauth/") and result.get("access_token"):
+        return result
+    status = str(result.get("status", ""))
+    if status != "200":
+        message = str(result.get("message") or "快递管家未明确返回处理成功")[:200]
+        s = get_settings()
+        for value in (s.kuaidi100_key, s.kuaidi100_secret, s.kuaidi100_access_token,
+                      s.kuaidi100_refresh_token, payload.get("access_token"), payload.get("refresh_token")):
+            if value:
+                message = message.replace(str(value), "[已隐藏]")
+        raise Kuaidi100Error(message, status or "format", uncertain and (not status or status.startswith("5")))
     return result
 
 
-def order_payload(db: Session, order, remote_order_id: str, package: dict) -> dict:
-    """构造快递100下单请求参数（partnerId/partnerKey 从配置读取）。
+def _save_token(row: Kuaidi100Authorization, result: dict) -> None:
+    try:
+        token, refresh = result["access_token"], result["refresh_token"]
+        seconds = int(result["expires_in"])
+        if not isinstance(token, str) or not token or len(token) > 1024 or not isinstance(refresh, str) or not refresh or len(refresh) > 1024 or not 0 < seconds <= 366 * 86400:
+            raise ValueError()
+    except (KeyError, ValueError, TypeError):
+        raise Kuaidi100Error("快递管家授权结果不完整，请重新授权", "authorization") from None
+    row.access_token, row.refresh_token = token, refresh
+    row.expires_at = datetime.utcnow() + timedelta(seconds=seconds)
 
-    返回的 dict 会传给 _request("order", ...)。
-    remote_order_id 用作 kuaidi100 的 orderId 字段，幂等性靠它保证。
-    """
+
+def _access_token(db: Session) -> str:
     s = get_settings()
-    _r = wx_api._split_chinese_address(order.receiver_address.strip())
-    receiver = {
-        "name": order.receiver_name.strip(),
-        "mobile": order.receiver_phone.strip(),
-        "printAddr": "",
-        "company": "",
-    }
-    sender = {
-        "name": s.wechat_express_sender_name.strip() or "五色知时",
-        "mobile": s.wechat_express_sender_phone.strip(),
-        "printAddr": "",
-        "company": "",
-    }
-    # 字段长度校验
-    for person, label in ((sender, "发件"), (receiver, "收件")):
-        if not person["name"] or not person["mobile"]:
-            raise Kuaidi100Error(f"{label}人姓名或手机号为空")
-        if not re.fullmatch(r"1[0-9]{10}", person["mobile"]):
-            raise Kuaidi100Error(f"{label}手机号格式异常")
-
-    # 商品明细：cargo 是字符串（物品名称），count 是包裹总数
-    cargo_names = []
-    total_count = 0
-    try:
-        sku_list = json.loads(order.items_json)
-        if not isinstance(sku_list, list) or not sku_list:
-            raise ValueError()
-        for item in sku_list:
-            quantity = int(item["quantity"])
-            if quantity < 1:
-                raise ValueError()
-            cargo_names.append(str(item["name"])[:128])
-            total_count += quantity
-    except (ValueError, TypeError, KeyError, AttributeError):
-        raise Kuaidi100Error("订单商品明细不完整，无法生成运单") from None
-
-    # 包裹重量尺寸
-    try:
-        weight = float(package["weight"])
-        x, y, z = float(package["space_x"]), float(package["space_y"]), float(package["space_z"])
-        if weight <= 0 or x <= 0 or y <= 0 or z <= 0:
-            raise ValueError()
-    except (ValueError, TypeError, KeyError):
-        raise Kuaidi100Error("包裹重量或尺寸无效") from None
-
-    # 收件完整地址（快递100只有一个 printAddr 字段）
-    receiver["printAddr"] = f"{_r['province']}{_r['city']}{_r['area']}{_r['address']}"
-    sender["printAddr"] = (
-        f"{s.wechat_express_sender_province.strip()}"
-        f"{s.wechat_express_sender_city.strip()}"
-        f"{s.wechat_express_sender_district.strip()}"
-        f"{s.wechat_express_sender_address.strip()}"
-    )
-
-    return {
-        "printType": "NON",
-        "partnerId": s.kuaidi100_partner_id.strip(),
-        "partnerKey": s.kuaidi100_partner_key.strip(),
-        "net": s.kuaidi100_net_code.strip(),
-        "kuaidicom": ZTO_COM,
-        "sendMan": sender,
-        "recMan": receiver,
-        "cargo": "、".join(cargo_names),
-        "count": total_count,
-        "weight": weight,
-        "tempId": s.kuaidi100_temp_id.strip(),
-        "remark": f"订单: {order.number}",
-        "orderId": remote_order_id,
-    }
+    if not keys_configured():
+        raise Kuaidi100Error("请配置快递管家的 App Key 和 App Secret", "configuration")
+    row = db.scalar(select(Kuaidi100Authorization).where(Kuaidi100Authorization.app_key == s.kuaidi100_key.strip()).with_for_update())
+    if row and row.access_token:
+        if row.expires_at and row.expires_at <= datetime.utcnow() + timedelta(minutes=5):
+            return _refresh_access_token(db)
+        return row.access_token
+    if s.kuaidi100_access_token.strip():
+        return s.kuaidi100_access_token.strip()
+    if s.kuaidi100_refresh_token.strip():
+        return _refresh_access_token(db)
+    raise Kuaidi100Error("请先在发货管理中授权快递管家账号", "authorization")
 
 
-def create_waybill(db: Session, order, remote_order_id: str, package: dict) -> str:
-    """调用快递100生成运单，返回运单号（kuaidhilNum）。"""
-    param = order_payload(db, order, remote_order_id, package)
-    result = _request("order", param)
-    waybill = str(result.get("kuaidinum") or "").strip()
-    if not waybill or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", waybill):
-        raise Kuaidi100Error("快递100返回的运单号异常，请补查", "empty_waybill", True)
-    return waybill
+def _refresh_access_token(db: Session) -> str:
+    s = get_settings()
+    row = db.scalar(select(Kuaidi100Authorization).where(Kuaidi100Authorization.app_key == s.kuaidi100_key.strip()).with_for_update())
+    refresh = row.refresh_token if row and row.refresh_token else s.kuaidi100_refresh_token.strip()
+    if not refresh:
+        raise Kuaidi100Error("快递管家授权已失效，请在后台重新授权", "authorization")
+    result = _post("/open/oauth/refreshToken", {
+        "client_id": s.kuaidi100_key.strip(), "client_secret": s.kuaidi100_secret.strip(),
+        "refresh_token": refresh, "grant_type": "refresh_token", "timestamp": str(int(time.time() * 1000)),
+    })
+    if row is None:
+        row = Kuaidi100Authorization(app_key=s.kuaidi100_key.strip())
+        db.add(row)
+    _save_token(row, result)
+    db.commit()
+    return row.access_token
 
 
-def cancel_waybill(kuaidinum: str, order_id: str) -> None:
-    """调用快递100取消运单。
-
-    快递100取消接口不依赖 partnerId，只依赖运单号 + orderId。
-    成功（code=200）直接返回；失败抛 Kuaidi100Error。
-    """
-    param = {
-        "kuaidinum": kuaidinum,
-        "orderId": order_id,
-        "reason": "用户协商退款",
+def _request(db: Session, path: str, data: dict, *, uncertain: bool = False) -> dict:
+    payload = {
+        "app_key": get_settings().kuaidi100_key.strip(), "access_token": _access_token(db),
+        "timestamp": str(int(time.time())), "data": _json(data),
     }
     try:
-        _request("cancel", param)
+        return _post(path, payload, uncertain=uncertain)
     except Kuaidi100Error as exc:
-        # 取消是 "best effort"：若运单已揽收则取消必失败，但运单作废操作可由中通网点处理
-        # 网络层失败（uncertain）告知调用方补查；业务失败（unshipped）按 cancelled 处理
-        if exc.uncertain:
-            raise
-        # 业务失败：运单可能已被揽收或在途，不能撤销；返回未发货前可作废
+        # 仅明确的令牌失效响应允许刷新后重试；超时或业务失败绝不重发导单。
+        if exc.code == "401" and re.search(r"(?i)(token|令牌).*(过期|失效|expired|invalid)", exc.message):
+            payload["access_token"] = _refresh_access_token(db)
+            return _post(path, payload, uncertain=uncertain)
         raise
 
 
-def query_track(kuaidinum: str) -> list[dict]:
-    """查询运单物流轨迹（订阅式接口）。
+def authorize_url(db: Session) -> str:
+    s = get_settings()
+    callback = s.kuaidi100_callback_url.strip()
+    parsed = urlsplit(callback)
+    if not keys_configured() or parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
+        raise Kuaidi100Error("请配置管家 App Key、App Secret 和公网 HTTPS 回调地址 KUAIDI100_CALLBACK_URL")
+    row = db.get(Kuaidi100Authorization, s.kuaidi100_key.strip())
+    if row is None:
+        row = Kuaidi100Authorization(app_key=s.kuaidi100_key.strip())
+        db.add(row)
+    state = secrets.token_urlsafe(32)
+    row.oauth_state_hash = hashlib.sha256(state.encode()).hexdigest()
+    row.oauth_state_expires_at = datetime.utcnow() + timedelta(minutes=10)
+    params = {"client_id": row.app_key, "response_type": "code", "redirect_uri": callback,
+              "state": state, "timestamp": str(int(time.time() * 1000))}
+    return BASE_URL + "/open/oauth/authorize?" + urlencode({**params, "sign": _sign(params)})
 
-    快递100使用订阅推送方式：调用订阅接口后，物流状态变化会推送到回调URL。
-    前端不需要主动查询，直接通过订阅获取更新。
-    本方法暂未启用，物流轨迹仍由微信物流助手提供。
-    """
-    raise Kuaidi100Error("物流轨迹请使用微信物流助手查询", "not_implemented")
+
+def finish_authorization(db: Session, code: str, state: str) -> None:
+    s = get_settings()
+    row = db.scalar(select(Kuaidi100Authorization).where(Kuaidi100Authorization.app_key == s.kuaidi100_key.strip()).with_for_update())
+    if not keys_configured() or not row or not row.oauth_state_hash or not row.oauth_state_expires_at or row.oauth_state_expires_at <= datetime.utcnow() or not hmac.compare_digest(row.oauth_state_hash, hashlib.sha256(state.encode()).hexdigest()):
+        raise Kuaidi100Error("授权已过期或状态不匹配，请从商城后台重新发起授权", "state")
+    result = _post("/open/oauth/accessToken", {
+        "client_id": row.app_key, "client_secret": s.kuaidi100_secret.strip(),
+        "grant_type": "authorization_code", "code": code,
+        "redirect_uri": s.kuaidi100_callback_url.strip(), "timestamp": str(int(time.time() * 1000)),
+    })
+    _save_token(row, result)
+    row.oauth_state_hash, row.oauth_state_expires_at = "", None
+
+
+def order_payload(db: Session, order, remote_order_id: str, package: dict) -> dict:
+    s = get_settings()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,30}", remote_order_id):
+        raise Kuaidi100Error("快递管家订单编号须为30位以内字母、数字、下划线或连字符")
+    try:
+        items = json.loads(order.items_json)
+        if not isinstance(items, list) or not items:
+            raise ValueError()
+        goods = [{"name": str(item["name"])[:30], "count": int(item["quantity"])} for item in items]
+        if any(not g["name"] or not 0 < g["count"] <= 999 for g in goods):
+            raise ValueError()
+        values = {key: float(package[key]) for key in ("weight", "space_x", "space_y", "space_z")}
+        if any(not math.isfinite(v) or v <= 0 for v in values.values()):
+            raise ValueError()
+    except (ValueError, TypeError, KeyError, AttributeError):
+        raise Kuaidi100Error("商品明细或包裹重量尺寸不完整，请在后台核对") from None
+    payload = {
+        "order_number": remote_order_id, "cargo_name": "、".join(g["name"] for g in goods)[:100],
+        "cargo_count": sum(g["count"] for g in goods), "package_count": 1,
+        "weight": values["weight"], "volume": str(round(values["space_x"] * values["space_y"] * values["space_z"], 3)),
+        "goods_list": goods, "express_company": ZTO_COM, "api_pay_mode": s.kuaidi100_api_pay_mode,
+        "receiver": {"name": order.receiver_name.strip(), "mobile": order.receiver_phone.strip(), "addr": order.receiver_address.strip()},
+        "sender": {"name": s.wechat_express_sender_name.strip(), "mobile": s.wechat_express_sender_phone.strip(),
+                   "addr": "".join(getattr(s, "wechat_express_sender_" + k).strip() for k in ("province", "city", "district", "address"))},
+    }
+    for person in (payload["sender"], payload["receiver"]):
+        if any(not person[k] or len(person[k]) > limit for k, limit in (("name", 30), ("mobile", 30), ("addr", 100))):
+            raise Kuaidi100Error("收寄件姓名、电话或地址缺失，或超出快递管家字段长度限制")
+    # 沿用现有微信绑定和订单字段，交给管家打单；微信客户端和物流查询不变。
+    if s.wechat_express_enabled:
+        user = db.get(User, order.user_id)
+        if not user or not user.openid:
+            raise Kuaidi100Error("买家微信账号缺失，请核对原订单")
+        wx = wx_api.order_payload(db, order, remote_order_id, user.openid, package)
+        payload.update(order_source="WX", openid=wx["openid"], express_custom_code=wx["biz_id"],
+                       express_company=wx["delivery_id"], order_page_url=wx["shop"]["wxa_path"], service_type=wx["service"]["service_name"])
+        for item, detail in zip(goods, wx["shop"]["detail_list"]):
+            item["img_url"] = detail["goods_img_url"]
+    return payload
+
+
+def import_order(db: Session, payload: dict) -> None:
+    _request(db, IMPORT_PATH, payload, uncertain=True)
+
+
+def lookup_waybill(db: Session, remote_order_id: str) -> dict:
+    result = _request(db, QUERY_PATH, {"order_number": remote_order_id})
+    return waybill_result(result, remote_order_id)
+
+
+def waybill_result(result: dict, remote: str) -> dict:
+    number = result.get("kuaidi_num")
+    carrier = result.get("company_code") or result.get("kuaidi_com")
+    if result.get("order_number") != remote or carrier not in {ZTO_COM, "ZTO"} or not isinstance(number, str) or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", number):
+        raise Kuaidi100Error("快递管家尚未返回匹配的单包裹中通运单，请在管家核对后补查", "waybill", True)
+    return {"waybill_id": number, "order_status": 0}
 
 
 def integration_status(db: Session) -> dict:
-    """返回快递100配置摘要（用于后台显示）。"""
     s = get_settings()
-    return {
-        "enabled": s.kuaidi100_enabled,
-        "configured": configured(),
-        "key_set": bool(s.kuaidi100_key.strip()),
-        "partner_id_set": bool(s.kuaidi100_partner_id.strip()),
-        "net_code_set": bool(s.kuaidi100_net_code.strip()),
-        "temp_id_set": bool(s.kuaidi100_temp_id.strip()),
-        "carrier_code": ZTO_COM,
-        "carrier_name": s.wechat_express_carrier_name.strip() or "中通快递",
-    }
+    return {"enabled": s.kuaidi100_enabled, "configured": configured(db), "key_set": bool(s.kuaidi100_key.strip()),
+            "secret_set": bool(s.kuaidi100_secret.strip()), "carrier_code": ZTO_COM,
+            "carrier_name": s.wechat_express_carrier_name.strip() or "中通快递", "supports_cancel": False}

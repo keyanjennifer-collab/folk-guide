@@ -45,13 +45,15 @@ class AdminOrderOutput(OrderOutput):
     refund_restock: bool = True
     shipping_sync_status: str | None = None
     shipping_sync_message: str | None = None
+    shipping_provider: str | None = None
 
 
 def admin_order_output(order: Order, sync: WechatExpressOrder | None = None) -> AdminOrderOutput:
     return AdminOrderOutput(**output(order).model_dump(), wx_transaction_id=order.wx_transaction_id,
                             refund_number=order.refund_number, refund_restock=order.refund_restock,
                             shipping_sync_status=sync.status if sync else None,
-                            shipping_sync_message=sync.message if sync else None)
+                            shipping_sync_message=sync.message if sync else None,
+                            shipping_provider=sync.provider if sync else None)
 
 
 class InventoryUpdate(BaseModel):

@@ -25,6 +25,7 @@ from .admin_user_routes import router as admin_user_router
 from .after_sales_routes import router as after_sales_router
 from .logistics_routes import router as logistics_router
 from .wechat_express_routes import router as wechat_express_router
+from .kuaidi100_routes import router as kuaidi100_router
 from .wechat_express_service import worker_loop as wechat_express_worker_loop
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
@@ -81,7 +82,7 @@ async def lifespan(_: FastAPI):
         scheduler_task = asyncio.create_task(
             daily_cache_scheduler_loop(), name="daily-color-cache-scheduler"
         )
-    if runtime_settings.wechat_express_enabled and not runtime_settings.testing:
+    if (runtime_settings.wechat_express_enabled or runtime_settings.kuaidi100_enabled) and not runtime_settings.testing:
         shipping_task = asyncio.create_task(wechat_express_worker_loop(), name="wechat-express-order-sync")
     try:
         yield
@@ -202,6 +203,7 @@ app.include_router(order_router)
 app.include_router(after_sales_router)
 app.include_router(logistics_router)
 app.include_router(wechat_express_router)
+app.include_router(kuaidi100_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_order_router)
 app.include_router(product_admin_router)

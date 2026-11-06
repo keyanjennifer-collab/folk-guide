@@ -1,13 +1,13 @@
 """微信物流助手的管理入口、运单任务和隔离的官方面单预览。
 
-运单生成渠道由配置决定：快递100 启用后由快递100同步下单/取消，物流轨迹仍由微信推送。
+快递管家分支导入订单后等待打印回传单号，微信接口保持原有流程。
 """
 
 import json
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,9 +23,13 @@ from .wechat_express_service import _openid_of, request_cancel
 router = APIRouter(tags=["商城运营后台"])
 
 
-def _enabled() -> None:
-    # 运单生成渠道：快递100优先；未启用则要求微信物流助手
-    if not (kd100.configured() or (get_settings().wechat_express_enabled and api.configured())):
+def _enabled(db: Session, provider: str | None = None) -> None:
+    # 显式启用管家后，不得因配置不全而悄悄向微信重复下单。
+    provider = provider or (kd100.PROVIDER if get_settings().kuaidi100_enabled else "wechat")
+    if provider == kd100.PROVIDER:
+        if not kd100.configured(db):
+            raise HTTPException(409, "请配置快递管家 App Key、App Secret 并完成账号授权")
+    elif not (get_settings().wechat_express_enabled and api.configured()):
         raise HTTPException(409, "请先在服务器配置快递100或微信物流助手")
 
 
@@ -42,14 +46,16 @@ def integration_status(response: Response, identity: AdminIdentity = Depends(req
     # 同时返回快递100配置状态
     from .kuaidi100_client import integration_status as kd100_status
     return {
-        "enabled": s.wechat_express_enabled,
-        "configured": api.configured(),
+        "enabled": s.kuaidi100_enabled or s.wechat_express_enabled,
+        "configured": kd100.configured(db) if s.kuaidi100_enabled else api.configured(),
+        "provider": kd100.PROVIDER if s.kuaidi100_enabled else "wechat",
         "delivery_id": s.wechat_express_delivery_id,
         "carrier_name": s.wechat_express_carrier_name,
         "bindings": bindings, "binding_error": error,
         "kuaidi100": kd100_status(db),
-        "kuaidi100_active": kd100.configured(),
-        "printer_guide": "在连接热敏打印机的电脑打开官方面单，按Ctrl+P打印；打印并打包后再确认发货。",
+        "kuaidi100_active": s.kuaidi100_enabled,
+        "printer_guide": ("订单同步到快递管家后，在管家打印中通面单；单号自动回传，打包后在这里确认发货。退款不会撤销管家面单，请在管家核对并停止打单或交寄。" if s.kuaidi100_enabled else
+                          "在连接热敏打印机的电脑打开官方面单，按Ctrl+P打印；打印并打包后再确认发货。"),
     }
 
 
@@ -69,7 +75,7 @@ class PrinterInput(BaseModel):
 @router.post("/api/admin/wechat-express/printer", summary="配置微信打单PC软件打印员（可选）")
 def update_printer(data: PrinterInput, request: Request, identity: AdminIdentity = Depends(require_admin_write), db: Session = Depends(get_db)):
     ensure_admin_role(identity, "superadmin")
-    _enabled()
+    _enabled(db, "wechat")
     try:
         api.update_printer(db, data.openid, data.update_type)
     except api.WechatExpressError as exc:
@@ -79,14 +85,14 @@ def update_printer(data: PrinterInput, request: Request, identity: AdminIdentity
     return {"message": "打印员配置已更新"}
 
 
-@router.post("/api/admin/orders/{order_id}/shipping-sync/{action}", summary="生成、补查或撤销微信运单")
+@router.post("/api/admin/orders/{order_id}/shipping-sync/{action}", summary="同步订单或补查运单")
 def sync_action(order_id: int, action: str, request: Request, data: PackageInput | None = None,
                 identity: AdminIdentity = Depends(require_admin_write), db: Session = Depends(get_db)):
-    _enabled()
     order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
     if not order:
         raise HTTPException(404, "订单不存在")
     row = db.get(WechatExpressOrder, order_id)
+    _enabled(db, row.provider if row and action not in {"create", "retry"} else None)
     now = datetime.utcnow()
     if order.status != "paid" or order.refund_number:
         raise HTTPException(409, "只有已付款待发货且没有退款中的订单可以操作运单")
@@ -94,18 +100,20 @@ def sync_action(order_id: int, action: str, request: Request, data: PackageInput
         if data is None:
             raise HTTPException(422, "请填写本次包裹实际重量及长宽高")
         if order.tracking_number or (row and (row.status not in {"failed", "cancelled"} or (row.lease_until and row.lease_until > now))):
-            raise HTTPException(409, "运单已存在或正在处理，请先补查或撤销，勿重复下单")
+            raise HTTPException(409, "运单已存在或正在处理，请先补查并核对，勿重复下单")
         if row is None:
             row = WechatExpressOrder(order_id=order.id)
             db.add(row)
         else:
             row.attempt_round += 1
-        row.status, row.next_action, row.message = "queued", "create", "已安排生成微信运单，尚未确认发货"
+        row.provider = kd100.PROVIDER if get_settings().kuaidi100_enabled else "wechat"
+        row.status, row.next_action = "queued", "create"
+        row.message = "已安排同步到快递管家，尚未确认发货" if row.provider == kd100.PROVIDER else "已安排生成微信运单，尚未确认发货"
         row.remote_order_id, row.waybill_id, row.cancel_requested = "", "", False
         row.package_json = json.dumps(data.model_dump(), separators=(",", ":"))
         row.lease_token, row.lease_until, row.next_attempt_at = "", None, now
     elif action == "verify":
-        if row is None or row.status != "unknown":
+        if row is None or row.status not in {"unknown", "waiting"}:
             raise HTTPException(409, "只有结果未确认的运单可以补查")
         if row.lease_until and row.lease_until > now:
             raise HTTPException(409, "正在处理，请稍后刷新")
@@ -113,6 +121,8 @@ def sync_action(order_id: int, action: str, request: Request, data: PackageInput
     elif action == "cancel":
         if row is None:
             raise HTTPException(404, "运单任务不存在")
+        if row.provider == kd100.PROVIDER:
+            raise HTTPException(410, "快递管家撤销运单功能已移除，请到快递管家核对处理")
         request_cancel(db, order, row)
     else:
         raise HTTPException(404, "操作不存在")
@@ -123,11 +133,16 @@ def sync_action(order_id: int, action: str, request: Request, data: PackageInput
 
 @router.get("/api/admin/orders/{order_id}/waybill", include_in_schema=False)
 def waybill_preview(order_id: int, request: Request, identity: AdminIdentity = Depends(require_admin_identity), db: Session = Depends(get_db)):
-    _enabled()
     order = db.get(Order, order_id)
     row = db.get(WechatExpressOrder, order_id)
     if not order or not row:
         raise HTTPException(404, "运单不存在")
+    if row.provider == kd100.PROVIDER:
+        if row.status not in {"waiting", "ordered"} or row.cancel_requested or order.refund_number or order.status not in {"paid", "shipped", "completed"}:
+            raise HTTPException(409, "当前订单不可打印，请先核对同步结果或退款状态")
+        return RedirectResponse(kd100.BASE_URL + "/page/doPrint/PRINTWAIT", status_code=303,
+                                headers={"Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer"})
+    _enabled(db, "wechat")
     if row.status != "ordered" or row.cancel_requested or order.refund_number or order.status not in {"paid", "shipped", "completed"} or row.waybill_id != order.tracking_number or row.carrier_name != order.carrier:
         raise HTTPException(409, "当前运单不可打印，请先完成补查或撤单处理")
     try:

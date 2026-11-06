@@ -143,22 +143,31 @@ def _request(db: Session, path: str, data: dict, *, uncertain: bool = False) -> 
         raise
 
 
-def authorize_url(db: Session) -> str:
+def authorize_by_mobile(db: Session, mobile: str) -> None:
+    """用手机号直接获取 access_token（client_credentials 模式），无需网页授权。
+
+    快递管家文档：https://www.kuaidi100.com/ecommerce/api/index.html?name=11
+    调用成功后 access_token 有效期 1 年，可用 refresh_token 刷新。
+    """
     s = get_settings()
-    callback = s.kuaidi100_callback_url.strip()
-    parsed = urlsplit(callback)
-    if not keys_configured() or parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
-        raise Kuaidi100Error("请配置管家 App Key、App Secret 和公网 HTTPS 回调地址 KUAIDI100_CALLBACK_URL")
-    row = db.get(Kuaidi100Authorization, s.kuaidi100_key.strip())
+    mobile = mobile.strip()
+    if not re.fullmatch(r"1[0-9]{10}", mobile):
+        raise Kuaidi100Error("手机号格式不正确", "mobile")
+    if not keys_configured():
+        raise Kuaidi100Error("请配置快递管家的 App Key 和 App Secret", "configuration")
+    params = {
+        "client_id": s.kuaidi100_key.strip(),
+        "client_secret": s.kuaidi100_secret.strip(),
+        "timestamp": str(int(time.time() * 1000)),
+        "grant_type": "client_credentials",
+        "mobile": mobile,
+    }
+    result = _post("/open/oauth/token", params)
+    row = db.scalar(select(Kuaidi100Authorization).where(Kuaidi100Authorization.app_key == s.kuaidi100_key.strip()))
     if row is None:
         row = Kuaidi100Authorization(app_key=s.kuaidi100_key.strip())
         db.add(row)
-    state = secrets.token_urlsafe(32)
-    row.oauth_state_hash = hashlib.sha256(state.encode()).hexdigest()
-    row.oauth_state_expires_at = datetime.utcnow() + timedelta(minutes=10)
-    params = {"client_id": row.app_key, "response_type": "code", "redirect_uri": callback,
-              "state": state, "timestamp": str(int(time.time() * 1000))}
-    return BASE_URL + "/open/oauth/authorize?" + urlencode({**params, "sign": _sign(params)})
+    _save_token(row, result)
 
 
 def finish_authorization(db: Session, code: str, state: str) -> None:

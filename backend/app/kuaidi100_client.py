@@ -219,7 +219,7 @@ def order_payload(db: Session, order, remote_order_id: str, package: dict) -> di
             raise Kuaidi100Error("买家微信账号缺失，请核对原订单")
         wx = wx_api.order_payload(db, order, remote_order_id, user.openid, package)
         payload.update(order_source="WX", openid=wx["openid"], express_custom_code=wx["biz_id"],
-                       express_company=wx["delivery_id"], order_page_url=wx["shop"]["wxa_path"], service_type=wx["service"]["service_name"])
+                       order_page_url=wx["shop"]["wxa_path"], service_type=wx["service"]["service_name"])
         for item, detail in zip(goods, wx["shop"]["detail_list"]):
             item["img_url"] = detail["goods_img_url"]
     return payload

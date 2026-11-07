@@ -255,9 +255,21 @@ def lookup_waybill(db: Session, remote_order_id: str) -> dict:
 
 
 def waybill_result(result: dict, remote: str) -> dict:
-    number = result.get("kuaidi_num")
-    carrier = result.get("company_code") or result.get("kuaidi_com")
-    if result.get("order_number") != remote or carrier not in {ZTO_COM, "ZTO"} or not isinstance(number, str) or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", number):
+    # 实际查询结果包在 data 中；兼容旧文档及单号回调的平铺字段。
+    payload = result.get("data", result)
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except ValueError:
+            payload = None
+    if isinstance(payload, list):
+        matches = [item for item in payload if isinstance(item, dict) and item.get("order_number") == remote]
+        payload = matches[0] if len(matches) == 1 else None
+    if not isinstance(payload, dict):
+        payload = {}
+    number = payload.get("kuaidi_num")
+    carrier = payload.get("company_code") or payload.get("kuaidi_com")
+    if payload.get("order_number") != remote or carrier not in {ZTO_COM, "ZTO"} or not isinstance(number, str) or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", number):
         raise Kuaidi100Error("快递管家尚未返回匹配的单包裹中通运单，请在管家核对后补查", "waybill", True)
     return {"waybill_id": number, "order_status": 0}
 

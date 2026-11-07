@@ -145,6 +145,84 @@ def test_timeout_and_restart_only_query_without_resubmitting(shop, guanjia, monk
     assert [path for path, _ in calls] == [kd.IMPORT_PATH, kd.QUERY_PATH]
 
 
+@pytest.mark.parametrize("as_list", [False, True])
+@pytest.mark.parametrize("as_json", [False, True])
+def test_query_reads_wrapped_data_without_reimporting_or_auto_shipping(shop, guanjia, monkeypatch, as_list, as_json):
+    order = create(shop)
+    data = {"order_number": order["number"], "kuaidi_com": "zhongtong", "kuaidi_num": "73123456789012"}
+    if as_list:
+        data = [data]
+    if as_json:
+        data = json.dumps(data)
+
+    def queried(request, fields):
+        if request.url.path == kd.QUERY_PATH:
+            return {"status": "200", "message": "成功", "data": data}
+
+    calls = provider(monkeypatch, queried)
+    service.run_batch(shop[1])
+    assert record(shop[1], order).status == "waiting"
+    assert action(shop, order, "verify").status_code == 200
+    service.run_batch(shop[1])
+
+    row = record(shop[1], order)
+    assert row.status == "ordered" and row.next_action == "none"
+    assert row.waybill_id == "73123456789012"
+    buyer = shop[0].get(f"/api/orders/{order['id']}", headers=shop[2]).json()
+    assert buyer["tracking_number"] == "73123456789012"
+    assert buyer["status"] == "paid" and not buyer["shipped_at"]
+    assert [path for path, _ in calls] == [kd.IMPORT_PATH, kd.QUERY_PATH]
+
+
+@pytest.mark.parametrize("data", [
+    None, [], "invalid-json", 123,
+    {"order_number": "another-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73123456789012"},
+    {"order_number": "expected-order", "kuaidi_com": "yuantong", "kuaidi_num": "YT123456789"},
+    {"order_number": "expected-order", "kuaidi_com": "zhongtong", "kuaidi_num": "731111111,732222222"},
+    [
+        {"order_number": "expected-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73111111111111"},
+        {"order_number": "expected-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73222222222222"},
+    ],
+])
+def test_wrapped_query_rejects_missing_mismatched_or_ambiguous_waybills(data):
+    result = {"status": "200", "data": data,
+              "order_number": "expected-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73123456789012"}
+    with pytest.raises(kd.Kuaidi100Error, match="匹配的单包裹中通运单"):
+        kd.waybill_result(result, "expected-order")
+
+
+def test_query_selects_only_the_requested_order_from_wrapped_list():
+    result = {"status": "200", "data": [
+        {"order_number": "another-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73111111111111"},
+        {"order_number": "expected-order", "kuaidi_com": "zhongtong", "kuaidi_num": "73123456789012"},
+    ]}
+    assert kd.waybill_result(result, "expected-order")["waybill_id"] == "73123456789012"
+
+
+def test_refund_during_wrapped_query_keeps_number_without_shipping(shop, guanjia, monkeypatch):
+    order = create(shop)
+
+    def queried(request, fields):
+        if request.url.path == kd.QUERY_PATH:
+            refunded = shop[0].post(f"/api/orders/{order['id']}/refund", headers=shop[2], json={"reason": "不要了"})
+            assert refunded.status_code == 200 and refunded.json()["status"] == "refunded"
+            return {"status": "200", "data": {
+                "order_number": order["number"], "kuaidi_com": "zhongtong", "kuaidi_num": "73123456789012",
+            }}
+
+    calls = provider(monkeypatch, queried)
+    service.run_batch(shop[1])
+    assert action(shop, order, "verify").status_code == 200
+    service.run_batch(shop[1])
+
+    row = record(shop[1], order)
+    assert row.status == "stopped" and row.next_action == "none"
+    assert row.waybill_id == "73123456789012"
+    buyer = shop[0].get(f"/api/orders/{order['id']}", headers=shop[2]).json()
+    assert buyer["status"] == "refunded" and not buyer["tracking_number"] and not buyer["shipped_at"]
+    assert [path for path, _ in calls] == [kd.IMPORT_PATH, kd.QUERY_PATH]
+
+
 def test_crashed_import_never_reimports_or_accepts_missing_number(shop, guanjia, monkeypatch):
     order = create(shop)
     with shop[1]() as db:

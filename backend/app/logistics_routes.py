@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .auth import current_user
+from .admin_models import AdminAuditLog
 from .commerce_models import Order
 from .database import get_db
 from .models import User
@@ -47,12 +48,16 @@ def order_logistics(order_id: int, response: Response,
         raise HTTPException(404, "订单不存在")
     response.headers["Cache-Control"] = "private, no-store"
 
+    auto_completed = order.completed_at and db.scalar(select(AdminAuditLog.id).where(
+        AdminAuditLog.action == "order_auto_complete", AdminAuditLog.target_type == "order",
+        AdminAuditLog.target_id == str(order.id),
+    ).limit(1))
     events = []
     for timestamp, title, description in (
         (order.created_at, "订单已提交", ""),
         (order.paid_at, "付款成功", ""),
         (order.shipped_at, "商家已登记发货", "揽收与运输进度以快递公司信息为准。"),
-        (order.completed_at, "买家已确认收货", ""),
+        (order.completed_at, "系统已自动确认收货" if auto_completed else "买家已确认收货", ""),
         (order.cancelled_at, "订单已取消", ""),
         (order.refunded_at, "退款已完成", ""),
     ):

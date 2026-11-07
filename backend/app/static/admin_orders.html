@@ -673,7 +673,7 @@
     async function loadAudit(){
       try{
         const rows=await api('/api/admin/audit-logs');
-        const actionText={inventory_update:'库存更新',order_ship:'订单发货',order_refund:'订单退款',order_return_restock:'退货验收入库',order_logistics_update:'修改运单',product_update:'商品修改',product_image:'商品图片',product_gallery:'商品图库',product_cost_update:'修改成本',admin_create:'创建管理员',admin_update:'修改管理员',admin_password_reset:'重置密码',admin_self_password_change:'修改本人密码'};
+        const actionText={inventory_update:'库存更新',order_ship:'订单发货',order_auto_complete:'发货满10天自动收货',order_refund:'订单退款',order_return_restock:'退货验收入库',order_logistics_update:'修改运单',product_update:'商品修改',product_image:'商品图片',product_gallery:'商品图库',product_cost_update:'修改成本',admin_create:'创建管理员',admin_update:'修改管理员',admin_password_reset:'重置密码',admin_self_password_change:'修改本人密码'};
         document.getElementById('audit').innerHTML=rows.length?('<table><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>详情</th><th>IP</th></tr>'+rows.map(r=>{
           let detail='';try{const d=r.detail;detail=d?Object.entries(d).map(([k,v])=>k+':'+(typeof v==='object'?JSON.stringify(v):v)).join(' '):''}catch(_){}
           return '<tr><td style="white-space:nowrap">'+fmtTime(r.created_at)+'</td><td>'+esc(r.operator)+'</td><td>'+(actionText[r.action]||r.action)+'</td><td>'+esc(r.target_type)+' '+(r.target_id?('#'+esc(r.target_id)):'')+'</td><td style="color:var(--text-faint);font-size:12px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(detail)+'</td><td style="color:var(--text-faint)">'+esc(r.ip_address||'')+'</td></tr>';

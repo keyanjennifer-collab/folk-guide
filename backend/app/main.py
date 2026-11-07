@@ -27,6 +27,7 @@ from .logistics_routes import router as logistics_router
 from .wechat_express_routes import router as wechat_express_router
 from .kuaidi100_routes import router as kuaidi100_router
 from .wechat_express_service import worker_loop as wechat_express_worker_loop
+from .order_receipt_service import worker_loop as order_receipt_worker_loop
 from .calendar_service import apply_calendar_calculation, calculate_birth_calendar
 from .config import get_settings, validate_runtime_settings
 from .database import Base, SessionLocal, engine, get_db
@@ -72,6 +73,7 @@ async def lifespan(_: FastAPI):
         migrate_development_schema(engine)
     scheduler_task: asyncio.Task | None = None
     shipping_task: asyncio.Task | None = None
+    receipt_task: asyncio.Task | None = None
     # 正式运行时由带数据库租约的任务统一完成启动补跑，避免多worker在lifespan中
     # 同时写公共缓存。测试或显式关闭调度时仍同步预热，保持接口开箱即用。
     if runtime_settings.testing or not runtime_settings.daily_scheduler_enabled:
@@ -84,9 +86,15 @@ async def lifespan(_: FastAPI):
         )
     if (runtime_settings.wechat_express_enabled or runtime_settings.kuaidi100_enabled) and not runtime_settings.testing:
         shipping_task = asyncio.create_task(wechat_express_worker_loop(), name="wechat-express-order-sync")
+    if not runtime_settings.testing:
+        receipt_task = asyncio.create_task(order_receipt_worker_loop(), name="order-auto-receipt")
     try:
         yield
     finally:
+        if receipt_task is not None:
+            receipt_task.cancel()
+            with suppress(CancelledError):
+                await receipt_task
         if shipping_task is not None:
             shipping_task.cancel()
             with suppress(CancelledError):
